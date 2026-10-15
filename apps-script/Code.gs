@@ -218,39 +218,75 @@ function aydaTrackingRows_(prepared,date,groupId,teacherId,lessonId,homeworkEnab
   return {attendance,homework};
 }
 function aydaTrackingSummary_(user){
-  if(user.role!=='admin')throw Error('Öğrenci takip raporunu yalnızca yönetici görebilir.');
-  const roster=aydaStudentRoster_(user),students=new Map(roster.map(s=>[s.id,s]));
+  // Öğretmen sadece kendi aktif gruplarını görür. Yönetici tüm aktif grupları görür.
+  if(user.role!=='admin'&&user.role!=='teacher')throw Error('Öğrenci takibi için oturum açın.');
   const groups=aydaGroups_(user).filter(g=>g.status==='Aktif');
-  const byGroup=new Map(groups.map(g=>[g.id,{id:g.id,name:g.name,students:roster.filter(s=>s.groupId===g.id).length,present:0,absent:0,excused:0,homeworkDone:0,homeworkMissing:0}]));
-  const byStudent=new Map(roster.map(s=>[s.id,{id:s.id,name:s.name,groupId:s.groupId,present:0,absent:0,excused:0,homeworkDone:0,homeworkMissing:0,attendanceHistory:[],homeworkHistory:[]} ]));
+  const roster=aydaStudentRoster_(user);
+  const byGroup=new Map(groups.map(g=>[g.id,{
+    id:g.id,name:g.name,students:0,present:0,absent:0,excused:0,
+    homeworkDone:0,homeworkMissing:0,atRisk:0,watch:0,untracked:0
+  }]));
+  const byStudent=new Map();
+  for(const r of roster){
+    const group=byGroup.get(r.groupId);
+    if(!group)continue;
+    group.students++;
+    byStudent.set(r.id,{id:r.id,name:r.name,groupId:r.groupId,present:0,absent:0,
+      excused:0,homeworkDone:0,homeworkMissing:0,attendanceHistory:[],homeworkHistory:[]});
+  }
   for(const r of aydaRead_('YOKLAMA')){
-    const s=byStudent.get(r['OGRENCI_ID']);if(!s||s.groupId!==r['GRUP_ID'])continue;
-    const g=byGroup.get(s.groupId),status=r['KATILIM'],excused=r['MAZERETLI']==='Evet',date=aydaDate_(r['TARIH']);
-    if(status==='Geldi'){s.present++;g.present++;}else if(status==='Gelmedi'){s.absent++;g.absent++;if(excused){s.excused++;g.excused++;}}else continue;
+    const s=byStudent.get(String(r['OGRENCI_ID']||'').trim());
+    if(!s||s.groupId!==r['GRUP_ID'])continue;
+    const group=byGroup.get(s.groupId);
+    const status=r['KATILIM'],excused=r['MAZERETLI']==='Evet',date=aydaDate_(r['TARIH']);
+    if(status==='Geldi'){s.present++;group.present++;}
+    else if(status==='Gelmedi'){s.absent++;group.absent++;if(excused){s.excused++;group.excused++;}}
+    else continue;
     s.attendanceHistory.push({date,status,excused});
   }
   for(const r of aydaRead_('ODEV_TAKIBI')){
-    const s=byStudent.get(r['OGRENCI_ID']);if(!s||s.groupId!==r['GRUP_ID'])continue;
-    const g=byGroup.get(s.groupId),status=r['ODEV_DURUMU'],date=aydaDate_(r['TARIH']);
-    if(status==='Yaptı'){s.homeworkDone++;g.homeworkDone++;}else if(status==='Yapmadı'){s.homeworkMissing++;g.homeworkMissing++;}else continue;
+    const s=byStudent.get(String(r['OGRENCI_ID']||'').trim());
+    if(!s||s.groupId!==r['GRUP_ID'])continue;
+    const group=byGroup.get(s.groupId),status=r['ODEV_DURUMU'],date=aydaDate_(r['TARIH']);
+    if(status==='Yaptı'){s.homeworkDone++;group.homeworkDone++;}
+    else if(status==='Yapmadı'){s.homeworkMissing++;group.homeworkMissing++;}
+    else continue;
     s.homeworkHistory.push({date,status});
   }
   const alerts=[];
   for(const s of byStudent.values()){
     s.attendanceHistory.sort((a,b)=>b.date.localeCompare(a.date));
     s.homeworkHistory.sort((a,b)=>b.date.localeCompare(a.date));
-    const recentAbsent=s.attendanceHistory.slice(0,5).filter(x=>x.status==='Gelmedi'&&!x.excused).length;
-    const consecutiveAbsent=s.attendanceHistory.slice(0,2).length===2&&s.attendanceHistory.slice(0,2).every(x=>x.status==='Gelmedi'&&!x.excused);
-    const recentExcused=s.attendanceHistory.slice(0,5).filter(x=>x.status==='Gelmedi'&&x.excused).length;
-    const recentHw=s.homeworkHistory.slice(0,5).filter(x=>x.status==='Yapmadı').length;
-    if(consecutiveAbsent||recentAbsent>=3||recentHw>=3){
-      const g=byGroup.get(s.groupId);
-      alerts.push({studentId:s.id,name:s.name,groupId:s.groupId,group:g?g.name:s.groupId,recentAbsent,recentExcused,recentHomeworkMissing:recentHw,consecutiveAbsent,excused:s.excused});
-    }
-    delete s.attendanceHistory;delete s.homeworkHistory;
+    const recentAttendance=s.attendanceHistory.slice(0,5);
+    const recentHomework=s.homeworkHistory.slice(0,5);
+    const recentAbsent=recentAttendance.filter(x=>x.status==='Gelmedi'&&!x.excused).length;
+    const consecutiveAbsent=recentAttendance.length>=2&&recentAttendance.slice(0,2).every(x=>x.status==='Gelmedi'&&!x.excused);
+    const recentExcused=recentAttendance.filter(x=>x.status==='Gelmedi'&&x.excused).length;
+    const recentHw=recentHomework.filter(x=>x.status==='Yapmadı').length;
+    s.lastAttendance=recentAttendance[0]||null;
+    s.lastHomework=recentHomework[0]||null;
+    s.recentAttendance=recentAttendance;
+    s.recentHomework=recentHomework;
+    s.recentAbsent=recentAbsent;
+    s.recentHomeworkMissing=recentHw;
+    s.consecutiveAbsent=consecutiveAbsent;
+    s.attendanceRate=(s.present+s.absent)?Math.round(s.present*100/(s.present+s.absent)):null;
+    s.riskLevel=consecutiveAbsent||recentAbsent>=3||recentHw>=3?'danger':
+      recentAbsent>=1||recentHw>=2?'watch':
+      recentAttendance.length||recentHomework.length?'regular':'untracked';
+    const group=byGroup.get(s.groupId);
+    if(s.riskLevel==='danger'){
+      group.atRisk++;
+      alerts.push({studentId:s.id,name:s.name,groupId:s.groupId,group:group.name,
+        recentAbsent,recentExcused,recentHomeworkMissing:recentHw,consecutiveAbsent,excused:s.excused});
+    }else if(s.riskLevel==='watch')group.watch++;
+    else if(s.riskLevel==='untracked')group.untracked++;
+    delete s.attendanceHistory;
+    delete s.homeworkHistory;
   }
   alerts.sort((a,b)=>Number(b.consecutiveAbsent)-Number(a.consecutiveAbsent)||b.recentAbsent-a.recentAbsent||b.recentHomeworkMissing-a.recentHomeworkMissing);
-  return {groups:[...byGroup.values()],students:[...byStudent.values()],alerts};
+  return {groups:[...byGroup.values()],students:[...byStudent.values()],alerts,
+    scope:user.role==='admin'?'all':'own',updatedAt:aydaToday_()};
 }
 function aydaSetPassword_(user,p){
   if(!p||typeof p!=='object')throw Error('Parola bilgileri eksik.');
