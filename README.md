@@ -1,24 +1,18 @@
-# AYDA — Sade Yönetici + Salt Okunur Takip Ekranı
-
-Bu paket önceki V4 dosyalarını korur. **Apps Script Code.gs değiştirmeyin**; bu sürüm yalnızca GitHub statik arayüz dosyalarını değiştirir.
+# AYDA Akademik Takip — Şifresiz Yönetici Panosu
 
 ## Kurulum
+1. ZIP içindeki `index.html`, `yonetici.html`, `assets/` ve `CNAME` dosyalarını GitHub `onurqlp/lehrer` deposuna yükleyin.
+2. `apps-script/Code.gs` dosyasının içeriğini **AYDA Ogretmen Sistemi** Apps Script projesinde `Kod.gs` ile değiştirin. Kaydedin ve **Dağıt > Dağıtımları yönet > Yeni sürüm > Dağıt** yapın. Çalıştıran: **Ben**, Erişim: **Herkes**.
+3. `https://lehrer.aydadil.com/yonetici.html` adresini açın. Anahtar istemez.
 
-GitHub `onurqlp/lehrer` deposuna bu ZIP içindeki `index.html`, `yonetici.html`, `assets/` ve `CNAME` dosyalarını yükleyin. `apps-script/Code.gs` önceki çalışır durumdaki sürümün yedek kopyasıdır; yeniden dağıtım gerekmez.
+## Mimari
+- Anahtarsız sayfa **publicDashboard** adlı salt-okunur JSONP API çağrısı yapar.
+- API öğretmen girişlerini ve yönetici girişini değiştirmez; diğer bütün işlemlerde mevcut doğrulama korunur.
+- Public yanıt: grupların isim/seviyesi/öğretmeni/öğrenci toplamı, ünite ilerlemesi, haftalık ders günleri, ders saat toplamları, konu başlıkları. **Öğrenci isimleri, özel ders öğrenci isimleri, ders notları ve giriş anahtarları dönmez.**
+- Herkese açık: URL'yi bilmeyenler de keşfedebilir. URL'yi gizli tutmak erişim kontrolü değildir.
+- 24 ünite ve iki sınav hazırlığı dersi ile ileriye yönelik yaklaşık tarih hesaplanır. Resmî sınav tarihi değildir.
+- Herkese açık pano tüm ziyaretçilerden okunabilir; yalnızca yetkili personelin erişmesi gerekiyorsa parola/Google oturumu eklenmelidir.
 
-- `https://lehrer.aydadil.com/` — öğretmen / yönetici işlem ekranı; yönetici menüleri Genel Bakış, Ders ve Muhasebe, Grup İşlemleri, Öğretmenler ve Anahtarlar, Düzenle.
-- `https://lehrer.aydadil.com/yonetici.html` — **salt okunur**, 24 ünite durumları, son konu, tahmini bitişler, öğretmen aylık saatleri; kayıt oluşturma / düzenleme / silme YOK. Yönetici anahtarı zorunlu.
-
-Başka siteye gömme örneği:
-
-```html
-<iframe src="https://lehrer.aydadil.com/yonetici.html" title="AYDA Yönetici Takibi" loading="lazy" style="width:100%;min-height:950px;border:0;border-radius:16px"></iframe>
-```
-
-**Önemli:** iframe içinde yönetici anahtarı ayrıca istenebilir; tarayıcıların üçüncü taraf çerez/oturum kısıtları bunu etkileyebilir. Anahtarı `?key=` şeklinde URL'ye koymayın. Her girişte mevcut Apps Script API'si üzerinden canlı yetki denetimi yapılır.
-
-**Telefon hata notu:** API Google Apps Script'e JSONP üzerinden bağlı; mobil ağ / Google yönlendirmesi / tarayıcı engeli nedeniyle bağlantı hatası tamamen ortadan kalkacağını garanti etmiyoruz. 45 saniyelik zaman aşımı ve tekrar yenileme eklendi. Gerçek teşhis için telefondaki tarayıcı ve erişim koşulları kontrol edilmeli.
-
-**Güvenlik:** Bu ayrı sayfa sadece admin anahtarıyla çalışır. Herhangi bir herkese açık veya anonim veri akışı açılmaz. İframe sadece görsel sunum sağlar, ek yetkilendirme değildir.
-
-**Teknik test:** JS sözdizimi ve ZIP dosya bütünlüğü kontrol edilmiştir, canlı backend mobil cihazda test edilmemiştir.
+## Sınırlamalar
+- Telefon tarayıcılarında Google Apps Script JSONP isteği engellenebilir; bağlantı ve Apps Script erişimi doğrulanmalıdır.
+- Backend canlı Google Sheets ortamında test edilmedi. Dağıtımdan önce Apps Script kodunun bir kopyasını saklayın.
