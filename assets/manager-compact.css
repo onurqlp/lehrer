@@ -44,7 +44,7 @@ body.manager-compact #managerOps[hidden],body.manager-compact #managerStudents36
 .compact-action{border:1px solid #cedfd3;background:#f6faf7;color:#176b59;border-radius:9px;font-size:12px;font-weight:800;padding:8px 11px;cursor:pointer}
 .compact-action:hover{background:#e6f4eb}
 .compact-action.primary{background:#176b59;color:#fff;border-color:#176b59}
-.compact-insights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:11px 0}
+.compact-insights{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:11px 0}
 .compact-insight{background:#fff;border:1px solid #dfeae2;border-radius:12px;padding:12px 14px;min-width:0}
 .compact-insight strong{font-size:13px;display:block;margin:0 0 5px;color:#20392d}
 .compact-insight p{font-size:12px;color:#6a7b70;margin:0;line-height:1.5}
