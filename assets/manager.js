@@ -46,7 +46,7 @@
   finally{setBusy(false);}
  }
  async function refreshTracking(){
-  try{tracking=await api('trackingSummary',authKey);showError('');}
+  try{const result=await api('trackingSummary',authKey);if(result?.scope!=='all')throw Error('Google Apps Script üzerinde yeni takip sürümü henüz yayımlanmadı.');tracking=result;showError('');}
   catch(error){tracking=null;showError('Öğrenci takibi yüklenemedi: '+error.message+' — Grup ve ders kayıtları görüntülenebilir.');}
   render();
  }
@@ -92,6 +92,7 @@
   const dates=forecast(g),row=append(box,'div','group-dates');
   row.append(document.createTextNode('Tahmini son ünite: '));append(row,'strong','',dates.unit);
   append(row,'div','','2 sınav hazırlığı dersi sonrası: '+dates.prep);
+  const open=append(box,'button','group-action','Bu grubun öğrencilerini gör →');open.type='button';open.addEventListener('click',()=>{$('managerStudentGroup').value=g.id;setTab('students');renderStudents();});
   return box;
  }
  function renderGroups(){
