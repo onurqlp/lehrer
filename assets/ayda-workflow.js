@@ -17,6 +17,7 @@
  function button(text,handler){const b=el('button','ayda-inline-btn',text);b.type='button';b.addEventListener('click',handler);return b;}
  function openLesson(groupId,date,forAttendance=false){
   if(!group(groupId))return;
+  window.AYDA_MAKEUP_ATTENDANCE=forAttendance?{groupId,date}:null;
   $('lessonType').value='group';$('lessonType').dispatchEvent(new Event('change',{bubbles:true}));
   $('groupId').value=groupId;$('groupId').dispatchEvent(new Event('change',{bubbles:true}));
   $('lessonDate').value=date;$('lessonDate').dispatchEvent(new Event('change',{bubbles:true}));
