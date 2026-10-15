@@ -43,7 +43,7 @@
  function showError(text){$('managerStatus').textContent=text||'';}
  function setTab(id){if(!['overview','students','groups','teachers','lessons','alerts'].includes(id))return;tab=id;for(const button of $('managerTabs').querySelectorAll('[data-tab]'))button.classList.toggle('active',button.dataset.tab===id);for(const section of document.querySelectorAll('.tab-panel'))section.hidden=section.id!=='manager-'+id;}
  async function login(key){
-  if(busy)return;const token=String(key||'').trim();if(!token){$('managerLoginError').textContent='Yönetici parolasını girin.';return;}
+  if(busy)return;const token=String(key||'');if(!token){$('managerLoginError').textContent='Yönetici parolasını girin.';return;}
   setBusy(true);$('managerLoginError').textContent='';showError('');
   try{
    const candidate=await api('overview',token);
