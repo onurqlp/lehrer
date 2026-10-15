@@ -305,7 +305,7 @@
  }
  $('ownerLoginForm').addEventListener('submit',e=>{e.preventDefault();login($('ownerKey').value);});
  $('ownerRefresh').addEventListener('click',refresh);
- $('ownerLogout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');token='';overview=null;tracking=null;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';});
+ $('ownerLogout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');token='';overview=null;tracking=null;$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';});
  $('ownerNav').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)activate(b.dataset.tab);});
  for(const b of document.querySelectorAll('[data-jump]'))b.addEventListener('click',()=>activate(b.dataset.jump));
  for(const id of ['ownerStudentSearch','ownerStudentGroup','ownerStudentStatus','ownerStudentSort'])$(id).addEventListener(id==='ownerStudentSearch'?'input':'change',renderStudents);
@@ -316,6 +316,22 @@
  $('ownerTeacherMonth').addEventListener('change',renderTeachers);
  $('ownerScheduleDay').addEventListener('change',renderSchedule);
  $('ownerScheduleTeacher').addEventListener('change',renderSchedule);
+ $('ownerVaultReveal').addEventListener('click',async()=>{
+   const button=$('ownerVaultReveal');button.disabled=true;
+   $('ownerVaultSecrets').hidden=false;
+   showEmpty('ownerVaultSecrets','Arşiv kayıtları yükleniyor…');
+   try{
+     const result=await api('vaultExport',token);
+     const rows=(result?.rows||[]).map(r=>[r.name||'—',r.role||'—',r.accountId||'—',r.key||'—',r.status||'—',r.created||'—']);
+     table('ownerVaultSecrets',['Adı','Rol','Hesap ID','Arşivdeki anahtar','Durum','Kayıt tarihi'],rows);
+     button.hidden=true;$('ownerVaultHide').hidden=false;
+   }catch(e){showEmpty('ownerVaultSecrets','Arşiv okunamadı: '+e.message);}
+   finally{button.disabled=false;}
+ });
+ $('ownerVaultHide').addEventListener('click',()=>{
+   $('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;
+   $('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;
+ });
  $('ownerTeacherCSV').addEventListener('click',()=>{
   const esc=x=>'"'+String(x??'').replace(/^[\s]*[=+@-]/,m=>"'"+m).replace(/"/g,'""')+'"';
   const csv='\ufeff'+exportRows.map(r=>r.map(esc).join(';')).join('\r\n');
