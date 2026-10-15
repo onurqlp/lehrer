@@ -1,0 +1,9 @@
+"use strict";
+(()=>{const area=document.getElementById('adminArea'),nav=document.getElementById('adminNav');if(!area||!nav)return;
+const sections=[{id:'academic',name:'📊 Genel Bakış',head:'Akademik Planlama'},{id:'money',name:'🗓️ Ders ve Muhasebe',head:'Yönetim · Aylık'},{id:'groups',name:'🏫 Grup İşlemleri',head:'Yeni Grup Aç'},{id:'teachers',name:'👩‍🏫 Öğretmenler ve Anahtarlar',head:'Yeni Öğretmen Ekle'},{id:'update',name:'⚙️ Düzenle',head:'Mevcut Grup Bilgilerini Düzenle'}];
+const map={'Yönetim · Aylık Ders ve Ücret Çizelgesi':'money','Akademik Planlama · 24 Ünite + 2 Sınav Hazırlığı':'academic','Yeni Öğretmen Ekle':'teachers','Yeni Grup Aç ve Programını Belirle':'groups','Mevcut Grup Bilgilerini Düzenle':'update','Öğretmen Hesapları ve Anahtar Arşivi':'teachers','Giriş Anahtarı Yönetimi':'teachers','Grup Durumu ve Son İşlenen Konular':'academic'};
+let current='academic';for(const child of [...area.children]){if(child.classList.contains('section')){const title=child.querySelector('h2')?.textContent?.trim();if(map[title])current=map[title];}if(child.id==='adminNav'||child.classList.contains('adminQuick'))continue;child.dataset.adminTab=current;}
+function select(id){for(const node of area.querySelectorAll(':scope > [data-admin-tab]'))node.hidden=node.dataset.adminTab!==id;for(const b of nav.querySelectorAll('button'))b.classList.toggle('active',b.dataset.target===id);try{sessionStorage.setItem('aydaAdminTab',id);}catch(_){}}
+for(const item of sections){const b=document.createElement('button');b.type='button';b.textContent=item.name;b.dataset.target=item.id;b.addEventListener('click',()=>select(item.id));nav.append(b);}
+select(sections.some(x=>x.id===sessionStorage.getItem('aydaAdminTab'))?sessionStorage.getItem('aydaAdminTab'):'academic');
+})();

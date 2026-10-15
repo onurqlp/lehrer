@@ -1,34 +1,24 @@
-# AYDA Akademik Takip — Final V4 (Hesap ve Müfredat Yönetimi)
+# AYDA — Sade Yönetici + Salt Okunur Takip Ekranı
 
-## Kurulum (mevcut çalışan sistem üzerine)
-1. **ÖNCE yedek:** Google Sheets'in bir kopyasını ve Apps Script'teki mevcut `Kod.gs` içeriğini kaydedin.
-2. GitHub deposunun köküne ZIP içindeki **`index.html`**, **`assets/`**, **`CNAME`**, **`README.md`** dosyalarını yükleyip mevcut dosyaların üzerine yazın. `CNAME` içeriği `lehrer.aydadil.com` olarak kalır.
-3. **AYDA Ogretmen Sistemi** Apps Script projesinde `Kod.gs` içeriğini `apps-script/Code.gs` ile değiştirin. **Dağıt → Dağıtımları yönet → kalem → Yeni sürüm → Dağıt**. `assets/config.js` içinde kendi `/exec` adresiniz zaten bulunmaktadır.
-4. Sayfayı sert yenileyin (`Ctrl+Shift+R`). Yönetici hesabına girin. Varsa eskiden oluşturulmuş giriş anahtarları çalışmaya devam eder.
+Bu paket önceki V4 dosyalarını korur. **Apps Script Code.gs değiştirmeyin**; bu sürüm yalnızca GitHub statik arayüz dosyalarını değiştirir.
 
-## Yönetici ekranı
-- Seviye, aşama ve grup adına göre filtrelenebilen 24 üniteli interaktif akademik takip ekranı.
-- Grup bazında öğretmen, öğrenci sayısı, son rapor, 24. ünite tahmini ve **iki ek sınav hazırlığı dersi** tahmini.
-- Öğretmen ekleme, kullanıcı/anahtar üretme, grup açma ve haftalık ders günleri belirleme.
-- Aylık grup/özel ders sayıları ve gerçekleşen ders saatleri, Excel uyumlu CSV.
-- **Öğretmen Hesapları ve Anahtar Arşivi:** mevcut hesap listesi ve anahtarın özel arşivde bulunup bulunmadığı. "Hesap ve anahtarları Excel'e indir" ile yalnızca arşivdeki *güncel* anahtarların dökümü.
-- Öğretmen veya yönetici anahtarını panelden yenileme.
+## Kurulum
 
-## Anahtar arşivi hakkında önemli bilgi
-- Yeni eklenen öğretmenlerin ve yenilenen anahtarların **açık değerleri**, ana Google Sheets veritabanından **ayrı** oluşturulan `AYDA - GIZLI HESAP VE GIRIS ANAHTARLARI` adlı Drive tablosuna kaydedilir. Script özelliklerinde yalnızca SHA-256 özeti saklanır.
-- Bu dosyanın sahibi Apps Script'in çalıştığı Google hesabıdır. **Bu dosyayı öğretmenlerle paylaşmayın.** Yönetici CSV'si de gizlidir.
-- Daha önce oluşturulan anahtarların açık değerleri SHA-256 özetinden geri alınamaz. Excel'de bu hesapların anahtar alanı boş kalır; panelden yenilenerek arşive eklenebilir.
-- Anahtar yenilendiğinde önceki anahtar anında geçersiz olur. Öğretmene yeni anahtarın güvenli yoldan iletilmesi gerekir.
-- Mevcut anahtarları sadece listelemek için arşiv oluşturulmaz; yeni öğretmen ya da yeni anahtar üretildiğinde arşiv otomatik oluşur.
+GitHub `onurqlp/lehrer` deposuna bu ZIP içindeki `index.html`, `yonetici.html`, `assets/` ve `CNAME` dosyalarını yükleyin. `apps-script/Code.gs` önceki çalışır durumdaki sürümün yedek kopyasıdır; yeniden dağıtım gerekmez.
 
-## Ders/müfredat modeli
-- Her kurda **24 ünite** ve sonrasında sınav hazırlığı için **iki ek ders günü** vardır.
-- Bitiş tarihi her *planlı ders gününde 1 ünite* varsayımıyla hesaplanan tahmindir; tatil/erteleme, özel ders ve resmî sınav takvimi değildir.
-- Öğretmen günlük çizelgesinde grup/özel, tarih, 1–4 ders saati, durum, son tamamlanan ünite ve zorunlu kısa açıklama girer.
-- İptal/ertelenen dersler aylık gerçekleşen saate sayılmaz.
+- `https://lehrer.aydadil.com/` — öğretmen / yönetici işlem ekranı; yönetici menüleri Genel Bakış, Ders ve Muhasebe, Grup İşlemleri, Öğretmenler ve Anahtarlar, Düzenle.
+- `https://lehrer.aydadil.com/yonetici.html` — **salt okunur**, 24 ünite durumları, son konu, tahmini bitişler, öğretmen aylık saatleri; kayıt oluşturma / düzenleme / silme YOK. Yönetici anahtarı zorunlu.
 
-## Dikkat
-- Mevcut GitHub Pages / Apps Script entegrasyonu JSONP kullanıyor. Anahtar URL parametresinde iletilir; dolayısıyla anahtar gizliliği için bu mimari hassastır. Özellikle yönetici CSV'sini ve arşivi paylaşmayın.
-- Tek bir anahtarın paylaşılması o hesaba erişim sağlar; sızdığı düşünülen anahtarı derhal yenileyin.
-- Apps Script ve Google Sheets servislerine bağlı canlı okuma/yazma işlemleri bu paketin oluşturulduğu ortamda test edilemedi. İlk kullanımdan önce yedek alın.
-- Yeni öğretmen/grup oluşturma birden fazla tabloya yazabilir; işlem yarım kalırsa ilgili tabloları kontrol edin.
+Başka siteye gömme örneği:
+
+```html
+<iframe src="https://lehrer.aydadil.com/yonetici.html" title="AYDA Yönetici Takibi" loading="lazy" style="width:100%;min-height:950px;border:0;border-radius:16px"></iframe>
+```
+
+**Önemli:** iframe içinde yönetici anahtarı ayrıca istenebilir; tarayıcıların üçüncü taraf çerez/oturum kısıtları bunu etkileyebilir. Anahtarı `?key=` şeklinde URL'ye koymayın. Her girişte mevcut Apps Script API'si üzerinden canlı yetki denetimi yapılır.
+
+**Telefon hata notu:** API Google Apps Script'e JSONP üzerinden bağlı; mobil ağ / Google yönlendirmesi / tarayıcı engeli nedeniyle bağlantı hatası tamamen ortadan kalkacağını garanti etmiyoruz. 45 saniyelik zaman aşımı ve tekrar yenileme eklendi. Gerçek teşhis için telefondaki tarayıcı ve erişim koşulları kontrol edilmeli.
+
+**Güvenlik:** Bu ayrı sayfa sadece admin anahtarıyla çalışır. Herhangi bir herkese açık veya anonim veri akışı açılmaz. İframe sadece görsel sunum sağlar, ek yetkilendirme değildir.
+
+**Teknik test:** JS sözdizimi ve ZIP dosya bütünlüğü kontrol edilmiştir, canlı backend mobil cihazda test edilmemiştir.
