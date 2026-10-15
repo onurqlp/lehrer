@@ -9,9 +9,11 @@ function message(id,text,kind='error'){const n=$el('div','message '+kind,text);$
 let workingApiUrl='';
 function apiCandidates(){
  const configured=String(window.AYDA_API_URL||'').trim();
- const match=configured.match(/^https:\/\/script\.google\.com\/a\/macros\/[^/]+\/s\/([^/]+)\/exec$/);
- const canonical=match?'https://script.google.com/macros/s/'+match[1]+'/exec':configured;
- return [...new Set([workingApiUrl,canonical,configured].filter(Boolean))];
+ const id=configured.match(/\/s\/([A-Za-z0-9_-]+)\/exec(?:$|\?)/)?.[1];
+ if(!id)return [configured].filter(Boolean);
+ const root='https://script.google.com/';
+ const paths=['a/macros/aydadil.com/s/','a/aydadil.com/macros/s/','macros/s/'];
+ return [...new Set([workingApiUrl,...paths.map(p=>root+p+id+'/exec'),configured].filter(Boolean))];
 }
 function apiTransportError(detail){
  const err=new Error(detail);err.transport=true;return err;
