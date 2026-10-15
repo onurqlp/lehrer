@@ -72,6 +72,7 @@
  $('teacherTrackingSearch').addEventListener('input',render);
  for(const id of ['teacherTrackingGroup','teacherTrackingRisk'])$(id).addEventListener('change',render);
  window.addEventListener('ayda:login',load);
+ window.addEventListener('ayda:saved',load);
  window.addEventListener('ayda:logout',()=>{request++;info=null;root.classList.add('hidden');});
  if(typeof data!=='undefined'&&data?.user?.role==='teacher')load();
 })();
