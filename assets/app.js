@@ -138,19 +138,19 @@ async function loadTrackingSummary(){
    for(const a of alerts.slice(0,40)){
     const item=$el('div','tracking-alert'),left=$el('div');
     left.append($el('strong','',a.name),$el('div','muted',a.group));
-    const details=$el('span','tracking-warning',(a.consecutiveAbsent?'Arka arkaya devamsızlık · ':'')+'Son 5 ders: '+a.recentAbsent+' devamsızlık · '+a.recentHomeworkMissing+' ödev eksik');
+    const details=$el('span','tracking-warning',(a.consecutiveAbsent?'Arka arkaya devamsızlık · ':'')+'Son 5 ders: '+a.recentAbsent+' mazeretsiz devamsızlık · '+a.recentHomeworkMissing+' ödev eksik');
     item.append(left,details);list.append(item);
    }
    root.append(list);
   }
   root.append($el('h3','','Grupların katılım ve ödev durumu'));
   const table=$el('table','data-table'),head=$el('tr');
-  for(const label of ['Grup','Öğrenci','Katılım','Ödev tamamlama'])head.append($el('th','',label));table.append(head);
+  for(const label of ['Grup','Öğrenci','Katılım','Mazeretli','Ödev tamamlama'])head.append($el('th','',label));table.append(head);
   for(const g of groups){
-   const tr=$el('tr');for(const value of [g.name,g.students,percent(g.present,g.present+g.absent),percent(g.homeworkDone,g.homeworkDone+g.homeworkMissing)])tr.append($el('td','',value));table.append(tr);
+   const tr=$el('tr');for(const value of [g.name,g.students,percent(g.present,g.present+g.absent),g.excused,percent(g.homeworkDone,g.homeworkDone+g.homeworkMissing)])tr.append($el('td','',value));table.append(tr);
   }
   const scroll=$el('div','summarytable');scroll.append(table);root.append(scroll);
-  root.append($el('p','tiny','Uyarılar: son 5 derste 3 devamsızlık, üst üste 2 devamsızlık veya son 5 kontrol edilen ödevden 3 eksik. Mazeretliler katılım hesabında ayrı tutulur; kontrol edilmeyen ödevler eksik sayılmaz.'));
+  root.append($el('p','tiny','Uyarılar: son 5 derste 3 mazeretsiz devamsızlık, üst üste 2 mazeretsiz devamsızlık veya son 5 kontrol edilen ödevden 3 eksik. Mazeretliler ayrıca gösterilir; kontrol edilmeyen ödevler eksik sayılmaz.'));
  }catch(e){root.replaceChildren($el('p','muted','Öğrenci takip raporu henüz etkin değil: '+e.message));}
 }
 $('passwordForm').addEventListener('submit',async e=>{
