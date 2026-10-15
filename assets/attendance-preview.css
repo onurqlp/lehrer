@@ -43,3 +43,28 @@
 .attendance-unmatched ul{line-height:1.9;margin-bottom:0}
 #studentCsvPreview{max-width:100%}
 @media(max-width:680px){.attendance-panel>summary{padding:13px;gap:9px}.attendance-body{padding:0 12px 15px}.attendance-preview-tag{font-size:9px;padding:5px 7px}.attendance-panel>summary strong{font-size:14px}.attendance-student{padding:12px}.attendance-student-controls{display:grid;gap:12px}.attendance-head{align-items:flex-start;flex-direction:column}.attendance-option{padding:10px 11px;font-size:12px}.attendance-csv-result{align-items:flex-start}}
+
+
+/* Canlı yoklama ve güvenli yönetici/öğretmen formları */
+.attendance-review{display:flex;align-items:center;gap:9px;margin:15px 0 0;padding:13px 14px;border:1px solid #b6d6c5;background:#eef8f2;border-radius:11px;color:#165d49;font-weight:750;cursor:pointer;line-height:1.45}
+.attendance-review input{width:19px;height:19px;accent-color:#176b59;flex-shrink:0}
+.attendance-review[hidden]{display:none!important}
+.attendance-preview-tag{transition:background .15s ease}
+.attendance-panel:has(.attendance-review:not([hidden])) .attendance-preview-tag{color:#176b59;background:#d9f2e2}
+.tracking-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0 24px}
+.tracking-kpi{display:flex;flex-direction:column;gap:7px;padding:14px;border-radius:12px;border:1px solid #dde8df;background:#f6faf7}
+.tracking-kpi strong{font-size:24px;color:#176b59;line-height:1.25}
+.tracking-alerts{display:grid;gap:8px;margin:8px 0 20px}
+.tracking-alert{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;background:#fffaf1;border:1px solid #f0ddb8;border-radius:11px;padding:12px 13px;font-size:13px}
+.tracking-alert>div{min-width:170px}
+.tracking-alert .muted{margin-top:4px}
+.tracking-warning{font-size:11px;font-weight:750;color:#915e08}
+#trackingResults h3{font-size:15px;margin:20px 0 12px}
+.self-password-section{margin-top:25px}
+.self-password-section details.card{padding:17px 20px}
+.self-password-section summary{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;cursor:pointer;list-style:none}
+.self-password-section summary::-webkit-details-marker{display:none}
+.self-password-section summary .muted{font-weight:400}
+.self-password-section form{border-top:1px solid #e2e9e4;margin-top:15px;padding-top:7px}
+#passwordForm .full input{max-width:480px}
+@media(max-width:700px){.tracking-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.tracking-kpi strong{font-size:21px}.self-password-section details.card{padding:15px}.tracking-alert{align-items:flex-start}}
