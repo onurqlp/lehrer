@@ -1,6 +1,11 @@
 "use strict";
 const $=id=>document.getElementById(id), el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=String(txt);return n;};
 let db=null,seq=0,tab='overview',monthlyRows=[];
+const CACHE_KEY='ayda_public_dashboard_v2',CACHE_MAX_AGE=7*24*60*60*1000;
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+function restoreCache(){try{const c=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');if(c&&c.savedAt&&Date.now()-c.savedAt<CACHE_MAX_AGE&&c.data&&Array.isArray(c.data.groups)){db=c.data;render();$('updated').textContent='Son başarılı veri: '+new Date(c.savedAt).toLocaleString('tr-TR')+' (çevrimdışı kayıt)';return true;}}catch(e){}return false;}
+function storeCache(data){try{localStorage.setItem(CACHE_KEY,JSON.stringify({savedAt:Date.now(),data}));}catch(e){}}
+async function apiRetry(){let last;for(let attempt=0;attempt<3;attempt++){try{return await api();}catch(e){last=e;if(attempt<2)await wait(1100*(attempt+1));}}throw last;}
 function api(){return new Promise((resolve,reject)=>{const address=window.AYDA_API_URL;if(!/^https:\/\/script\.google\.com\/macros\/s\//.test(address||'')){reject(Error('API yapılandırması bulunamadı.'));return;}const cb='ayda_cb_'+Date.now()+'_'+(++seq),u=new URL(address),s=document.createElement('script');let done=false;const finish=(error,value)=>{if(done)return;done=true;clearTimeout(timer);s.remove();delete window[cb];error?reject(error):resolve(value);};const timer=setTimeout(()=>finish(Error('Sunucu zaman aşımına uğradı. İnternet bağlantısını kontrol edip Yenile seçeneğini deneyin.')),45000);window[cb]=r=>r?.ok?finish(null,r.data):finish(Error(r?.error||'Sunucu yanıtı alınamadı.'));u.searchParams.set('callback',cb);u.searchParams.set('action','publicDashboard');s.onerror=()=>finish(Error('Sunucu bağlantısı kurulamadı.'));s.src=u.toString();document.head.append(s);});}
 const names=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
 function parse(s){const a=String(s||'').split('-').map(Number);return a.length===3&&a.every(Number.isFinite)?new Date(Date.UTC(a[0],a[1]-1,a[2])):null;}
@@ -13,15 +18,23 @@ function renderAlerts(){const all=db.groups||[],attention=all.filter(g=>{const x
 function hours(v){const m=String(v||'').match(/^(\d{1,2}):(\d{2})$/);return m?Number(m[1])+Number(m[2])/60:(Number(v)||0);}
 function renderTeachers(){const month=$('month').value,records=[...(db.history||[]).map(x=>({...x,type:'Grup'})),...(db.privateHistory||[]).map(x=>({...x,type:'Özel'}))].filter(x=>x.date.startsWith(month));const totals=new Map();for(const r of records){const t=totals.get(r.teacherId)||{count:0,group:0,private:0,hours:0,cancel:0};if(r.status==='İşlendi'){t.count++;t.hours+=hours(r.actual);t[r.type==='Özel'?'private':'group']++;}else t.cancel++;totals.set(r.teacherId,t);}monthlyRows=[['Öğretmen','Grup dersi','Özel ders','Toplam ders','Toplam saat','İptal/Erteleme']];for(const [id,x] of totals)monthlyRows.push([teacher(id),x.group,x.private,x.count,x.hours.toLocaleString('tr-TR',{maximumFractionDigits:2}),x.cancel]);$('teacherTotals').replaceChildren();if(totals.size){const wrap=el('div','tableWrap'),table=el('table'),head=el('tr');for(const h of monthlyRows[0])head.append(el('th','',h));table.append(head);for(const row of monthlyRows.slice(1)){const tr=el('tr');for(const x of row)tr.append(el('td','',x));table.append(tr);}wrap.append(table);$('teacherTotals').append(wrap);}else $('teacherTotals').append(el('div','empty','Bu ay için ders raporu bulunmuyor.'));}
 function render(){const gs=db.groups||[],done=gs.filter(g=>Number(g.completed)>=24).length,near=gs.filter(g=>Number(g.completed)>=20&&Number(g.completed)<24).length,students=gs.reduce((n,g)=>n+(Number(g.students)||0),0);$('kpis').replaceChildren();for(const [label,value] of [['Aktif / kayıtlı grup',gs.length],['Toplam öğrenci',students],['Bitmeye yakın',near],['24 ünite tamamlandı',done]]){const c=el('div','kpi');c.append(el('span','label',label),el('strong','',value));$('kpis').append(c);}$('updated').textContent='Son yenileme: '+new Date().toLocaleString('tr-TR');$('month').value ||= db.today.slice(0,7);renderGroups();renderAlerts();renderTeachers();}
+let loadingNow=false;
 async function load(){
+ if(loadingNow)return;loadingNow=true;
  const b=$('refresh');b.disabled=true;b.textContent='↻ Yükleniyor…';
  $('publicError').textContent='';$('loading').hidden=false;
- try{db=await api();render();$('loading').hidden=true;$('refresh').hidden=false;}
- catch(err){$('loading').hidden=true;$('publicError').textContent='Veriler şu anda getirilemedi: '+err.message+' Yenile butonuna dokunun.';}
- finally{b.disabled=false;b.textContent='↻ Yenile';}
+ try{
+   const fresh=await apiRetry();
+   if(!fresh||!Array.isArray(fresh.groups))throw Error('Eksik sunucu yanıtı');
+   db=fresh;storeCache(fresh);render();$('loading').hidden=true;$('refresh').hidden=false;
+ }catch(err){
+   $('loading').hidden=true;
+   $('publicError').textContent=db?'Canlı bağlantı geçici olarak kurulamadı. Son başarılı veriler gösteriliyor; tekrar denemek için Yenile’ye dokunun.':'Veriler şu anda getirilemedi: '+err.message+' Yenile butonuna dokunun.';
+ }finally{loadingNow=false;b.disabled=false;b.textContent='↻ Yenile';}
 }
 $('refresh').hidden=false;$('refresh').addEventListener('click',load);
 for(const b of document.querySelectorAll('[data-tab]'))b.addEventListener('click',()=>{for(const x of document.querySelectorAll('[data-tab]'))x.classList.toggle('active',x===b);for(const x of document.querySelectorAll('.tabpanel'))x.hidden=x.id!==b.dataset.tab;});
 for(const id of ['level','stage','search'])$(id).addEventListener(id==='search'?'input':'change',()=>db&&renderGroups());$('month').addEventListener('change',()=>db&&renderTeachers());
 $('csv').addEventListener('click',()=>{const quote=x=>'"'+String(x??'').replace(/^[\s]*[=+@-]/,m=>"'"+m).replace(/"/g,'""')+'"';const blob=new Blob(['\ufeff'+monthlyRows.map(r=>r.map(quote).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='AYDA-ogretmen-saatleri-'+$('month').value+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1200);});
+restoreCache();
 load();
