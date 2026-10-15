@@ -125,9 +125,10 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  const tracking=window.AYDA_ATTENDANCE?.collect?.();
  if(tracking)Object.assign(payload,tracking);
  const previous=payload.type==='group'?(data?.history||[]).find(r=>r.groupId===payload.groupId&&r.date===payload.date):null;
- const oldAttendance=!!previous;
+ const makeup=window.AYDA_MAKEUP_ATTENDANCE;
+ const oldAttendance=!!previous||(payload.type==='group'&&makeup?.groupId===payload.groupId&&makeup?.date===payload.date);
  if(previous&&previous.status!=='İşlendi')throw Error('Bu tarihte zaten iptal/erteleme kaydı var. Yönetimden kontrol isteyin.');
- if(previous&&!tracking)throw Error('Ders raporu zaten kayıtlı. Eksik yoklama için öğrenci listesini işaretleyin.');
+ if(oldAttendance&&!tracking)throw Error('Bu tarihin ders raporu zaten kayıtlı. Eksik yoklama için öğrenci listesini işaretleyin.');
  const saved=oldAttendance?await jsonp('saveAttendance',{payload:utf8Base64Url(JSON.stringify({groupId:payload.groupId,date:payload.date,...tracking}))}):await jsonp('save',{payload:utf8Base64Url(JSON.stringify(payload))});
  if(!saved?.saved)throw Error('Sunucu kayıt işlemini doğrulamadı.');
  const trackingVerified=!!tracking&&saved.trackingSaved===true&&saved.attendanceCount===tracking.attendance.length;
@@ -141,6 +142,7 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  }catch(refreshError){
   message('formMessage',confirmation+' Liste güncellenemedi; sayfayı yenileyin.',tracking&&!trackingVerified?'error':'success');
  }
+ window.AYDA_MAKEUP_ATTENDANCE=null;
  window.dispatchEvent(new Event('ayda:saved'));
 }catch(err){
  message('formMessage',err.unknownCommit?'Sunucudan kayıt onayı alınamadı. Yeniden kaydetmeden önce Google Sheets DERS_KAYITLARI sekmesini kontrol edin. ('+err.message+')':err.message);
