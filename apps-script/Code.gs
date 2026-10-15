@@ -353,7 +353,7 @@ function doGet(e){
     const action=String(p.action||'overview');
     if(action==='ping'){out={ok:true,data:{status:'ok',version:'2026-10-15.4'}};}
     else if(action==='publicDashboard'){out={ok:true,data:aydaPublicDashboard_()};}
-    else if(action==='publicTrackingDashboard'){out={ok:true,data:aydaTrackingSummary_({role:'admin',id:'ADMIN',name:'Yönetici'})};}
+    else if(action==='publicTrackingDashboard'){out={ok:false,error:'Öğrenci bilgileri anonim erişime kapalı.'};}
     else {const user=aydaAuth_(p.key);
     if(action==='overview')out={ok:true,data:aydaOverview_(user)};
     else if(action==='createTeacher')out={ok:true,data:aydaAdminCreateTeacher_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
