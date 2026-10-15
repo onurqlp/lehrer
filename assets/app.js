@@ -101,7 +101,21 @@ $('vaultExportBtn').addEventListener('click',async()=>{
 $('monthFilter').addEventListener('change',renderMonth);$('teacherFilter').addEventListener('change',renderMonth);
 $('csvBtn').addEventListener('click',()=>{const month=$('monthFilter').value,teacher=$('teacherFilter').value,items=allEntries().filter(x=>(!month||x.date.startsWith(month))&&(!teacher||x.teacherId===teacher));const rows=[['Tarih','Öğretmen ID','Tür','Grup/Öğrenci','Durum','Saat','Son tamamlanan ünite','Kısa bilgi'],...items.map(x=>[x.date,x.teacherId,x.type,x.group,x.status,x.status==='İşlendi'?hours(x.actual):0,x.completed||'',x.note||x.topic||''])];downloadCSV(rows,'AYDA_ders_cizelgesi_'+(month||'tum')+'.csv');});
 $('lessonType').addEventListener('change',()=>{const priv=$('lessonType').value==='private';$('groupWrap').classList.toggle('hidden',priv);$('privateWrap').classList.toggle('hidden',!priv);$('groupId').required=!priv;$('privateStudent').required=priv;});
-function renderHistory(){clear('history');const filter=$('historyFilter').value;const list=[...data.history,...(data.privateHistory||[])].filter(x=>!filter||x.groupId===filter).sort((a,b)=>b.date.localeCompare(a.date));for(const r of list){const g=data.groups.find(x=>x.id===r.groupId),card=$el('div','card historyitem'),line=$el('div','topline');line.append($el('strong','',(g?g.name:(r.student||r.groupId))+' · '+r.date),$el('span','tag',r.status));card.append(line,$el('div','muted','Son tamamlanan ünite: '+r.completed+' · '+r.teacherId),$el('p','',r.note||r.topic||''));$('history').append(card);}if(!list.length)$('history').append($el('div','card empty','Henüz rapor bulunmuyor.'));}
+function renderHistory(){clear('history');const filter=$('historyFilter').value;const list=[...data.history,...(data.privateHistory||[])].filter(x=>!filter||x.groupId===filter).sort((a,b)=>b.date.localeCompare(a.date));for(const r of list){const g=data.groups.find(x=>x.id===r.groupId),card=$el('div','card historyitem'),line=$el('div','topline');line.append($el('strong','',(g?g.name:(r.student||r.groupId))+' · '+r.date),$el('span','tag',r.status));card.append(line,$el('div','muted','Son tamamlanan ünite: '+r.completed+' · '+r.teacherId),$el('p','',r.note||r.topic||''));if(r.groupId&&(data.user.role==='admin'||r.teacherId===data.user.id)){
+  const edit=$el('details','ayda-history-edit'),summary=$el('summary','','✏️ Raporun süre / açıklamasını düzelt');edit.append(summary);
+  const area=$el('textarea');area.value=r.note||r.topic||'';area.maxLength=2000;area.minLength=3;area.rows=3;area.setAttribute('aria-label','Düzeltilmiş ders notu');
+  const duration=$el('input');duration.type='time';duration.value=r.actual||'02:00';duration.setAttribute('aria-label','Ders süresi');
+  const button=$el('button','ayda-inline-btn','Düzeltmeyi kaydet');button.type='button';
+  const feedback=$el('small','ayda-note-state');
+  button.addEventListener('click',async()=>{const note=area.value.trim(),actual=duration.value;if(note.length<3){feedback.textContent='En az 3 karakter yazın.';return;}button.disabled=true;feedback.textContent='Kaydediliyor…';
+   try{const result=await jsonp('updateReport',{payload:utf8Base64Url(JSON.stringify({id:r.id,note,actual}))});if(!result.saved)throw Error('Kayıt onayı alınamadı.');
+    feedback.textContent='Düzeltme kaydedildi.';data=await jsonp('overview');render();
+   }catch(err){feedback.textContent='Düzeltme doğrulanamadı; tekrar denemeden önce kontrol edin. '+err.message;}
+   finally{button.disabled=false;}
+  });
+  edit.append(area,duration,button,feedback);card.append(edit);
+ }
+ $('history').append(card);}if(!list.length)$('history').append($el('div','card empty','Henüz rapor bulunmuyor.'));}
 $('groupId').addEventListener('change',()=>{const g=data?.groups.find(x=>x.id===$('groupId').value);if(g)$('completed').value=g.completed||0;});
 $('historyFilter').addEventListener('change',renderHistory);
 $('loginForm').addEventListener('submit',e=>{e.preventDefault();login($('key').value);});
