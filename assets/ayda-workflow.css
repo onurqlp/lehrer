@@ -1,0 +1,33 @@
+/* AYDA automation UX: responsive, low-friction workflow */
+.ayda-support{position:fixed;right:16px;bottom:18px;z-index:70;border-radius:999px;padding:13px 18px;background:#176b59;color:#fff!important;font-weight:800;text-decoration:none;box-shadow:0 8px 24px #063d2c35;font-size:13px;border:2px solid #fff}
+.ayda-support:focus-visible,.ayda-inline-btn:focus-visible{outline:3px solid #f1b64c;outline-offset:2px}
+.ayda-automation{border:1px solid #c9e0d0;background:#fbfefd;border-radius:16px;padding:17px;margin:16px 0 22px}
+.ayda-automation.hidden{display:none}
+.ayda-auto-title{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ayda-auto-title h2{font-size:19px;margin:0}
+.ayda-auto-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:14px 0}
+.ayda-auto-metric{background:#edf6f0;border:1px solid #d9e9de;padding:13px;border-radius:10px;display:flex;flex-direction:column;gap:4px}
+.ayda-auto-metric strong{font-size:24px;color:#176b59}
+.ayda-auto-metric span{font-size:11px;color:#52685d}
+.ayda-auto-quick{display:grid;gap:8px;margin-bottom:12px}
+.ayda-auto-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 12px;border:1px solid #dce8df;border-radius:10px;background:white;font-size:13px}
+.ayda-auto-line>span,.ayda-auto-copy{flex:1;min-width:150px}
+.ayda-auto-warning{border-color:#efdbb7;background:#fffaf3}
+.ayda-auto-copy{display:flex;flex-direction:column;gap:4px}
+.ayda-auto-copy span{font-size:11px;color:#6a716b}
+.ayda-inline-btn{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:8px 12px;border:1px solid #bad5c4;color:#176b59!important;background:#eef7f1;border-radius:9px;text-decoration:none;font-size:12px;font-weight:750;cursor:pointer;white-space:nowrap}
+.ayda-auto-subhead{font-weight:800;font-size:13px;color:#173c30;margin:12px 0 8px}
+.ayda-auto-subtle{font-size:12px;color:#64766b;margin:9px 0}
+.ayda-auto-done{font-size:13px;color:#176b59;padding:11px;background:#eff8f1;border-radius:9px}
+.ayda-draft-status{font-size:11px;color:#5d7866;margin:12px 0 0}
+.ayda-student-note{margin-top:12px;border-top:1px solid #dee9e1;padding-top:10px}
+.ayda-student-note summary{cursor:pointer;color:#176b59;font-size:12px;font-weight:750}
+.ayda-note-history{display:grid;gap:6px;max-height:215px;overflow:auto;margin:9px 0}
+.ayda-note-history p{padding:8px 10px;margin:0;border:1px solid #e3ebe5;border-radius:9px;white-space:pre-wrap;font-size:12px}
+.ayda-note-history small{display:block;color:#667a6d;margin-top:4px}
+.ayda-student-note textarea{display:block;width:100%;min-height:70px;padding:10px;box-sizing:border-box;border:1px solid #bdd1c2;border-radius:8px;font:inherit}
+.ayda-note-actions{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.ayda-note-state{font-size:11px;color:#607467}
+.ayda-group-link{display:inline-block;margin:10px 0 0;font-size:12px;color:#176b59;font-weight:750}
+@media(max-width:680px){.ayda-auto-metrics{grid-template-columns:repeat(3,1fr)}.ayda-auto-metric{padding:9px}.ayda-auto-metric strong{font-size:20px}.ayda-auto-title h2{font-size:16px}.ayda-auto-line{align-items:stretch}.ayda-auto-line>span,.ayda-auto-copy{flex-basis:100%}.ayda-inline-btn{flex:1}.ayda-support{right:12px;bottom:12px}}
+@media print{.ayda-support,.ayda-automation{display:none!important}}
