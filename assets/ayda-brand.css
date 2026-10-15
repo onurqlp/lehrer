@@ -1,0 +1,156 @@
+/* AYDA UI v1.0 — academic portal variant. Functional controls only; no marketing CTA. */
+:root{
+ --ayda-deep:#0b1b31;--ayda-navy:#102541;--ayda-blue:#214d75;--ayda-gold:#e8c37b;
+ --ayda-gold-ink:#74511b;--ayda-cream:#fbf9f5;--ayda-white:#ffffff;--ayda-sky:#edf5fb;
+ --ayda-text:#142b44;--ayda-muted:#536779;--ayda-border:#dbe3ea;--ayda-green:#19776b;
+ --ayda-red:#aa514c;--ayda-purple:#8d4f83;--ayda-radius:17px;--ayda-shadow:0 9px 28px rgba(10,28,46,.055);
+ --ayda-max:1120px;--green:#214d75;--green-dark:#102541;--green-soft:#edf5fb;--bg:#fbf9f5;--dark:#142b44;
+ --ink:#142b44;--line:#dbe3ea;--muted:#536779;--white:#fff;--blue:#214d75;
+ --ayda:#214d75;--ayda-bg:#fbf9f5;--ayda-bd:#dbe3ea;--ayda-muted:#536779;--ayda-ink:#142b44;
+}
+html{scroll-behavior:smooth;scroll-padding-top:115px}
+body.ayda-internal{background:var(--ayda-cream);color:var(--ayda-text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;line-height:1.65;overflow-wrap:break-word}
+body.ayda-internal button,body.ayda-internal input,body.ayda-internal select,body.ayda-internal textarea{font-family:inherit}
+body.ayda-internal a{overflow-wrap:anywhere}
+body.ayda-internal :where(button,a,input,select,textarea,summary):focus-visible{outline:3px solid var(--ayda-gold);outline-offset:3px}
+body.ayda-internal button{min-height:44px}
+body.ayda-internal [hidden]{display:none!important}
+body.ayda-internal .ayda-site-header{position:sticky;top:0;z-index:30;background:var(--ayda-deep);border-bottom:1px solid #2b3b50;box-shadow:0 5px 21px #0b1b3114}
+body.ayda-internal .top,body.ayda-internal .topbar-inner{max-width:var(--ayda-max);margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 26px;min-height:75px}
+body.ayda-internal .ayda-brand-lockup{display:inline-flex;align-items:center;gap:13px;min-width:0;text-decoration:none;color:white;flex-shrink:0;line-height:1.2}
+body.ayda-internal .ayda-brand-lockup img{display:block;width:125px;max-width:100%;height:auto;object-fit:contain;flex-shrink:0}
+body.ayda-internal .ayda-brand-name{display:block;color:var(--ayda-gold);font-size:10px;letter-spacing:.12em;font-weight:750;line-height:1.55;border-left:1px solid #9cb2c45e;padding-left:12px;max-width:160px}
+body.ayda-internal .topright,body.ayda-internal .top-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;min-width:0}
+body.ayda-internal .ayda-main-nav{display:flex;justify-content:center;gap:4px;min-width:0;flex:1}
+body.ayda-internal .ayda-main-nav a{color:#e6ecf3;font-size:12px;font-weight:650;text-decoration:none;white-space:nowrap;border-radius:8px;padding:10px 9px;min-height:44px;display:inline-flex;align-items:center}
+body.ayda-internal .ayda-main-nav a:hover,body.ayda-internal .ayda-main-nav a:focus-visible{background:#213955}
+body.ayda-teacher:not(.ayda-session-active) .ayda-main-nav{display:none}
+body.ayda-internal .ayda-header-help{min-height:44px;padding:9px 13px;border:1px solid #7892ab64;border-radius:9px;color:#fff;text-decoration:none;display:inline-flex;align-items:center;font-size:12px;font-weight:750;white-space:nowrap}
+body.ayda-internal .ayda-header-help:hover{background:#1b3553}
+body.ayda-internal .logout,body.ayda-internal #ownerLogout,body.ayda-internal .top-actions .quiet{color:#f3f6fb;background:transparent;border:1px solid #7892ab64;border-radius:9px;min-height:44px;padding:9px 11px}
+body.ayda-internal .topright .chip{color:#dbe8f4;background:#203954;border:1px solid #334f6c;font-size:11px;white-space:nowrap}
+body.ayda-internal .top-actions .nav-link{color:#e4edf7;display:inline-flex;align-items:center;min-height:44px;font-size:12px;white-space:nowrap}
+body.ayda-internal .top-actions .system-pill{background:#1c3a57;color:#e6eff9;border:1px solid #305371}
+body.ayda-internal .wrap,body.ayda-internal .shell{max-width:var(--ayda-max);margin:0 auto;padding:26px 26px 70px}
+body.ayda-internal .hero{position:relative;border-radius:18px;padding:22px 26px;background:linear-gradient(112deg,#0b1b31 0%,#173957 95%);color:#fff;box-shadow:var(--ayda-shadow)}
+body.ayda-internal .hero>div:first-child{color:var(--ayda-gold);font-size:11px;letter-spacing:.11em;font-weight:800;text-transform:uppercase}
+body.ayda-internal .hero h1{color:#fff;font-size:clamp(26px,3.5vw,38px);margin:7px 0 5px;line-height:1.25;letter-spacing:-.035em;overflow-wrap:anywhere}
+body.ayda-internal .hero #dateLine{color:#d8e5f3;font-size:13px}
+body.ayda-internal :where(h1,h2,h3){color:var(--ayda-text)}
+body.ayda-internal .section h2,body.ayda-internal .owner-section-title h2{color:var(--ayda-navy);letter-spacing:-.02em}
+body.ayda-internal :where(.card,.owner-kpi,.owner-student-card,.owner-group-card,.owner-lesson,.owner-teacher-card,.academic-card,.teacher-track-card,.login-card){background:#fff;border:1px solid var(--ayda-border);border-radius:var(--ayda-radius);box-shadow:var(--ayda-shadow)}
+body.ayda-internal :where(.muted,.tiny,.micro,.subtle,.owner-heading p,.teacher-track-meta){color:var(--ayda-muted)}
+body.ayda-internal :where(.number,.dash-kpi strong,.owner-kpi strong,.teacher-track-kpi strong){color:var(--ayda-navy)}
+body.ayda-internal .stats .card{border:1px solid var(--ayda-border);box-shadow:var(--ayda-shadow)}
+body.ayda-internal .tag,body.ayda-internal .level-tag{color:var(--ayda-blue);background:var(--ayda-sky);border:1px solid #d9e8f3}
+body.ayda-internal .progress,body.ayda-internal .progress-track{background:#e9edf2}
+body.ayda-internal .progress>div,body.ayda-internal .progress-bar{background:var(--ayda-blue)}
+body.ayda-internal :where(input,select,textarea){border:1px solid #cbd8e3;border-radius:10px;background:#fff;color:var(--ayda-text);font-size:14px;min-width:0}
+body.ayda-internal :where(input,select,textarea)::placeholder{color:#77879a}
+body.ayda-internal :where(button.primary,.primary,.primary-link){background:var(--ayda-gold);color:var(--ayda-deep);border:1px solid #dfb972;border-radius:10px;font-weight:800;text-decoration:none;box-shadow:none}
+body.ayda-internal :where(button.primary,.primary,.primary-link):hover:not(:disabled){background:#f0d19a;color:var(--ayda-deep)}
+body.ayda-internal .primary-link{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 15px}
+body.ayda-internal :where(.outline,.logout,.ayda-inline-btn,.teacher-track-refresh,.attendance-demo-button){border:1px solid #c8d8e4;background:#fff;color:var(--ayda-blue);border-radius:9px;font-weight:750}
+body.ayda-internal .adminQuick{background:#eef4f9;border:1px solid var(--ayda-border)}
+body.ayda-internal .adminQuick a{background:var(--ayda-gold);color:var(--ayda-deep)}
+body.ayda-internal .adminNav{border-color:var(--ayda-border)}
+body.ayda-internal .adminNav button,body.ayda-internal .owner-tabs button{background:#fff;color:var(--ayda-blue);border:1px solid var(--ayda-border);min-height:44px}
+body.ayda-internal .adminNav button.active,body.ayda-internal .owner-tabs button.active{background:var(--ayda-navy);color:#fff;border-color:var(--ayda-navy)}
+body.ayda-internal .daily>.card{border:1px solid #bccedb}
+body.ayda-internal .daily{scroll-margin-top:100px}
+body.ayda-internal .ayda-automation{background:#fff;border-color:var(--ayda-border);box-shadow:var(--ayda-shadow)}
+body.ayda-internal .ayda-auto-metric{background:#f4f7fb;border-color:var(--ayda-border)}
+body.ayda-internal .ayda-auto-metric strong{color:var(--ayda-navy)}
+body.ayda-internal .ayda-auto-metric span{color:var(--ayda-muted)}
+body.ayda-internal .ayda-auto-line{border-color:var(--ayda-border)}
+body.ayda-internal .ayda-auto-warning{background:#fffaf0;border-color:#f0dcba}
+body.ayda-internal .ayda-inline-btn{color:var(--ayda-blue)!important;background:#fff;border-color:#c8d8e4;min-height:44px}
+body.ayda-internal .ayda-inline-btn:hover{background:var(--ayda-sky)}
+body.ayda-internal .ayda-auto-subhead{color:var(--ayda-navy)}
+body.ayda-internal .ayda-auto-done{color:var(--ayda-green);background:#eef7f4}
+body.ayda-internal .ayda-draft-status{color:var(--ayda-muted)}
+body.ayda-internal .teacher-tracker{background:#f8f9fc;border:1px solid var(--ayda-border);border-radius:17px}
+body.ayda-internal .teacher-track-refresh{background:#fff;color:var(--ayda-blue)}
+body.ayda-internal .teacher-track-kpi{background:#fff;border-color:var(--ayda-border)}
+body.ayda-internal .teacher-track-stat{background:#f2f5fa}
+body.ayda-internal .teacher-track-meta,body.ayda-internal .teacher-track-last{color:var(--ayda-muted)}
+body.ayda-internal .teacher-track-tag.regular,body.ayda-internal .pill.regular{background:#e8f5f0;color:var(--ayda-green)}
+body.ayda-internal .teacher-track-tag.watch,body.ayda-internal .pill.watch{background:#fff2d9;color:#74511b}
+body.ayda-internal .teacher-track-tag.danger,body.ayda-internal .pill.danger{background:#fbece9;color:var(--ayda-red)}
+body.ayda-internal .teacher-track-card summary,body.ayda-internal .ayda-student-note summary{color:var(--ayda-blue)}
+body.ayda-internal .attendance-panel{background:#fff;border:1px solid var(--ayda-border)}
+body.ayda-internal .attendance-panel>summary strong{color:var(--ayda-navy)}
+body.ayda-internal .attendance-summary-mark{background:var(--ayda-sky);color:var(--ayda-blue)}
+body.ayda-internal .attendance-option.selected{border-color:var(--ayda-blue);background:var(--ayda-sky);color:var(--ayda-navy);box-shadow:inset 0 0 0 1px var(--ayda-blue)}
+body.ayda-internal .attendance-homework-toggle{background:#f6f8fb;border-color:var(--ayda-border)}
+body.ayda-internal #attendanceMarkAll{background:#edf5fb;color:var(--ayda-blue);border-color:#b9cfdf}
+body.ayda-internal .attendance-preview-tag{background:#edf5fb;color:var(--ayda-blue)}
+body.ayda-internal .attendance-counts{color:var(--ayda-blue)}
+body.ayda-internal .owner-tabs{background:var(--ayda-cream);border-color:var(--ayda-border);top:75px}
+body.ayda-internal .owner-section-title{color:var(--ayda-text)}
+body.ayda-internal .owner-kpi.danger strong{color:var(--ayda-red)}
+body.ayda-internal .owner-kpi.warn strong{color:var(--ayda-gold-ink)}
+body.ayda-internal .owner-shell .table-panel{border-color:var(--ayda-border)}
+body.ayda-internal .owner-shell th,body.ayda-internal .data-table th{background:#edf5fb;color:var(--ayda-navy)}
+body.ayda-internal .owner-footnote{border-color:var(--ayda-border)}
+body.ayda-internal .owner-heading h1{color:var(--ayda-navy);font-size:clamp(24px,3vw,34px)}
+body.ayda-internal .ayda-internal-footer{background:var(--ayda-deep);color:#dce6f0;border-top:1px solid #2f4b67;text-align:center;padding:20px 18px;font-size:12px;line-height:1.6}
+body.ayda-internal .ayda-internal-footer strong{color:#fff}
+body.ayda-internal .ayda-staff-resources{border:1px solid var(--ayda-border);background:#fff;border-radius:16px;box-shadow:var(--ayda-shadow);padding:0;margin:22px 0}
+body.ayda-internal .ayda-staff-resources summary{display:flex;align-items:center;gap:10px;padding:17px 20px;min-height:58px;cursor:pointer;list-style:none;color:var(--ayda-navy);font-weight:800}
+body.ayda-internal .ayda-staff-resources summary::-webkit-details-marker{display:none}
+body.ayda-internal .ayda-staff-resources summary::after{content:"+";margin-left:auto;color:var(--ayda-blue);font-size:19px}
+body.ayda-internal .ayda-staff-resources[open] summary::after{content:"−"}
+body.ayda-internal .ayda-resource-lead{padding:0 20px;color:var(--ayda-muted);font-size:12px;margin:0 0 13px;line-height:1.6}
+body.ayda-internal .ayda-resource-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:0 20px 20px}
+body.ayda-internal .ayda-resource-link{min-width:0;display:flex;flex-direction:column;gap:3px;padding:13px 15px;border-radius:12px;border:1px solid var(--ayda-border);background:#fbfcff;color:var(--ayda-navy);text-decoration:none;min-height:68px;justify-content:center}
+body.ayda-internal .ayda-resource-link:hover{border-color:#a9c1d7;background:var(--ayda-sky)}
+body.ayda-internal .ayda-resource-link strong{font-size:13px}
+body.ayda-internal .ayda-resource-link span{font-size:11px;color:var(--ayda-muted)}
+body.ayda-internal .ayda-resource-link:focus-visible{outline:3px solid var(--ayda-gold);outline-offset:2px}
+body.ayda-internal .owner-shell .ayda-student-note textarea{width:100%}
+body.ayda-internal .owner-student-card :where(.ayda-inline-btn){white-space:normal}
+body.ayda-internal :where(.summarytable,.table-panel){max-width:100%;overflow-x:auto}
+body.ayda-internal :where(.owner-student-card,.teacher-track-card,.ayda-auto-line){min-width:0;overflow-wrap:anywhere}
+@media(max-width:1050px){
+ body.ayda-internal .ayda-main-nav a{padding:9px 6px;font-size:11px}
+ body.ayda-internal .top,body.ayda-internal .topbar-inner{gap:10px}
+ body.ayda-internal .topright .chip{display:none}
+}
+@media(max-width:780px){
+ body.ayda-internal .top,body.ayda-internal .topbar-inner{padding:10px 17px;min-height:65px}
+ body.ayda-internal .top{flex-wrap:wrap}
+ body.ayda-internal .ayda-main-nav{order:3;flex:0 0 100%;justify-content:flex-start;overflow-x:auto;scrollbar-width:thin;gap:6px;padding-top:4px}
+ body.ayda-internal .ayda-main-nav a{padding:8px 12px}
+ body.ayda-internal .owner-tabs{top:65px}
+ body.ayda-internal .wrap,body.ayda-internal .shell{padding:19px 17px 55px}
+ body.ayda-internal .ayda-resource-grid{grid-template-columns:1fr 1fr}
+ body.ayda-internal .hero{padding:20px}
+}
+@media(max-width:660px){
+ body.ayda-internal .ayda-brand-lockup img{width:117px}
+ body.ayda-internal .ayda-brand-name{font-size:9px;padding-left:9px;max-width:100px}
+ body.ayda-internal .top-actions .system-pill{display:none}
+ body.ayda-internal .top-actions .nav-link{font-size:11px}
+ body.ayda-internal .ayda-header-help{font-size:12px;padding:8px 10px}
+ body.ayda-internal .ayda-resource-grid{grid-template-columns:1fr}
+ body.ayda-internal .owner-shell{padding:16px 17px 45px}
+}
+@media(max-width:390px){
+ body.ayda-internal .ayda-brand-lockup img{width:105px}
+ body.ayda-internal .ayda-brand-name{font-size:8px;max-width:84px;padding-left:7px}
+ body.ayda-internal .top,body.ayda-internal .topbar-inner{padding-left:13px;padding-right:13px;gap:7px}
+ body.ayda-internal .top-actions{gap:5px}
+ body.ayda-internal .top-actions .nav-link{display:none}
+ body.ayda-internal .ayda-header-help{padding:8px 9px;font-size:11px}
+ body.ayda-internal .wrap,body.ayda-internal .shell{padding-left:13px;padding-right:13px}
+ body.ayda-internal .hero{padding:17px}
+ body.ayda-internal .hero h1{font-size:27px}
+}
+@media(prefers-reduced-motion:reduce){
+ html{scroll-behavior:auto}
+ body.ayda-internal .owner-panel{animation:none}
+}
+@media print{
+ body.ayda-internal .ayda-site-header,body.ayda-internal .ayda-staff-resources,body.ayda-internal .ayda-internal-footer{display:none!important}
+}
