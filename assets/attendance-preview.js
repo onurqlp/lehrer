@@ -5,7 +5,7 @@
  const node=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=String(text);return el;};
  const attendanceBox=byId('attendancePreview');
  if(!attendanceBox)return;
- let roster=new Map(),rows=new Map(),demo=false,homeworkEnabled=false,activeGroup='',liveRoster=false,rosterError='';
+ let roster=new Map(),rows=new Map(),demo=false,homeworkEnabled=false,activeGroup='',liveRoster=false,rosterLoading=false,rosterError='';
  const examples=[{id:'sample-1',name:'Örnek Öğrenci 1'},{id:'sample-2',name:'Örnek Öğrenci 2'},{id:'sample-3',name:'Örnek Öğrenci 3'},{id:'sample-4',name:'Örnek Öğrenci 4'}];
  const normalize=s=>String(s||'').trim().toLocaleLowerCase('tr-TR').replace(/\s+/g,' ').replace(/[‐‑–—]/g,'-');
  const statusAvailable=()=>byId('lessonType').value==='group'&&byId('status').value==='İşlendi';
@@ -21,7 +21,7 @@
   list.replaceChildren();
   const valid=statusAvailable()&&!!group;
   byId('attendanceInputs').hidden=!valid;
-  if(!valid){empty.textContent=byId('lessonType').value==='private'?'Öğrenci yoklaması grup dersleri için tasarlandı.':!group?'Önce bir grup seçin.':'İptal veya ertelenen derslerde yoklama alınmaz.';empty.hidden=false;counter.textContent='';demoBtn.hidden=true;return;}
+  if(!valid){const banner=attendanceBox.querySelector('.attendance-caution');if(banner)banner.textContent=liveRoster?'Canlı kayıt hazır. İşlenen bir grup dersini seçerek yoklama alın.':'ÖNİZLEME: Apps Script güncellenene kadar yoklama/ödev kaydedilmez.';empty.textContent=byId('lessonType').value==='private'?'Öğrenci yoklaması grup dersleri için tasarlandı.':!group?'Önce bir grup seçin.':'İptal veya ertelenen derslerde yoklama alınmaz.';empty.hidden=false;counter.textContent='';demoBtn.hidden=true;return;}
   const actual=roster.get(groupId)||[],students=actual.length?actual:(demo?examples:[]);
   demoBtn.hidden=liveRoster||actual.length>0;
   demoBtn.textContent=demo?'Örnek listeyi kapat':'4 örnek öğrenciyle ekranı dene';
@@ -134,7 +134,7 @@
  async function syncRoster(){
   const signed=typeof data!=='undefined'&&data&&data.user;
   if(!signed)return;
-  liveRoster=false;rosterError='';roster=new Map();rows.clear();demo=false;
+  liveRoster=false;rosterLoading=true;rosterError='';roster=new Map();rows.clear();demo=false;
   const review=byId('attendanceReviewed');if(review)review.checked=false;
   renderRoster();
   try{
@@ -148,10 +148,11 @@
    }
    liveRoster=true;
   }catch(err){rosterError=String(err.message||err);}
-  renderRoster();
+  rosterLoading=false;renderRoster();
  }
  window.AYDA_ATTENDANCE={
   collect(){
+   if(rosterLoading&&statusAvailable())throw Error('Öğrenci listesi yükleniyor. Birkaç saniye bekleyin.');
    if(!liveRoster||!statusAvailable())return null;
    const group=pickGroup();if(!group)return null;
    const students=roster.get(String(group.id))||[];
@@ -168,6 +169,6 @@
   isConnected(){return liveRoster;}
  };
  window.addEventListener('ayda:login',syncRoster);
- window.addEventListener('ayda:logout',()=>{roster=new Map();rows.clear();liveRoster=false;rosterError='';demo=false;renderRoster();});
+ window.addEventListener('ayda:logout',()=>{roster=new Map();rows.clear();liveRoster=false;rosterLoading=false;rosterError='';demo=false;renderRoster();});
  renderRoster();
 })();
