@@ -23,16 +23,16 @@
   const valid=statusAvailable()&&!!group;
   byId('attendanceInputs').hidden=!valid;
   const badge=attendanceBox.querySelector('.attendance-preview-tag');if(badge)badge.textContent=liveRoster?'CANLI':'ÖNİZLEME';
-  const saveButton=byId('saveBtn');if(saveButton&&!saveButton.disabled)saveButton.textContent=liveRoster&&valid?'Dersi ve Yoklamayı Kaydet':'Dersi Kaydet';
+  const saveButton=byId('saveBtn');if(saveButton&&!saveButton.disabled)saveButton.textContent=liveRoster&&valid&&(roster.get(groupId)||[]).length?'Dersi ve Yoklamayı Kaydet':'Dersi Kaydet';
   if(!valid){const banner=attendanceBox.querySelector('.attendance-caution');if(banner)banner.textContent=liveRoster?'Canlı kayıt hazır. İşlenen bir grup dersini seçerek yoklama alın.':'ÖNİZLEME: Apps Script güncellenene kadar yoklama/ödev kaydedilmez.';empty.textContent=byId('lessonType').value==='private'?'Öğrenci yoklaması grup dersleri için tasarlandı.':!group?'Önce bir grup seçin.':'İptal veya ertelenen derslerde yoklama alınmaz.';empty.hidden=false;counter.textContent='';demoBtn.hidden=true;return;}
   const actual=roster.get(groupId)||[],students=actual.length?actual:(demo?examples:[]);
   demoBtn.hidden=liveRoster||actual.length>0;
   demoBtn.textContent=demo?'Örnek listeyi kapat':'4 örnek öğrenciyle ekranı dene';
   empty.hidden=students.length>0;
-  empty.textContent=liveRoster?'Bu gruba atanmış öğrenci bulunamadı. OGRENCILER tablosunda grup ID eşleşmesini kontrol edin.':('Bu grubun öğrenci listesi henüz bağlı değil. '+(rosterError?'Apps Script: '+rosterError+' · ':'')+'Yoklama şimdilik önizleme modunda.');
+  empty.textContent=liveRoster?'Bu grubun öğrenci listesi henüz eklenmemiş. Ders raporunu yine kaydedebilirsiniz; yoklama için OGRENCILER sekmesindeki grup ID eşleşmesini kontrol edin.':('Bu grubun öğrenci listesi henüz bağlı değil. '+(rosterError?'Apps Script: '+rosterError+' · ':'')+'Yoklama şimdilik önizleme modunda.');
   byId('attendanceGroupName').textContent=group.name+' · '+(actual.length?actual.length+' öğrenci'+(liveRoster?' (canlı yoklama)':' (CSV önizleme)'):'öğrenci listesi bekleniyor');
   const review=byId('attendanceReview');if(review)review.hidden=!liveRoster||!actual.length;
-  const caution=attendanceBox.querySelector('.attendance-caution');if(caution)caution.textContent=liveRoster?'Canlı kayıt hazır. Yoklamayı ve varsa ödevleri kontrol edin; ders raporuyla birlikte tek tuşla kaydedilecek.':'ÖNİZLEME: Yoklama ve ödev bu aşamada kaydedilmez. Dersi Kaydet yalnızca mevcut ders raporunu kaydeder. '+(rosterError?'Sunucu mesajı: '+rosterError:'');
+  const caution=attendanceBox.querySelector('.attendance-caution');if(caution)caution.textContent=liveRoster?(actual.length?'Canlı kayıt hazır. Yoklamayı ve varsa ödevleri kontrol edin; ders raporuyla birlikte tek tuşla kaydedilecek.':'Bu grupta öğrenci kaydı henüz yok; ders raporu tek başına kaydedilir.'):'ÖNİZLEME: Yoklama ve ödev bu aşamada kaydedilmez. Dersi Kaydet yalnızca mevcut ders raporunu kaydeder. '+(rosterError?'Sunucu mesajı: '+rosterError:'');
   const tag=attendanceBox.querySelector('.attendance-preview-tag');if(tag)tag.textContent=liveRoster?'CANLI':'ÖNİZLEME';
   byId('attendanceHomeworkPanel').hidden=!homeworkEnabled;
   for(const student of students){
@@ -162,7 +162,7 @@
    if(!liveRoster||!statusAvailable())return null;
    const group=pickGroup();if(!group)return null;
    const students=roster.get(String(group.id))||[];
-   if(!students.length)throw Error('Bu grubun yoklama listesi boş. Yöneticinizden öğrenci eşleştirmesini kontrol etmesini isteyin.');
+   if(!students.length)return null; // Yeni grupların ders raporlarını bloke etme.
    if(!byId('attendanceReviewed')?.checked)throw Error('Kaydetmeden önce “Yoklamayı kontrol ettim” kutusunu işaretleyin.');
    return {homeworkEnabled,attendance:students.map(s=>{
     const r=stateFor(s.id);
