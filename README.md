@@ -1,15 +1,22 @@
-# AYDA Akademik Takip – production foundation
-This is a **real Supabase-backed application**, not localStorage demo. It is not deployed until you configure it.
+# AYDA Akademik Takip — Google Sheets + Apps Script
 
-## Installation
-1. Create a Supabase project; open SQL Editor and run `schema.sql`.
-2. In Supabase Authentication > Users create your first administrator using email/password. Copy their UUID.
-3. In SQL Editor, run `insert into public.profiles(id,full_name,role) values ('YOUR-AUTH-USER-UUID','AYDA Yönetim','admin');`.
-4. Copy `config.example.js` to `config.js`; set project URL and **publishable/anon key** from Supabase Project Settings > API. NEVER use service_role/secret key in browser files.
-5. Upload `index.html`, `app.js`, `config.js` to a GitHub Pages repository; set Pages publishing from main/root. Enable HTTPS.
-6. Create teachers in Supabase Auth > Users, then add a matching `profiles` row with role `teacher`. Admin may add groups and individual scheduled lessons in the UI.
-7. To load existing AYDA groups, enter them via admin UI; do not invent missing schedules or unit progress.
+## Kurulum
+1. Mevcut **AYDA – Akademik Takip Veritabanı** Google Sheet'inde **Uzantılar > Apps Komut Dosyası** açın.
+2. `apps-script/Code.gs` içeriğini Apps Script'teki `Kod.gs` dosyasına yapıştırın.
+3. Sol tarafta **+ > HTML** ile adı **Index** olan dosya açın; `apps-script/Index.html` içeriğini yapıştırın.
+4. Kaydedin. Fonksiyon listesinden `kurulumAYDA` seçip **Çalıştır**'a basın ve Google izinlerini onaylayın.
+5. **Yürütme günlüğü** içinde oluşturulan admin ve öğretmen PIN'lerini bir kez not edin. Bunları kimseyle toplu paylaşmayın. Bu dosyada veya GitHub'da saklamayın.
+6. **Dağıt > Yeni dağıtım > Web uygulaması**: **Şu kişi olarak yürüt: Ben**; **Erişimi olanlar: Herkes**. Bu seçeneğin anlamı: bağlantı herkese açık olsa da veri işlemleri uygulama içindeki PIN ve rol kontrolüyle korunur. Bu bir başlangıç güvenlik modelidir; daha güçlü kimlik doğrulama ve hız sınırlaması olmadan hassas öğrenci verilerini yüklemeyin.
+7. Oluşan `/exec` URL'sini `github/config.js` dosyasında `window.AYDA_APPS_SCRIPT_URL` alanına yazın.
+8. GitHub Pages için yalnızca `github/` klasöründeki **index.html ve config.js** dosyalarını deponun köküne yükleyin. Apps Script kodu GitHub'dan değil Apps Script üzerinden çalışır.
+9. Önce yönetici olarak giriş yapıp eksik ders programlarını, mevcut tamamlanan üniteleri ve özel ders öğrencilerini ekleyin.
 
-## Important release limitations
-This foundation has centralized auth, RLS and reports, but does **not yet implement recurring schedule generation**, user management UI, audit logs, automatic backups, full private-lesson creation UI, or transactional enforcement of private-lesson balance. Teachers should not be onboarded until these are finished and tested. No student personal data should be entered before security review.
-The trigger `sync_group_progress` tracks max completed unit and assumes monotonic progress. Group lesson durations are clock times; 40-minute group and 50-minute private unit rules should be enforced in the future scheduler. Do not interpret arbitrary elapsed time as teaching units when breaks are included.
+## Önemli
+- GitHub Pages yalnızca **giriş bağlantısını** gösterir. Gerçek uygulama Google Apps Script üzerinde çalışır. Bu, tarayıcıdan doğrudan Apps Script'e yapılan çapraz-kaynak isteklerinde oluşabilecek sorunları önler.
+- Google Sheet'i öğretmenlerle **paylaşmayın**. Öğretmenler uygulamadan kendi PIN'leriyle giriş yapar.
+- Ders süresi: grup **40 dk**, özel **50 dk**. 90 dakikalık bir grup oturumu varsayılan **2 ders saati + 10 dk ara** olarak tanımlandı; gerekirse yönetici düzeltir.
+- Başlangıç verileri **10 grup**, **5 isimlendirilmiş öğretmen** ve bilinen P-Ç-C programlarıdır. CNC programlarının bazı saatleri, atanamayan öğretmenler ve mevcut üniteler boş bırakılmıştır.
+- Ders raporu her program/tarih için tek kayıttır. Hatalı kaydın düzeltilmesi şu an yönetici tarafından Sheet'te yapılır; bu ilk sürümün bir sınırlamasıdır.
+- Bu sürüm **başlangıç üretim adayıdır**, kurulumdan önce canlı çalıştığı doğrulanmış değildir. Gerçek öğrenci kişisel verilerini eklemeden önce PIN yenileme, giriş deneme sınırlaması, güvenli kurtarma, kayıt düzeltme akışı, denetim ve yedekleme testleri tamamlanmalıdır.
+- Google Apps Script CacheService oturumları en fazla 6 saat saklar, erken sona erebilir.
+- Ücretsiz Google kotaları, Google'ın hizmet koşulları ve değişebilen limitlerine tabidir.
