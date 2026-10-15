@@ -196,6 +196,8 @@
    for(const x of rows)add(ul,'li','',lastRecord(x,t));
    if(!rows.length)add(ul,'li','','Henüz kayıt yok');
   }
+  window.AYDA_NOTES?.mount(box,s,(action,params)=>api(action,token,params));
+  box.append(quick('Öğrenci raporunu yazdır / PDF',()=>printStudent(s)));
   return box;
  }
  function updateGroupSelectors(){
@@ -275,11 +277,49 @@
   }
   if(!rows.length)showEmpty('ownerScheduleList','Bu ölçütlerde program bulunamadı.');
  }
+
+ function printStudent(s){
+  const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const pop=window.open('','_blank');if(!pop){alert('Rapor için açılır pencerelere izin verin.');return;}
+  const row=(a,b)=>'<tr><th>'+esc(a)+'</th><td>'+esc(b)+'</td></tr>';
+  const rows=[row('Öğrenci',s.name),row('Grup',gName(s.groupId)),row('Katılım',s.attendanceRate===null?'Kayıt yok':s.attendanceRate+'%'),row('Geldi',s.present||0),row('Gelmedi',s.absent||0),row('Mazeretli',s.excused||0),row('Ödev yaptı',s.homeworkDone||0),row('Ödev yapmadı',s.homeworkMissing||0),row('Akademik durum',formats[status(s)])].join('');
+  pop.document.open();
+  pop.document.write('<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>AYDA Öğrenci Gelişim Raporu</title><style>body{font:15px Arial,sans-serif;color:#183e30;margin:36px}h1{color:#176b59}table{width:100%;border-collapse:collapse;margin-top:25px}td,th{border-bottom:1px solid #d7e2da;padding:12px;text-align:left}th{width:42%}small{color:#777}@media print{body{margin:18mm}}</style></head><body><h1>AYDA DİL AKADEMİSİ</h1><h2>Öğrenci Akademik Gelişim Raporu</h2><small>Oluşturulma tarihi: '+esc(new Date().toLocaleDateString('tr-TR'))+' · Yalnızca sisteme girilmiş kayıtlar</small><table>'+rows+'</table><p><small>İstatistikler, kaydedilmiş yoklama ve kontrol edilen ödevlere dayanır. Resmî başarı belgesi değildir.</small></p></body></html>');
+  pop.document.close();pop.focus();pop.print();
+ }
+ function renderMissing(){
+  const root=$('ownerMissingRecords');if(!root)return;root.replaceChildren();
+  if(!reminders){root.append(node('div','owner-empty','Eksik kayıt servisi henüz yayımlanmadı.'));return;}
+  if(!reminders.items?.length){root.append(node('div','owner-empty','12 saati aşan eksik ders veya yoklama bulunmuyor.'));return;}
+  for(const r of reminders.items.slice(0,50)){
+   const c=add(root,'article','note-card warn'),person=tName(r.teacherId),kind=r.type==='attendance'?'Yoklama':'Ders raporu';
+   add(c,'strong','',kind+' eksik · '+r.group);
+   add(c,'p','','Tarih: '+fmt(r.date)+' · Öğretmen: '+person+' · '+r.ageHours+' saat önce');
+   const msg='Merhaba hocam, '+fmt(r.date)+' tarihli '+r.group+' grubu '+kind.toLocaleLowerCase('tr-TR')+' eksik görünüyor. Lütfen sisteme girerek tamamlayınız. Teşekkürler.';
+   c.append(quick('WhatsApp mesajını kopyala',()=>{
+    if(!navigator.clipboard?.writeText){c.lastChild.textContent='Tarayıcınız kopyalamayı desteklemiyor.';return;}
+    navigator.clipboard.writeText(msg).then(()=>{c.lastChild.textContent='Kopyalandı ✓';}).catch(()=>{c.lastChild.textContent='Kopyalanamadı';});
+   }));
+  }
+ }
+ function renderWeekly(){
+  const root=$('ownerWeekly');if(!root)return;root.replaceChildren();
+  const cutoff=new Date((today()||'').slice(0,10)+'T00:00:00Z');cutoff.setUTCDate(cutoff.getUTCDate()-6);
+  const since=cutoff.toISOString().slice(0,10);
+  const past=(overview?.history||[]).filter(r=>r.date>=since&&r.date<=today());
+  const done=past.filter(r=>r.status==='İşlendi').length;
+  const privateDone=(overview?.privateHistory||[]).filter(r=>r.date>=since&&r.date<=today()&&r.status==='İşlendi').length;
+  for(const [label,value] of [['Son 7 günde grup dersi',done],['Son 7 günde özel ders',privateDone],['Bekleyen akademik kayıt',reminders?.total??'—'],['Öncelikli öğrenci',tracking?.alerts?.length??'—']]){
+   const box=add(root,'div','note-card');add(box,'strong','',value);add(box,'p','',label);
+  }
+ }
+
  function renderAlerts(){
   const root=$('ownerAlertList');root.replaceChildren();
   const students=(tracking?.students||[]).filter(s=>status(s)==='danger').sort((a,b)=>Number(b.consecutiveAbsent)-Number(a.consecutiveAbsent)||b.recentAbsent-a.recentAbsent);
   for(const s of students)root.append(studentCard(s));
   if(!students.length)showEmpty('ownerAlertList',tracking?'Öncelikli uyarı yok.':'Öğrenci takibi henüz yüklenemedi.');
+  renderMissing();
   const future=$('ownerDateAlerts');future.replaceChildren();
   for(const g of activeGroups()){const rest=unit(g)-unitsDone(g),soon=g.start&&g.start>=today()&&difference(g.start,today())<=14;
    if(rest>0&&rest<=3||soon){const c=add(future,'div','note-card '+(rest<=3?'warn':''));add(c,'strong','',g.name);
@@ -297,7 +337,7 @@
  function renderAll(){
   if(!overview)return;
   const work=[
-   ['ownerKpis',renderKpis],['ownerHighlights',renderHighlights],['ownerToday',renderOverview],
+   ['ownerKpis',renderKpis],['ownerHighlights',renderHighlights],['ownerToday',renderOverview],['ownerWeekly',renderWeekly],
    ['ownerGroupList',renderGroups],['ownerStudentList',renderStudents],['ownerAttendanceKpis',renderAttendance],
    ['ownerLessonList',renderLessons],['ownerTeacherTable',renderTeachers],['ownerScheduleList',renderSchedule],
    ['ownerAlertList',renderAlerts],['ownerAccountsTable',renderAccounts]
