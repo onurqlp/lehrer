@@ -1,5 +1,5 @@
 "use strict";
-/* Roster is fetched only after authenticated sign-in. Legacy backend safely remains in preview mode. */
+/* Roster is fetched only after authenticated sign-in. Backend roster support is optional; never invent attendance when unavailable. */
 (()=>{
  const byId=id=>document.getElementById(id);
  const node=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=String(text);return el;};
@@ -10,7 +10,7 @@
  const normalize=s=>String(s||'').trim().toLocaleLowerCase('tr-TR').replace(/\s+/g,' ').replace(/[‐‑–—]/g,'-');
  const statusAvailable=()=>byId('lessonType').value==='group'&&byId('status').value==='İşlendi';
  const make=(tag,cls,text)=>node(tag,cls,text);
- const stateFor=id=>{if(!rows.has(id))rows.set(id,{present:true,excused:false,homework:'unchecked'});return rows.get(id);};
+ const stateFor=id=>{if(!rows.has(id))rows.set(id,{present:null,excused:false,homework:'unchecked'});return rows.get(id);};
  function pickGroup(){const gs=(typeof data!=='undefined'&&data&&Array.isArray(data.groups))?data.groups:[];return gs.find(g=>String(g.id)===byId('groupId').value);}
  function button(label,selected,cls,onClick){const b=make('button','attendance-option '+cls+(selected?' selected':''),label);b.type='button';b.setAttribute('aria-pressed',String(selected));b.addEventListener('click',onClick);return b;}
  function chooser(label,items){const box=make('div','attendance-cell');box.append(make('div','attendance-label',label));const options=make('div','attendance-options');for(const [name,selected,cls,handler] of items)options.append(button(name,selected,cls,handler));box.append(options);return box;}
@@ -27,49 +27,53 @@
   if(!valid){const banner=attendanceBox.querySelector('.attendance-caution');if(banner)banner.textContent=liveRoster?'Canlı kayıt hazır. İşlenen bir grup dersini seçerek yoklama alın.':'ÖNİZLEME: Apps Script güncellenene kadar yoklama/ödev kaydedilmez.';empty.textContent=byId('lessonType').value==='private'?'Öğrenci yoklaması grup dersleri için tasarlandı.':!group?'Önce bir grup seçin.':'İptal veya ertelenen derslerde yoklama alınmaz.';empty.hidden=false;counter.textContent='';demoBtn.hidden=true;return;}
   const actual=roster.get(groupId)||[],students=actual.length?actual:(demo?examples:[]);
   demoBtn.hidden=liveRoster||actual.length>0;
+  if(allButton)allButton.hidden=!liveRoster||!actual.length;
   demoBtn.textContent=demo?'Örnek listeyi kapat':'4 örnek öğrenciyle ekranı dene';
   empty.hidden=students.length>0;
   empty.textContent=liveRoster?'Bu grubun öğrenci listesi henüz eklenmemiş. Ders raporunu yine kaydedebilirsiniz; yoklama için OGRENCILER sekmesindeki grup ID eşleşmesini kontrol edin.':('Bu grubun öğrenci listesi henüz bağlı değil. '+(rosterError?'Apps Script: '+rosterError+' · ':'')+'Yoklama şimdilik önizleme modunda.');
   byId('attendanceGroupName').textContent=group.name+' · '+(actual.length?actual.length+' öğrenci'+(liveRoster?' (canlı yoklama)':' (CSV önizleme)'):'öğrenci listesi bekleniyor');
-  const review=byId('attendanceReview');if(review)review.hidden=!liveRoster||!actual.length;
+  const review=byId('attendanceReview');if(review)review.hidden=true; // İşaretli liste için ek onay tıklaması gerekmez.
   const caution=attendanceBox.querySelector('.attendance-caution');if(caution)caution.textContent=liveRoster?(actual.length?'Canlı kayıt hazır. Yoklamayı ve varsa ödevleri kontrol edin; ders raporuyla birlikte tek tuşla kaydedilecek.':'Bu grupta öğrenci kaydı henüz yok; ders raporu tek başına kaydedilir.'):'ÖNİZLEME: Yoklama ve ödev bu aşamada kaydedilmez. Dersi Kaydet yalnızca mevcut ders raporunu kaydeder. '+(rosterError?'Sunucu mesajı: '+rosterError:'');
   const tag=attendanceBox.querySelector('.attendance-preview-tag');if(tag)tag.textContent=liveRoster?'CANLI':'ÖNİZLEME';
   byId('attendanceHomeworkPanel').hidden=!homeworkEnabled;
   for(const student of students){
    const s=stateFor(student.id),row=make('div','attendance-student');
    const identity=make('div','attendance-identity');identity.append(make('strong','',student.name));
-   if(!s.present&&s.excused)identity.append(make('span','attendance-excused','Mazeretli'));
+   if(s.present===false&&s.excused)identity.append(make('span','attendance-excused','Mazeretli'));
    row.append(identity);
    const controls=make('div','attendance-student-controls');
    controls.append(chooser('Yoklama',[
-    ['Geldi',s.present,'came',()=>{s.present=true;s.excused=false;renderRoster();}],
-    ['Gelmedi',!s.present,'missed',()=>{s.present=false;s.homework='unchecked';renderRoster();}]
+    ['Geldi',s.present===true,'came',()=>{s.present=true;s.excused=false;renderRoster();}],
+    ['Gelmedi',s.present===false,'missed',()=>{s.present=false;s.homework='unchecked';renderRoster();}]
    ]));
-   if(!s.present){
+   if(s.present===false){
     const excuse=make('label','attendance-excuse'),check=make('input');
     check.type='checkbox';check.checked=s.excused;check.addEventListener('change',()=>{s.excused=check.checked;renderRoster();});
     excuse.append(check,document.createTextNode('Mazeretli (isteğe bağlı)'));controls.append(excuse);
    }
-   if(homeworkEnabled&&s.present){
+   if(homeworkEnabled&&s.present===true){
     controls.append(chooser('Bugünkü ödev',[
      ['Yaptı',s.homework==='done','did',()=>{s.homework='done';renderRoster();}],
      ['Yapmadı',s.homework==='missing','missing',()=>{s.homework='missing';renderRoster();}],
      ['Kontrol edilmedi',s.homework==='unchecked','unchecked',()=>{s.homework='unchecked';renderRoster();}]
     ]));
-   }else if(homeworkEnabled&&!s.present){
+   }else if(homeworkEnabled&&s.present===false){
     controls.append(make('div','attendance-label','Ödev: Gelmediği için kontrol edilmedi'));
    }
    row.append(controls);list.append(row);
   }
   if(students.length){
-   const present=students.filter(x=>stateFor(x.id).present).length;
-   const absent=students.length-present;
-   const excused=students.filter(x=>!stateFor(x.id).present&&stateFor(x.id).excused).length;
+   const present=students.filter(x=>stateFor(x.id).present===true).length;
+   const absent=students.filter(x=>stateFor(x.id).present===false).length;
+   const pending=students.length-present-absent;
+   const excused=students.filter(x=>stateFor(x.id).present===false&&stateFor(x.id).excused).length;
    const missing=homeworkEnabled?students.filter(x=>stateFor(x.id).homework==='missing').length:0;
-   counter.textContent=present+' geldi · '+absent+' gelmedi'+(excused?' ('+excused+' mazeretli)':'')+(homeworkEnabled?' · '+missing+' ödev eksik':'');
+   counter.textContent=present+' geldi · '+absent+' gelmedi'+(pending?' · '+pending+' işaretlenmedi':'')+(excused?' ('+excused+' mazeretli)':'')+(homeworkEnabled?' · '+missing+' ödev eksik':'');
   }else counter.textContent='';
  }
  byId('attendanceDemoButton').addEventListener('click',()=>{demo=!demo;rows.clear();renderRoster();});
+ const allButton=byId('attendanceMarkAll');
+ if(allButton)allButton.addEventListener('click',()=>{const group=pickGroup();for(const person of (roster.get(String(group?.id||''))||[])){const st=stateFor(person.id);st.present=true;st.excused=false;}renderRoster();});
  byId('attendanceHomeworkToggle').addEventListener('change',e=>{homeworkEnabled=e.target.checked;renderRoster();});
  for(const id of ['groupId','lessonType','status','lessonDate'])byId(id).addEventListener('change',renderRoster);
  new MutationObserver(renderRoster).observe(byId('groupId'),{childList:true});
@@ -163,10 +167,12 @@
    const group=pickGroup();if(!group)return null;
    const students=roster.get(String(group.id))||[];
    if(!students.length)return null; // Yeni grupların ders raporlarını bloke etme.
-   if(!byId('attendanceReviewed')?.checked)throw Error('Kaydetmeden önce “Yoklamayı kontrol ettim” kutusunu işaretleyin.');
+   const marked=students.filter(s=>stateFor(s.id).present!==null).length;
+   if(!marked){if(homeworkEnabled)throw Error('Ödev kontrolü açıldı ancak yoklama işaretlenmedi.');return null;}
+   if(marked!==students.length)throw Error('Yoklama tamamlanmadı: '+(students.length-marked)+' öğrenci henüz işaretlenmedi. İsterseniz “Hepsi geldi” seçeneğini kullanın.');
    return {homeworkEnabled,attendance:students.map(s=>{
     const r=stateFor(s.id);
-    return {studentId:s.id,status:r.present?'Geldi':'Gelmedi',excused:!r.present&&r.excused,homework:homeworkEnabled?r.homework==='done'?'Yaptı':r.homework==='missing'?'Yapmadı':'Kontrol edilmedi':'Kontrol edilmedi'};
+    return {studentId:s.id,status:r.present===true?'Geldi':'Gelmedi',excused:r.present===false&&r.excused,homework:homeworkEnabled?r.homework==='done'?'Yaptı':r.homework==='missing'?'Yapmadı':'Kontrol edilmedi':'Kontrol edilmedi'};
    })};
   },
   resetAfterSave(){
