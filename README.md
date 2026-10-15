@@ -4,21 +4,19 @@
 **Girişli tam yönetici takip merkezi:** https://lehrer.aydadil.com/yonetici.html
 
 
-## Yeni takip merkezi (15 Ekim 2026)
-- `yonetici.html` yönetici anahtarıyla açılır; öğrenci takibi, yoklama, ödev, ders ve öğretmen özetleri gösterir. Kullanıcı `index.html` üzerinden yönetici olarak giriş yapıp aynı sekmede bu sayfaya geçerse mevcut oturum korunur.
-- Kompakt yönetici sayfası `index.html` ile **aynı** `assets/app.js`, `assets/admin-menu.js` ve kayıt formlarını kullanır; grup açma/düzenleme, öğretmen ekleme, parola yönetimi, yoklama/ödev, ders ve muhasebe tamamen aynıdır. Yalnızca görünüm ve sıralama farklıdır.
-- Kompakt sekmeler: Genel Bakış, Öğrenci Takibi, **Öğrenci 360 (tekil öğrenci listesi, son 5 yoklama/ödev, arama, grup/risk filtreleri)**, Ders ve Muhasebe, Grup İşlemleri, Öğretmenler ve Anahtarlar, Düzenle. Diğer ortak modüller "Diğer günlük işlemler ve kayıtlar" altında erişilir.
-- Öğretmen ana sayfasında **Öğrencilerim · Takip Merkezi** bulunur. Yeni `trackingSummary` yalnızca öğretmenin yetkili olduğu aktif grupları döndürür.
-- Risk: üst üste 2 mazeretsiz devamsızlık, son 5 yoklamada 3 mazeretsiz devamsızlık veya son 5 ödevde 3 eksik => öncelikli. 1 mazeretsiz devamsızlık ya da son 5'te 2 eksik ödev => takip edilmeli. Kayıt yoksa risk hesaplanmış gibi gösterilmez.
-- **Sadece kompakt arayüz güncellemesi:** Yeni `yonetici.html` aynı mevcut `overview`, `trackingSummary` ve yönetim uçlarını kullandığından Google Apps Script dosyasında veya dağıtımında değişiklik gerekmez. Apps Script kodu ayrıca değişirse, mevcut web uygulamasının yeni sürümü yayımlanmalıdır. Dağıtım ID'sini değiştirmeyin.
-- Yönetici anahtarı mevcut değilse ilk anahtar kurulmalıdır; daha önce varsa otomatik silinmez. Yönetici anahtarını kimseyle paylaşmayın.
-- `publicDashboard` anonim özet verisi döndürür (öğrenci adı, yoklama ve ödev yok). Ayrıntılı yönetici sayfası ise giriş anahtarı gerektiren `overview` + `trackingSummary` yanıtlarını kullanır.
+## Kurs sahibi takip merkezi (15 Ekim 2026)
+- `yonetici.html` artık **ayrı ve sadece görüntüleme** amaçlı bir yönetici rapor panelidir. Düzenleme, öğretmen oluşturma, grup değiştirme, parola değiştirme, kayıt ekleme/silme, ders kaydetme işlemleri bulunmaz.
+- **Dokuz bölüm:** Genel Bakış; Öğrenciler; Yoklama & Ödev; Gruplar; Ders Kayıtları; Öğretmenler & Saat; Ders Programı; Uyarılar; Hesaplar.
+- Ayrıntılar: Aktif/tüm gruplar, seviye, öğretmen, öğrenci sayısı, müfredat ilerlemesi, planlanan ve tahmini tarihler, haftalık gün/saat, grup ve özel dersler, işlenen konu, öğretmen notu, rapor durumu ve süreleri, öğretmen aylık toplamları/CSV, öğrenci bazında yoklama/ödev istatistikleri, son beş bireysel kayıt, risk uyarıları, öğretmen hesap ve anahtar arşiv durumu.
+- Ana yönetim panelindeki `overview` + `trackingSummary` uç noktalarını mevcut yönetici anahtarıyla **salt okunur** çağırır. Giriş oturumu `index.html` ile aynı sekmede korunur. Veriler menülerde dinamik gösterilir; mobil ve masaüstü için farklı yoğunluklar vardır.
+- **Bu arayüz güncellemesinde Google Apps Script kodu değiştirilmedi; yeni sürüm dağıtmaya gerek yoktur.** Öğretmen sayfasındaki günlük kayıt ve yönetici düzenleme işlemleri `index.html` üzerinden çalışmaya devam eder.
+- Risk sınıflandırması: son beşte üç mazeretsiz devamsızlık veya üst üste iki mazeretsiz devamsızlık ya da beş kontrol edilen ödevden üç eksik = öncelikli. Daha hafif uyarılar = takip edilmeli. Kayıt olmayan öğrenci riskli sayılmaz.
 
 ## Bileşenler
 - `index.html` + `assets/app.js`: öğretmen ve yönetici girişi, ders raporları, grup yönetimi, kolay parola belirleme.
-- `yonetici.html`: `index.html` ile aynı modülleri kullanan tam özellikli yönetici görünümü.
-- `assets/manager-compact.js` + `assets/manager-compact.css`: mobil/masaüstü kompakt yerleşim, ek yönetici KPI'ları ve Öğrenci 360. Yönetici/öğretmen ana işlemlerinin ayrı kopyaları **yoktur**.
-- `assets/manager.js` + `assets/manager.css` ve `assets/viewer.js` + `assets/viewer.css`: önceki prototip/sürüm dosyaları, artık sayfalara yüklenmez.
+- `yonetici.html`: salt okunur kurs sahibi paneli; dokuz sekmeli analiz.
+- `assets/owner.js` + `assets/owner.css` + `assets/manager.css`: kurs sahibi için tüm yönetim verilerinin salt okunur, filtrelenebilir ve mobil uyumlu görünümü.
+- `assets/manager.js`, `assets/manager-compact.js`, `assets/viewer.js`: önceki prototipler; `yonetici.html` bunları yüklemez.
 - `assets/teacher-tracking.js` + `assets/teacher-tracking.css`: öğretmenin kendi öğrenci durumları.
 - `assets/attendance-preview.js`: girişten sonra Apps Script `studentRoster` çağrısı, yoklama, mazeret, isteğe bağlı ödev kontrolü; tek rapor kaydı.
 - `assets/viewer.js`: şifresiz akademik pano, **yalnızca** `publicDashboard` salt-okunur çağrısı.
@@ -57,4 +55,4 @@ Google giriş / Drive hata sayfası görünüyorsa **GitHub değil Apps Script d
 - **Yazma istekleri ağ hatasında otomatik tekrar edilmez:** dersin iki kez kaydedilmesini önler.
 
 ## Durum
-Kompakt yönetici arayüzü ve ana yönetim panelinin kaynak kodları ortak. Güncel UI değişikliği için Google Apps Script'e yeni kod kopyalanması gerekmez. Kullanıcı önceki turda canlı Google bağlantısının çalıştığını doğruladı; bu UI sürümünün tarayıcıdaki son görünümü ayrıca kontrol edilmelidir.
+Kurs sahibi takip merkezi artık yalnızca okumaya yetkilidir ve mevcut Apps Script sürümüyle çalışır. Yeni UI GitHub'da güncellendi, canlı Google verileriyle son tarayıcı kontrolü yapılmalıdır.
