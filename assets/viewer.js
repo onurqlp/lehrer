@@ -9,24 +9,20 @@ function storeCache(data){try{localStorage.setItem(CACHE_KEY,JSON.stringify({sav
    account. Retry the SAME deployment's canonical /macros/s URL for public reads. */
 function apiUrls(){
  const primary=String(window.AYDA_API_URL||'').trim();
- const urls=[primary];
  const match=primary.match(/^https:\/\/script\.google\.com\/a\/macros\/[^/]+\/s\/([^/]+)\/exec$/);
- if(match)urls.push('https://script.google.com/macros/s/'+match[1]+'/exec');
- return urls;
+ const canonical=match?'https://script.google.com/macros/s/'+match[1]+'/exec':primary;
+ return [...new Set([canonical,primary].filter(Boolean))];
 }
 function transportFailure(text){
  const error=new Error(text);error.transport=true;return error;
 }
 async function apiRetry(){
  let last;
- for(let cycle=0;cycle<2;cycle++){
-  for(const url of apiUrls()){
-   try{return await api(url);}
-   catch(error){last=error;if(!error?.transport)throw error;}
-  }
-  if(cycle===0)await wait(1200);
+ for(const url of apiUrls()){
+  try{return await api(url);}
+  catch(error){last=error;if(!error?.transport)throw error;}
  }
- throw Error('Apps Script bağlantısı iki farklı adresten de kurulamadı. Dağıtım erişimini “Herkes”, çalıştıranı “Ben” olarak kontrol edin. ('+(last?.message||'Bağlantı hatası')+')');
+ throw Error('Apps Script bağlantısı kurulamadı. Google dağıtımının erişimi “Herkes”, çalıştıranı “Ben” olmalı. ('+(last?.message||'Bağlantı hatası')+')');
 }
 function api(address){
  return new Promise((resolve,reject)=>{
@@ -36,7 +32,7 @@ function api(address){
   const cb='ayda_cb_'+Date.now()+'_'+(++seq),url=new URL(address),script=document.createElement('script');
   let done=false;
   const finish=(err,value)=>{if(done)return;done=true;clearTimeout(timer);script.remove();delete window[cb];err?reject(err):resolve(value);};
-  const timer=setTimeout(()=>finish(transportFailure('Sunucu zaman aşımı.')),22000);
+  const timer=setTimeout(()=>finish(transportFailure('Sunucu zaman aşımı.')),15000);
   window[cb]=result=>result?.ok?finish(null,result.data):finish(Error(result?.error||'Geçersiz sunucu yanıtı.'));
   url.searchParams.set('callback',cb);url.searchParams.set('action','publicDashboard');
   script.onerror=()=>finish(transportFailure('Google Apps Script yanıtı tarayıcıya yüklenemedi.'));
@@ -109,10 +105,12 @@ async function load(){
  try{
    const fresh=await apiRetry();
    if(!fresh||!Array.isArray(fresh.groups))throw Error('Eksik sunucu yanıtı');
-   db=fresh;storeCache(fresh);render();$('loading').hidden=true;$('refresh').hidden=false;
+   db=fresh;storeCache(fresh);render();$('loading').hidden=true;$('refresh').hidden=false;$('connectionHelp').hidden=true;
  }catch(err){
    $('loading').hidden=true;
-   $('publicError').textContent=db?'Canlı bağlantı geçici olarak kurulamadı. Son başarılı veriler gösteriliyor; tekrar denemek için Yenile’ye dokunun.':'Veriler şu anda getirilemedi: '+err.message+' Yenile butonuna dokunun.';
+   $('publicError').textContent=db?'Canlı bağlantı geçici olarak kurulamadı. Son başarılı veriler gösteriliyor; tekrar denemek için Yenile’ye tıklayın.':'Veriler şu anda getirilemedi: '+err.message;
+   $('connectionHelp').hidden=false;
+   const testUrl=new URL(apiUrls()[0]);testUrl.searchParams.set('action','publicDashboard');testUrl.searchParams.set('callback','ayda_cb_test123');$('apiTestLink').href=testUrl.toString();
  }finally{loadingNow=false;b.disabled=false;b.textContent='↻ Yenile';}
 }
 $('refresh').hidden=false;$('refresh').addEventListener('click',load);
