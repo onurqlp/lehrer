@@ -1,6 +1,7 @@
 "use strict";
 (()=>{
  const $=id=>document.getElementById(id);
+ const payload64=s=>{const b=new TextEncoder().encode(s);let a='';for(const c of b)a+=String.fromCharCode(c);return btoa(a).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
  const node=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=String(value);return e;};
  const add=(parent,tag,cls,value)=>{const e=node(tag,cls,value);parent.append(e);return e;};
  const showEmpty=(id,label)=>$(id).replaceChildren(node('div','owner-empty',label));
@@ -184,6 +185,13 @@
   const head=add(box,'div','owner-student-head'),identity=add(head,'div');
   add(identity,'h3','',s.name);add(identity,'small','',gName(s.groupId)+' · '+tName(g?.teacherId));
   head.append(pill(formats[status(s)],status(s)));
+  if(status(s)==='danger'){
+   const state=add(box,'div','owner-student-recent');add(state,'span','','İlgilenme durumu: '+(s.followupStatus||'Yeni'));
+   for(const option of ['Takipte','Çözüldü']){
+    const b=quick(option,async()=>{b.disabled=true;try{const out=await api('setFollowup',token,{payload:payload64(JSON.stringify({studentId:s.id,status:option}))});if(!out.saved)throw Error('Kayıt onayı alınamadı.');tracking=await api('trackingSummary',token);renderAll();}catch(e){alert('Takip güncellenemedi: '+e.message);}finally{b.disabled=false;}});
+    state.append(b);
+   }
+  }
   const stats=add(box,'div','owner-student-stats');
   for(const [label,value] of [['Katılım',s.attendanceRate===null?'—':s.attendanceRate+'%'],['Geldi',s.present||0],['Gelmedi',s.absent||0],['Mazeretli',s.excused||0],['Ödev yaptı',s.homeworkDone||0],['Ödev eksik',s.homeworkMissing||0]]){
    const cell=add(stats,'div');add(cell,'span','',label);add(cell,'strong','',value);
@@ -316,7 +324,7 @@
 
  function renderAlerts(){
   const root=$('ownerAlertList');root.replaceChildren();
-  const students=(tracking?.students||[]).filter(s=>status(s)==='danger').sort((a,b)=>Number(b.consecutiveAbsent)-Number(a.consecutiveAbsent)||b.recentAbsent-a.recentAbsent);
+  const students=(tracking?.students||[]).filter(s=>status(s)==='danger'&&s.followupStatus!=='Çözüldü').sort((a,b)=>Number(b.consecutiveAbsent)-Number(a.consecutiveAbsent)||b.recentAbsent-a.recentAbsent);
   for(const s of students)root.append(studentCard(s));
   if(!students.length)showEmpty('ownerAlertList',tracking?'Öncelikli uyarı yok.':'Öğrenci takibi henüz yüklenemedi.');
   renderMissing();
