@@ -102,12 +102,16 @@
   const ident=append(main,'div');
   append(ident,'div','compact-student-name',s.name);
   const g=(data?.groups||[]).find(x=>x.id===s.groupId);
-  append(ident,'div','compact-student-meta',g?.name||s.groupId);
+  const instructor=(data?.teachers||[]).find(t=>t.id===g?.teacherId)?.name||'';
+  append(ident,'div','compact-student-meta',(g?.name||s.groupId)+(instructor?' · '+instructor:''));
   const addCell=(label,value)=>{const e=append(main,'div','compact-student-cell');append(e,'small','',label);append(e,'strong','',value);};
   addCell('Katılım',rate(s));
   addCell('Gelmedi',s.absent||0);
   addCell('Ödev eksik',s.homeworkMissing||0);
-  addCell('Son yoklama',last(s,'attendance'));
+  const recent=append(main,'div','compact-student-cell');
+  append(recent,'small','','Son yoklama / ödev');
+  append(recent,'div','',last(s,'attendance'));
+  append(recent,'div','',last(s,'homework'));
   const state=append(main,'div','compact-student-cell');append(state,'small','','Durum');
   const tag=append(state,'span','compact-student-risk '+riskOf(s),statusLabels[riskOf(s)]);
   const details=append(row,'details');
@@ -142,8 +146,8 @@
   const cards=[
    ['Bu ay işlenen grup dersi',reports+' rapor',''],
    ['Genel müfredat ilerlemesi',avg+'% · '+gs.length+' grup',''],
-   ['Öncelikli öğrenci',tracking?alerts.length+' takip kaydı':'Yoklama verisi bekleniyor',alerts.length?'danger':''],
-   ['Bitişe yakın gruplar',next.length+' grup',next.length?'warn':'']
+   ['Öncelikli öğrenci',tracking?(alerts.length?alerts.length+' kişi: '+alerts.slice(0,2).map(a=>a.name).join(', '):'Takip uyarısı yok'):'Yoklama verisi bekleniyor',alerts.length?'danger':''],
+   ['Bitişe yakın gruplar',next.length?next.length+' grup: '+next.slice(0,2).map(g=>g.name).join(', '):'Bitişe yakın grup yok',next.length?'warn':'']
   ];
   // Present four compact operational signals without duplicating the full academic cards.
   for(const [label,value,tone] of cards){
