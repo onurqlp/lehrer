@@ -28,6 +28,8 @@
   const current=(typeof data!=='undefined'&&data&&data.user)?data.user:null;
   const teacher=current?.role==='teacher';
   document.body.classList.toggle('ayda-session-active',Boolean(current));
+  document.body.dataset.aydaRole=current?.role||'';
+  const skip=document.getElementById('aydaSkip');if(skip){skip.href=current?'#app':'#login';skip.textContent=current?'Ana içeriğe geç':'Giriş bölümüne geç';}
   root.classList.toggle('hidden',!teacher);
   if(!teacher){grid.replaceChildren();root.open=false;return;}
   const levels=new Set((data.groups||[]).filter(g=>g.status==='Aktif').map(g=>String(g.level||'').toUpperCase()));
