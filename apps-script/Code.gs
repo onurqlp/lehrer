@@ -255,7 +255,7 @@ function aydaTrackingSummary_(user){
     else continue;
     s.homeworkHistory.push({date,status});
   }
-  const alerts=[];
+  const alerts=[],followups=aydaFollowupMap_();
   for(const s of byStudent.values()){
     s.attendanceHistory.sort((a,b)=>b.date.localeCompare(a.date));
     s.homeworkHistory.sort((a,b)=>b.date.localeCompare(a.date));
@@ -276,14 +276,16 @@ function aydaTrackingSummary_(user){
     s.consecutiveAbsent=consecutiveAbsent;
     s.absenceStreak=absenceStreak;
     s.attendanceRate=(s.present+s.absent)?Math.round(s.present*100/(s.present+s.absent)):null;
+    s.riskSignature=[s.lastAttendance?.date||'',s.lastAttendance?.status||'',String(!!s.lastAttendance?.excused),s.lastHomework?.date||'',s.lastHomework?.status||''].join('|');
+    const follow=followups.get(s.id);s.followupStatus=follow?.signature===s.riskSignature?follow.status:'Yeni';
     s.riskLevel=consecutiveAbsent||recentHw>=3?'danger':
       absenceStreak>=2||recentAbsent>=1||recentHw>=2?'watch':
       recentAttendance.length||recentHomework.length?'regular':'untracked';
     const group=byGroup.get(s.groupId);
-    if(s.riskLevel==='danger'){
+    if(s.riskLevel==='danger'&&s.followupStatus!=='Çözüldü'){
       group.atRisk++;
       alerts.push({studentId:s.id,name:s.name,groupId:s.groupId,group:group.name,
-        recentAbsent,recentExcused,recentHomeworkMissing:recentHw,consecutiveAbsent,absenceStreak,excused:s.excused});
+        recentAbsent,recentExcused,recentHomeworkMissing:recentHw,consecutiveAbsent,absenceStreak,followupStatus:s.followupStatus,excused:s.excused});
     }else if(s.riskLevel==='watch')group.watch++;
     else if(s.riskLevel==='untracked')group.untracked++;
     delete s.attendanceHistory;
@@ -393,6 +395,61 @@ function aydaSaveStudentNote_(user,p){
  }finally{lock.releaseLock();}
 }
 
+
+/** Audit kaydı tutan kontrollü rapor düzeltmesi: sadece not ve ders süresi. */
+function aydaUpdateReport_(user,p){
+ if(!p||typeof p!=='object')throw Error('Düzeltme bilgisi eksik.');
+ const id=String(p.id||'').trim(),note=String(p.note||'').trim(),actual=String(p.actual||'').trim();
+ if(note.length<3||note.length>2000)throw Error('Not 3–2000 karakter olmalı.');
+ if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(actual))throw Error('Ders süresi SS:DD olmalı.');
+ const lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  const sh=aydaSheet_('DERS_KAYITLARI'),rows=sh.getDataRange().getDisplayValues(),h=rows[0].map(String);
+  const idc=h.indexOf('Kayıt ID'),ix=rows.findIndex((r,i)=>i>0&&r[idc]===id);
+  if(idc<0||ix<1)throw Error('Ders raporu bulunamadı.');
+  const r=rows[ix],gid=r[h.indexOf('Grup ID')],tid=r[h.indexOf('Öğretmen ID')];
+  if(user.role!=='admin'&&(tid!==user.id||!aydaGroups_(user).some(g=>g.id===gid)))throw Error('Bu raporda düzeltme yetkiniz yok.');
+  const nc=h.indexOf('Öğretmen Notu'),ac=h.indexOf('Gerçekleşen Ders Saati');
+  if(nc<0||ac<0)throw Error('Ders raporu sütunları eksik.');
+  const oldNote=r[nc],oldActual=r[ac];
+  if(oldNote===note&&oldActual===actual)return {saved:true,unchanged:true,id};
+  const db=aydaDb_();let audit=db.getSheetByName('RAPOR_DUZELTME_GECMISI');
+  if(!audit){audit=db.insertSheet('RAPOR_DUZELTME_GECMISI');audit.appendRow(['KAYIT_ID','DUZELTEN_ID','ESKI_NOT','YENI_NOT','ESKI_SURE','YENI_SURE','ZAMAN']);audit.setFrozenRows(1);}
+  const safe=/^[=+@-]/.test(note)?"'"+note:note;
+  sh.getRange(ix+1,nc+1).setValue(safe);
+  try{sh.getRange(ix+1,ac+1).setValue(actual);audit.appendRow([id,user.id,oldNote,safe,oldActual,actual,new Date()]);}
+  catch(e){sh.getRange(ix+1,nc+1).setValue(oldNote);sh.getRange(ix+1,ac+1).setValue(oldActual);throw Error('Rapor düzeltilemedi: '+e.message);}
+  return {saved:true,id};
+ }finally{lock.releaseLock();}
+}
+function aydaFollowupSheet_(create){
+ let sh=aydaDb_().getSheetByName('TAKIP_ISLEMLERI');
+ if(!sh&&create){sh=aydaDb_().insertSheet('TAKIP_ISLEMLERI');sh.appendRow(['OGRENCI_ID','GRUP_ID','DURUM','RISK_IMZASI','YONETICI_ID','KAYIT_ZAMANI']);sh.setFrozenRows(1);}
+ return sh;
+}
+function aydaFollowupMap_(){
+ const sh=aydaFollowupSheet_(false),map=new Map();
+ if(!sh||sh.getLastRow()<2)return map;
+ const h=sh.getRange(1,1,1,sh.getLastColumn()).getDisplayValues()[0];
+ for(const line of sh.getRange(2,1,sh.getLastRow()-1,h.length).getDisplayValues()){
+  const r=Object.fromEntries(h.map((k,i)=>[k,line[i]]));
+  if(r['OGRENCI_ID'])map.set(r['OGRENCI_ID'],{status:r['DURUM'],signature:r['RISK_IMZASI']});
+ }
+ return map;
+}
+function aydaSetFollowup_(user,p){
+ if(user.role!=='admin')throw Error('Yalnızca yönetici takip durumunu değiştirebilir.');
+ const id=String((p||{}).studentId||'').trim(),status=String((p||{}).status||'').trim();
+ if(!['Takipte','Çözüldü'].includes(status))throw Error('Geçersiz takip durumu.');
+ const lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  const student=aydaTrackingSummary_(user).students.find(s=>s.id===id);
+  if(!student||student.riskLevel!=='danger')throw Error('Risk uyarısı bulunan öğrenci seçin.');
+  aydaFollowupSheet_(true).appendRow([id,student.groupId,status,student.riskSignature,user.id,new Date()]);
+  return {saved:true,studentId:id,status};
+ }finally{lock.releaseLock();}
+}
+
 function aydaSetPassword_(user,p){
   if(!p||typeof p!=='object')throw Error('Parola bilgileri eksik.');
   const target=String(p.target||'').trim(),password=String(p.password||'');
@@ -472,6 +529,8 @@ function doGet(e){
     else if(action==='studentNotes')out={ok:true,data:aydaStudentNotes_(user,{studentId:p.studentId})};
     else if(action==='saveStudentNote')out={ok:true,data:aydaSaveStudentNote_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='saveAttendance')out={ok:true,data:aydaSaveAttendance_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
+    else if(action==='updateReport')out={ok:true,data:aydaUpdateReport_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
+    else if(action==='setFollowup')out={ok:true,data:aydaSetFollowup_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='setPassword')out={ok:true,data:aydaSetPassword_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='save'){
       const input=JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8'));
