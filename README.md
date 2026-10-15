@@ -1,26 +1,24 @@
-# AYDA Akademik Takip — Tam Çizelge Sürümü
+# AYDA Akademik Takip — Akademik Planlama Sürümü
 
-## Ne yapar?
-- Öğretmen: tek ekranda günlük grup veya özel ders kaydı, ders süresi, ünite ve isteğe bağlı konu/not.
-- Yönetici: tüm gruplar ve son konular, aylık öğretmen bazlı işlenen ders sayısı ve saat toplamı, CSV indirme.
-- Veritabanı: mevcut Google Sheets `GRUPLAR`, `KULLANICILAR`, `HAFTALIK_PROGRAM`, `DERS_KAYITLARI` korunur. Özel ders kaydı için `AYDA_OZEL_DERS_CIZELGESI` ilk kayıt sırasında otomatik açılır.
+## Kurulum
+1. GitHub deposunda `index.html`, `assets/`, `CNAME`, `README.md` dosyalarını güncelleyin.
+2. Apps Script projesinde `Kod.gs` dosyasının içeriğini `apps-script/Code.gs` ile değiştirin. Dağıtımları yönet > Yeni sürüm > Dağıt.
+3. `assets/config.js` içinde mevcut `/exec` adresini koruyun.
 
-## Yükleme (2 işlem)
-1. ZIP içindeki `index.html`, `assets/`, `CNAME`, `README.md` dosyalarını GitHub `onurqlp/lehrer` deposunun köküne yükleyin (eski dosyaların üzerine).
-2. `apps-script/Code.gs` içeriğini **AYDA Ogretmen Sistemi** projesindeki `Kod.gs` ile tamamen değiştirin; kaydedin; **Dağıt > Dağıtımları yönet > Düzenle > Yeni sürüm > Dağıt**. Eski dağıtım URL'sini koruyun.
+## Yönetici
+- Öğretmen oluşturma, otomatik aktif kullanıcı kaydı ve bir kez gösterilen anahtar
+- Grup oluşturma: seviye, öğretmen, başlangıç, öğrenci sayısı, haftalık günler ve saatler
+- Tamamlanan ünite ve öğrenci sayısı güncelleme
+- Aylık öğretmen çizelgesi ve CSV
+- 24 ünite + 2 sınav hazırlığı dersi için tarih tahmini
+
+## Hesaplama
+- Her programlı ders günü 1 ünite sayılır; tamamlanan ünite Sheets'ten alınır.
+- Kalan ünite kadar planlı ders günü, ardından 2 sınav hazırlığı dersi hesaplanır.
+- Bu tahmin **resmî sınav tarihi değildir**. Tatil/iptal/erteleme ve raporlanmamış dersler tahmini değiştirebilir.
+- Gerçek derslerin saatleri aylık ücret çizelgesinde ayrı hesaplanır.
 
 ## Önemli
-- Yönetici girişi mevcut yönetici anahtarıyla, öğretmenler kendi anahtarlarıyla devam eder.
-- Saatler **ders süresidir**, ödeme miktarı değildir; ücret hesaplaması kurumun saatlik ücretlerine göre ayrıca yapılır.
-- `İptal` ve `Ertelendi` kayıtları ders saati toplamına katılmaz.
-- Grup için aynı gün ikinci rapor kabul edilmez; özel derste aynı öğrenci/öğretmen/gün tekrarı engellenir.
-- Güvenlik: GitHub Pages + Apps Script JSONP API, giriş anahtarlarını URL içinde taşır; bu yaklaşımın üretim ortamında erişim kayıtları ve URL geçmişi açısından riskleri vardır. Anahtarları GitHub'a koymayın, paylaşılan anahtarları yenileyin. Para bordrosu kesinleştirmeden önce Sheets ile karşılaştırın.
-- Canlı Google hesabına erişim olmadan uçtan uca test yapılamaz; JavaScript sözdizimi ve dosya paketi yerel olarak doğrulanmıştır.
-
-
-## Güncel kullanım
-- Öğretmen çizelgesinde yalnızca 1/2/3/4 saat seçilir.
-- İşlenen ünite alanı kaldırıldı; yalnızca son tamamlanan ünite ve zorunlu kısa bilgi bulunur. Eski 13 sütunlu veritabanı korunur, işlenen ünite alanına son tamamlanan ünite değeri yazılır.
-- Yönetici panelinde Giriş Anahtarı Yönetimi: aktif öğretmen veya yönetici anahtarını yeniler; yeni anahtar bir defa gösterilir, eski anahtar anında geçersiz olur.
-- İlk yönetici anahtarı mevcut Apps Script kurulumuyla oluşturulmuş olmalıdır. Anahtar yenileme için yönetici girişi gerekir.
-- Güvenlik notu: mevcut mimari JSONP/GET üzerinden anahtar taşır. URL geçmişi ve günlüklerinde açığa çıkma riski nedeniyle üretimde güvenli POST tabanlı API mimarisine geçiş önerilir.
+- JSONP ile anahtar URL parametresinde taşınır; tarayıcı geçmişi ve ağ günlükleri bakımından bu mimari hassastır. Canlı kullanımda erişim anahtarlarını gizli tutun, sızanları yenileyin.
+- Yeni yönetici işlemleri canlı Google Sheets üzerinde test edilmedi. Yüklemeden önce mevcut Apps Script ve Sheets yedeğini alın.
+- Yeni grup kaydı iki ayrı sekmeye yazılır; olası kısmi başarısızlıkta manuel kontrol gerekir.
