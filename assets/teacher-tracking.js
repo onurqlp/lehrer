@@ -37,9 +37,7 @@
   if(!hw.children.length)hw.append(node('li','','Ödev henüz kontrol edilmedi'));
   details.append(node('small','','Ödev'),hw);c.append(details);
   window.AYDA_NOTES?.mount(c,s,(action,params)=>jsonp(action,params));
-  const source=(typeof data!=='undefined'&&data?.groups||[]).find(g=>g.id===s.groupId);
-  const resource=(source?.level||'').startsWith('A1')?'https://www.aydadil.com/a1ayda/':(source?.level||'').startsWith('A2')?'https://www.aydadil.com/a2ayda/':'';
-  if(resource){const link=node('a','ayda-group-link','📚 Öğrenci için tekrar kaynakları ↗');link.href=resource;link.target='_blank';link.rel='noopener noreferrer';c.append(link);}
+  // Internal material links live in one collapsed teacher resource panel, not on every student card.
   return c;
  }
  function fillGroups(){
