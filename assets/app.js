@@ -20,13 +20,13 @@ function apiTransportError(detail){
 }
 function jsonpRequest(api,action,params){
  return new Promise((resolve,reject)=>{
-  if(!/^https:\/\/script\.google\.com\/(?:macros\/s\/|a\/macros\/[^/]+\/s\/)/.test(api)){
+  if(!/^https:\/\/script\.google\.com\/(?:macros\/s\/|a\/macros\/[^/]+\/s\/|a\/[^/]+\/macros\/s\/)/.test(api)){
    reject(Error('Apps Script API adresi ayarlanmamış.'));return;
   }
   const cb='ayda_cb_'+Date.now()+'_'+(++requestNo),url=new URL(api),script=document.createElement('script');
   let settled=false;
   const finish=(err,result)=>{if(settled)return;settled=true;clearTimeout(timer);delete window[cb];script.remove();err?reject(err):resolve(result);};
-  const timer=setTimeout(()=>finish(apiTransportError('Apps Script yanıtı zaman aşımına uğradı.')),18000);
+  const timer=setTimeout(()=>finish(apiTransportError('Apps Script yanıtı zaman aşımına uğradı.')),12000);
   window[cb]=r=>{if(!r||!r.ok)finish(Error((r&&r.error)||'Sunucudan geçersiz yanıt geldi.'));else finish(null,r.data);};
   url.searchParams.set('callback',cb);url.searchParams.set('action',action);url.searchParams.set('key',authKey);
   for(const [k,v] of Object.entries(params))url.searchParams.set(k,v);
