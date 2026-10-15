@@ -6,16 +6,19 @@
 
 ## Yeni takip merkezi (15 Ekim 2026)
 - `yonetici.html` yönetici anahtarıyla açılır; öğrenci takibi, yoklama, ödev, ders ve öğretmen özetleri gösterir. Kullanıcı `index.html` üzerinden yönetici olarak giriş yapıp aynı sekmede bu sayfaya geçerse mevcut oturum korunur.
-- Yönetici menüsü: Genel bakış, Öğrenciler (isim, grup, son beş yoklama/ödev), Gruplar (ünite, ilerleme, bitiş tahmini), Öğretmenler (aylık ders, CSV), Ders kayıtları, Uyarılar.
+- Kompakt yönetici sayfası `index.html` ile **aynı** `assets/app.js`, `assets/admin-menu.js` ve kayıt formlarını kullanır; grup açma/düzenleme, öğretmen ekleme, parola yönetimi, yoklama/ödev, ders ve muhasebe tamamen aynıdır. Yalnızca görünüm ve sıralama farklıdır.
+- Kompakt sekmeler: Genel Bakış, Öğrenci Takibi, **Öğrenci 360 (tekil öğrenci listesi, son 5 yoklama/ödev, arama, grup/risk filtreleri)**, Ders ve Muhasebe, Grup İşlemleri, Öğretmenler ve Anahtarlar, Düzenle. Diğer ortak modüller "Diğer günlük işlemler ve kayıtlar" altında erişilir.
 - Öğretmen ana sayfasında **Öğrencilerim · Takip Merkezi** bulunur. Yeni `trackingSummary` yalnızca öğretmenin yetkili olduğu aktif grupları döndürür.
 - Risk: üst üste 2 mazeretsiz devamsızlık, son 5 yoklamada 3 mazeretsiz devamsızlık veya son 5 ödevde 3 eksik => öncelikli. 1 mazeretsiz devamsızlık ya da son 5'te 2 eksik ödev => takip edilmeli. Kayıt yoksa risk hesaplanmış gibi gösterilmez.
-- **Google tarafında zorunlu işlem:** `apps-script/Code.gs` dosyasının tamamını mevcut **AYDA Akademik Takip CRM** Apps Script projesinin `Kod.gs` dosyasına yapıştır, kaydet; mevcut **Web uygulaması** dağıtımını düzenleyip **Yeni sürüm** olarak yayımla. Erişim: **Herkes**, çalıştıran: **Ben**. Mevcut dağıtım ID'sini değiştirmeyin.
+- **Sadece kompakt arayüz güncellemesi:** Yeni `yonetici.html` aynı mevcut `overview`, `trackingSummary` ve yönetim uçlarını kullandığından Google Apps Script dosyasında veya dağıtımında değişiklik gerekmez. Apps Script kodu ayrıca değişirse, mevcut web uygulamasının yeni sürümü yayımlanmalıdır. Dağıtım ID'sini değiştirmeyin.
 - Yönetici anahtarı mevcut değilse ilk anahtar kurulmalıdır; daha önce varsa otomatik silinmez. Yönetici anahtarını kimseyle paylaşmayın.
 - `publicDashboard` anonim özet verisi döndürür (öğrenci adı, yoklama ve ödev yok). Ayrıntılı yönetici sayfası ise giriş anahtarı gerektiren `overview` + `trackingSummary` yanıtlarını kullanır.
 
 ## Bileşenler
 - `index.html` + `assets/app.js`: öğretmen ve yönetici girişi, ders raporları, grup yönetimi, kolay parola belirleme.
-- `assets/manager.js` + `assets/manager.css`: etkin, girişli ayrıntılı yönetici takip merkezi. `assets/viewer.js` ve `assets/viewer.css` önceki anonim özet sürümünden kalmıştır.
+- `yonetici.html`: `index.html` ile aynı modülleri kullanan tam özellikli yönetici görünümü.
+- `assets/manager-compact.js` + `assets/manager-compact.css`: mobil/masaüstü kompakt yerleşim, ek yönetici KPI'ları ve Öğrenci 360. Yönetici/öğretmen ana işlemlerinin ayrı kopyaları **yoktur**.
+- `assets/manager.js` + `assets/manager.css` ve `assets/viewer.js` + `assets/viewer.css`: önceki prototip/sürüm dosyaları, artık sayfalara yüklenmez.
 - `assets/teacher-tracking.js` + `assets/teacher-tracking.css`: öğretmenin kendi öğrenci durumları.
 - `assets/attendance-preview.js`: girişten sonra Apps Script `studentRoster` çağrısı, yoklama, mazeret, isteğe bağlı ödev kontrolü; tek rapor kaydı.
 - `assets/viewer.js`: şifresiz akademik pano, **yalnızca** `publicDashboard` salt-okunur çağrısı.
@@ -39,7 +42,7 @@ https://script.google.com/macros/s/DAĞITIM_KİMLİĞİ/exec?action=ping&callbac
 
 Beklenen yanıt:
 ```js
-ayda_cb_test123({"ok":true,"data":{"status":"ok","version":"2026-10-15.2"}});
+ayda_cb_test123({"ok":true,"data":{"status":"ok","version":"2026-10-15.4"}});
 ```
 
 Google giriş / Drive hata sayfası görünüyorsa **GitHub değil Apps Script dağıtım erişimi** sorunludur. Workspace yöneticisi "Herkes" erişimini kısıtlamış olabilir.
@@ -54,4 +57,4 @@ Google giriş / Drive hata sayfası görünüyorsa **GitHub değil Apps Script d
 - **Yazma istekleri ağ hatasında otomatik tekrar edilmez:** dersin iki kez kaydedilmesini önler.
 
 ## Durum
-GitHub kaynak dosyaları güncel. Google Apps Script'e kodun kopyalanması, Google yetkilendirmesi ve yeni sürüm dağıtımı kullanıcı hesabında ayrıca yapılmalıdır. Kodun örnek verilerle yerel işlev testleri yapıldı; canlı dağıtım henüz doğrulanmadı.
+Kompakt yönetici arayüzü ve ana yönetim panelinin kaynak kodları ortak. Güncel UI değişikliği için Google Apps Script'e yeni kod kopyalanması gerekmez. Kullanıcı önceki turda canlı Google bağlantısının çalıştığını doğruladı; bu UI sürümünün tarayıcıdaki son görünümü ayrıca kontrol edilmelidir.
