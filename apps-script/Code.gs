@@ -299,11 +299,11 @@ function aydaSetPassword_(user,p){
   if(!accountId)throw Error('Hesabınız bulunamadı.');
   if(accountId!=='ADMIN'&&!teachers.some(a=>a['Kullanıcı ID']===accountId))throw Error('Aktif hesap bulunamadı.');
   if(user.role!=='admin'&&accountId!==ownAccount)throw Error('Yetkisiz parola işlemi.');
-  const min=accountId==='ADMIN'?10:8;
-  if(password.length<min||password.length>64||!/\p{L}/u.test(password)||!/\d/.test(password)||/^\s|\s$/.test(password))
-    throw Error('Parola '+min+'–64 karakter olmalı; en az bir harf ve bir rakam içermeli.');
-  if(['ayda1234','password1','12345678','123456789','1234567890'].includes(password.toLocaleLowerCase('tr-TR')))
-    throw Error('Bu parola çok kolay tahmin edilebilir. Farklı bir parola seçin.');
+  // Yönetici ve öğretmen hesaplarında en az 3 karakter yeterli;
+  // rakam, harf, özel karakter veya belirli bir desen zorunlu değildir.
+  // Giriş API'sinin 150 karakterlik teknik üst sınırıyla uyumlu tutulur.
+  if(password.length<3||password.length>150)
+    throw Error('Yeni parola en az 3, en fazla 150 karakter olmalı.');
   const props=PropertiesService.getScriptProperties(),field=accountId==='ADMIN'?'AYDA_ADMIN_HASH':'AYDA_GIRIS_'+accountId;
   const lock=LockService.getScriptLock();lock.waitLock(20000);
   try{
@@ -340,7 +340,7 @@ function aydaHealthCheck(){
   const required=['GRUPLAR','KULLANICILAR','DERS_KAYITLARI','OGRENCILER','YOKLAMA','ODEV_TAKIBI'];
   const missing=required.filter(name=>!db.getSheetByName(name));
   if(missing.length)throw Error('Eksik Google Sheets sekmeleri: '+missing.join(', '));
-  const result={ok:true,version:'2026-10-15.4',sheetCount:db.getSheets().length,groups:Math.max(0,db.getSheetByName('GRUPLAR').getLastRow()-1),students:Math.max(0,db.getSheetByName('OGRENCILER').getLastRow()-1)};
+  const result={ok:true,version:'2026-10-16.1',sheetCount:db.getSheets().length,groups:Math.max(0,db.getSheetByName('GRUPLAR').getLastRow()-1),students:Math.max(0,db.getSheetByName('OGRENCILER').getLastRow()-1)};
   Logger.log(JSON.stringify(result));
   return result;
 }
@@ -351,7 +351,7 @@ function doGet(e){
   let out;
   try{
     const action=String(p.action||'overview');
-    if(action==='ping'){out={ok:true,data:{status:'ok',version:'2026-10-15.4'}};}
+    if(action==='ping'){out={ok:true,data:{status:'ok',version:'2026-10-16.1'}};}
     else if(action==='publicDashboard'){out={ok:true,data:aydaPublicDashboard_()};}
     else if(action==='publicTrackingDashboard'){out={ok:false,error:'Öğrenci bilgileri anonim erişime kapalı.'};}
     else {const user=aydaAuth_(p.key);
