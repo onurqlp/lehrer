@@ -304,7 +304,9 @@ function aydaReminders_(user){
  const groups=aydaGroups_(user).filter(g=>g.status==='Aktif');
  const byId=new Map(groups.map(g=>[g.id,g]));
  const today=aydaToday_(),now=new Date().getTime();
- const schedules=aydaSchedule_(groups),history=aydaHistory_(user,groups);
+ const schedules=aydaSchedule_(groups);
+ const allowed=new Set(groups.map(g=>g.id));
+ const history=aydaRead_('DERS_KAYITLARI').filter(r=>allowed.has(r['Grup ID'])).map(r=>({id:r['Kayıt ID'],groupId:r['Grup ID'],date:aydaDate_(r['Tarih']),status:r['Durum']}));
  const existing=new Map(history.map(r=>[r.groupId+'|'+r.date,r]));
  const attended=new Set(aydaRead_('YOKLAMA').map(r=>String(r['GRUP_ID'])+'|'+aydaDate_(r['TARIH'])));
  const rosterGroups=new Set(aydaStudentRoster_(user).map(r=>r.groupId)),missing=[];
@@ -343,7 +345,8 @@ function aydaSaveAttendance_(user,p){
  try{
   const group=aydaGroups_(user).find(g=>g.id===groupId);
   if(!group)throw Error('Grup yetkisi bulunamadı.');
-  const lesson=aydaHistory_(user,[group]).find(r=>r.groupId===groupId&&r.date===date);
+  const lessonRaw=aydaRead_('DERS_KAYITLARI').find(r=>r['Grup ID']===groupId&&aydaDate_(r['Tarih'])===date);
+  const lesson=lessonRaw?{id:lessonRaw['Kayıt ID'],status:lessonRaw['Durum']}:null;
   if(!lesson||lesson.status!=='İşlendi')throw Error('Önce bu tarihin işlenen ders raporu kaydedilmeli.');
   if(aydaRead_('YOKLAMA').some(r=>r['DERS_KAYIT_ID']===lesson.id||(r['GRUP_ID']===groupId&&aydaDate_(r['TARIH'])===date)))
    throw Error('Bu dersin yoklaması zaten kayıtlı.');
