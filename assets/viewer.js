@@ -5,8 +5,45 @@ const CACHE_KEY='ayda_public_dashboard_v2',CACHE_MAX_AGE=7*24*60*60*1000;
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function restoreCache(){try{const c=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');if(c&&c.savedAt&&Date.now()-c.savedAt<CACHE_MAX_AGE&&c.data&&Array.isArray(c.data.groups)){db=c.data;render();$('updated').textContent='Son başarılı veri: '+new Date(c.savedAt).toLocaleString('tr-TR')+' (çevrimdışı kayıt)';return true;}}catch(e){}return false;}
 function storeCache(data){try{localStorage.setItem(CACHE_KEY,JSON.stringify({savedAt:Date.now(),data}));}catch(e){}}
-async function apiRetry(){let last;for(let attempt=0;attempt<3;attempt++){try{return await api();}catch(e){last=e;if(attempt<2)await wait(1100*(attempt+1));}}throw last;}
-function api(){return new Promise((resolve,reject)=>{const address=window.AYDA_API_URL;if(!/^https:\/\/script\.google\.com\/(?:macros\/s\/|a\/macros\/[^/]+\/s\/)/.test(address||'')){reject(Error('API yapılandırması bulunamadı.'));return;}const cb='ayda_cb_'+Date.now()+'_'+(++seq),u=new URL(address),s=document.createElement('script');let done=false;const finish=(error,value)=>{if(done)return;done=true;clearTimeout(timer);s.remove();delete window[cb];error?reject(error):resolve(value);};const timer=setTimeout(()=>finish(Error('Sunucu zaman aşımına uğradı. İnternet bağlantısını kontrol edip Yenile seçeneğini deneyin.')),45000);window[cb]=r=>r?.ok?finish(null,r.data):finish(Error(r?.error||'Sunucu yanıtı alınamadı.'));u.searchParams.set('callback',cb);u.searchParams.set('action','publicDashboard');s.onerror=()=>finish(Error('Sunucu bağlantısı kurulamadı.'));s.src=u.toString();document.head.append(s);});}
+/* Google Workspace can route domain-specific /a/macros URLs through a signed-in
+   account. Retry the SAME deployment's canonical /macros/s URL for public reads. */
+function apiUrls(){
+ const primary=String(window.AYDA_API_URL||'').trim();
+ const urls=[primary];
+ const match=primary.match(/^https:\/\/script\.google\.com\/a\/macros\/[^/]+\/s\/([^/]+)\/exec$/);
+ if(match)urls.push('https://script.google.com/macros/s/'+match[1]+'/exec');
+ return urls;
+}
+function transportFailure(text){
+ const error=new Error(text);error.transport=true;return error;
+}
+async function apiRetry(){
+ let last;
+ for(let cycle=0;cycle<2;cycle++){
+  for(const url of apiUrls()){
+   try{return await api(url);}
+   catch(error){last=error;if(!error?.transport)throw error;}
+  }
+  if(cycle===0)await wait(1200);
+ }
+ throw Error('Apps Script bağlantısı iki farklı adresten de kurulamadı. Dağıtım erişimini “Herkes”, çalıştıranı “Ben” olarak kontrol edin. ('+(last?.message||'Bağlantı hatası')+')');
+}
+function api(address){
+ return new Promise((resolve,reject)=>{
+  if(!/^https:\/\/script\.google\.com\/(?:macros\/s\/|a\/macros\/[^/]+\/s\/)/.test(address||'')){
+   reject(Error('API yapılandırması bulunamadı.'));return;
+  }
+  const cb='ayda_cb_'+Date.now()+'_'+(++seq),url=new URL(address),script=document.createElement('script');
+  let done=false;
+  const finish=(err,value)=>{if(done)return;done=true;clearTimeout(timer);script.remove();delete window[cb];err?reject(err):resolve(value);};
+  const timer=setTimeout(()=>finish(transportFailure('Sunucu zaman aşımı.')),22000);
+  window[cb]=result=>result?.ok?finish(null,result.data):finish(Error(result?.error||'Geçersiz sunucu yanıtı.'));
+  url.searchParams.set('callback',cb);url.searchParams.set('action','publicDashboard');
+  script.onerror=()=>finish(transportFailure('Google Apps Script yanıtı tarayıcıya yüklenemedi.'));
+  script.onload=()=>{if(!done)finish(transportFailure('Google Apps Script geçerli veri döndürmedi.'));};
+  script.src=url.toString();document.head.append(script);
+ });
+}
 const names=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
 function parse(s){const a=String(s||'').split('-').map(Number);return a.length===3&&a.every(Number.isFinite)?new Date(Date.UTC(a[0],a[1]-1,a[2])):null;}
 function iso(d){return d.toISOString().slice(0,10);}function fmt(s){if(!s)return '—';const a=s.split('-');return a.length===3?a[2]+'.'+a[1]+'.'+a[0]:s;}
