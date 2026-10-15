@@ -122,7 +122,7 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  }
 }catch(err){
  message('formMessage',err.unknownCommit?'Sunucudan kayıt onayı alınamadı. Yeniden kaydetmeden önce Google Sheets DERS_KAYITLARI sekmesini kontrol edin. ('+err.message+')':err.message);
-}finally{b.disabled=false;b.textContent=window.AYDA_ATTENDANCE?.isConnected?.()?'Dersi ve Yoklamayı Kaydet':'Dersi Kaydet';}});
+}finally{b.disabled=false;b.textContent='Dersi Kaydet';}});
 
 // Academic planning: one unit per scheduled class date; two further class dates for exam preparation.
 function dateISO(d){return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');}
