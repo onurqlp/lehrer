@@ -18,7 +18,7 @@ function aydaAuth_(key){
   if(!u)throw Error('Parola veya giriş anahtarı geçersiz ya da hesap pasif.');
   return {role:'teacher',id:u['Öğretmen ID'],accountId:u['Kullanıcı ID'],name:u['Kullanıcı Adı']};
 }
-function aydaGroups_(user){return aydaRead_('GRUPLAR').filter(g=>user.role==='admin'||(g['Öğretmen ID']===user.id&&g['Durum']==='Aktif')).map(g=>({id:g['ID'],name:g['Grup'],level:g['Seviye'],teacherId:g['Öğretmen ID'],start:aydaDate_(g['Başlangıç']),end:aydaDate_(g['Planlanan Bitiş']),students:g['Öğrenci'],completed:Number(g['Son Tamamlanan Ünite'])||0,total:Number(g['Toplam Ünite'])||0,status:g['Durum']}));}
+function aydaGroups_(user){return aydaRead_('GRUPLAR').filter(g=>user.role==='admin'||(g['Öğretmen ID']===user.id&&g['Durum']==='Aktif')).map(g=>({id:g['ID'],name:g['Grup'],level:g['Seviye'],teacherId:g['Öğretmen ID'],start:aydaDate_(g['Başlangıç']),end:aydaDate_(g['Planlanan Bitiş']),students:g['Öğrenci'],completed:Number(g['Son Tamamlanan Ünite'])||0,total:Number(g['Toplam Ünite'])||0,status:g['Durum'],whatsapp:String(g['WhatsApp']||'').trim()}));}
 function aydaSchedule_(groups){const ids=new Set(groups.map(g=>g.id)),map=Object.fromEntries(groups.map(g=>[g.id,g]));return aydaRead_('HAFTALIK_PROGRAM').filter(p=>ids.has(p['Grup ID'])&&(p['Durum']==='Aktif'||p['Durum']==='Eksik saat')).map(p=>({groupId:p['Grup ID'],group:map[p['Grup ID']].name,day:p['Gün'],start:p['Başlangıç'],end:p['Bitiş']||'Belirtilmemiş',status:p['Durum']}));}
 function aydaHistory_(user,groups){const ids=new Set(groups.map(g=>g.id));return aydaRead_('DERS_KAYITLARI').filter(r=>ids.has(r['Grup ID'])&&(user.role==='admin'||r['Öğretmen ID']===user.id)).map(r=>({id:r['Kayıt ID'],date:aydaDate_(r['Tarih']),groupId:r['Grup ID'],teacherId:r['Öğretmen ID'],plannedStart:r['Planlanan Başlangıç'],plannedEnd:r['Planlanan Bitiş'],actual:r['Gerçekleşen Ders Saati'],status:r['Durum'],unit:r['İşlenen Ünite'],completed:r['Tamamlanan Ünite'],topic:r['İşlenen Konu'],note:r['Öğretmen Notu']})).sort((a,b)=>b.date.localeCompare(a.date));}
 function aydaPrivateSheet_(){const db=aydaDb_();let s=db.getSheetByName('AYDA_OZEL_DERS_CIZELGESI');if(!s){s=db.insertSheet('AYDA_OZEL_DERS_CIZELGESI');s.appendRow(['Kayıt ID','Tarih','Öğretmen ID','Öğrenci','Gerçekleşen Ders Saati','Durum','İşlenen Ünite','Tamamlanan Ünite','İşlenen Konu','Öğretmen Notu','Kayıt Zamanı']);}return s;}
@@ -89,9 +89,11 @@ function aydaAdminCreateGroup_(user,p){
 function aydaAdminSetGroup_(user,p){
  if(user.role!=='admin')throw Error('Yönetici yetkisi gerekir.');
  const id=String(p.id||''),completed=Number(p.completed),students=Number(p.students);
+  const wantsWhatsapp=Object.prototype.hasOwnProperty.call(p,'whatsapp'),whatsapp=String(p.whatsapp||'').trim();
+  if(wantsWhatsapp&&whatsapp&&!/^https:\/\/(chat\.whatsapp\.com\/[A-Za-z0-9_-]+|wa\.me\/[0-9]+)(?:[?][^#]*)?$/.test(whatsapp))throw Error('Geçerli WhatsApp grup bağlantısı girin.');
  if(!Number.isInteger(completed)||completed<0||completed>100||!Number.isInteger(students)||students<0||students>500)throw Error('Değerleri kontrol edin.');
  const lock=LockService.getScriptLock();lock.waitLock(20000);
- try{const sh=aydaSheet_('GRUPLAR'),rows=sh.getDataRange().getDisplayValues(),h=rows[0],ix=rows.findIndex((r,i)=>i>0&&r[h.indexOf('ID')]===id);if(ix<1)throw Error('Grup bulunamadı.');const total=Number(rows[ix][h.indexOf('Toplam Ünite')])||24;if(completed>total)throw Error('Tamamlanan ünite toplamı aşamaz.');sh.getRange(ix+1,h.indexOf('Son Tamamlanan Ünite')+1).setValue(completed);sh.getRange(ix+1,h.indexOf('Öğrenci')+1).setValue(students);return {id,completed,students};}finally{lock.releaseLock();}
+ try{const sh=aydaSheet_('GRUPLAR'),rows=sh.getDataRange().getDisplayValues(),h=rows[0],ix=rows.findIndex((r,i)=>i>0&&r[h.indexOf('ID')]===id);if(ix<1)throw Error('Grup bulunamadı.');const total=Number(rows[ix][h.indexOf('Toplam Ünite')])||24;if(completed>total)throw Error('Tamamlanan ünite toplamı aşamaz.');sh.getRange(ix+1,h.indexOf('Son Tamamlanan Ünite')+1).setValue(completed);sh.getRange(ix+1,h.indexOf('Öğrenci')+1).setValue(students);if(wantsWhatsapp){const wc=h.indexOf('WhatsApp');if(wc<0)throw Error('GRUPLAR tablosunda WhatsApp sütunu bulunamadı.');sh.getRange(ix+1,wc+1).setValue(whatsapp);}return {id,completed,students};}finally{lock.releaseLock();}
 }
 function aydaOverview_(user){const groups=aydaGroups_(user),schedule=aydaSchedule_(groups),history=aydaHistory_(user,groups),today=aydaToday_(),day=aydaWeekday_(today);return {user,groups,schedule,history,privateHistory:aydaPrivateHistory_(user),today,todayLessons:schedule.filter(p=>{const g=groups.find(x=>x.id===p.groupId);return p.day===day&&g&&(!g.start||g.start<=today)&&(!g.end||g.end>=today);}),accounts:user.role==='admin'?aydaRead_('KULLANICILAR').filter(x=>x['Rol']==='Öğretmen').map(x=>({id:x['Kullanıcı ID'],name:x['Kullanıcı Adı'],status:x['Durum']})):[],teachers:user.role==='admin'?aydaTeachers_():[],vaultStatus:user.role==='admin'?aydaVaultStatus_(user):[]};}
 function aydaSave_(user,p){
@@ -259,10 +261,12 @@ function aydaTrackingSummary_(user){
     s.homeworkHistory.sort((a,b)=>b.date.localeCompare(a.date));
     const recentAttendance=s.attendanceHistory.slice(0,5);
     const recentHomework=s.homeworkHistory.slice(0,5);
+    const lastFourChecked=s.homeworkHistory.slice(0,4);
     const recentAbsent=recentAttendance.filter(x=>x.status==='Gelmedi'&&!x.excused).length;
-    const consecutiveAbsent=recentAttendance.length>=2&&recentAttendance.slice(0,2).every(x=>x.status==='Gelmedi'&&!x.excused);
+    const absenceStreak=recentAttendance.findIndex(x=>x.status!=='Gelmedi'||x.excused)===-1?recentAttendance.length:recentAttendance.findIndex(x=>x.status!=='Gelmedi'||x.excused);
+    const consecutiveAbsent=absenceStreak>=3;
     const recentExcused=recentAttendance.filter(x=>x.status==='Gelmedi'&&x.excused).length;
-    const recentHw=recentHomework.filter(x=>x.status==='Yapmadı').length;
+    const recentHw=lastFourChecked.filter(x=>x.status==='Yapmadı').length;
     s.lastAttendance=recentAttendance[0]||null;
     s.lastHomework=recentHomework[0]||null;
     s.recentAttendance=recentAttendance;
@@ -270,15 +274,16 @@ function aydaTrackingSummary_(user){
     s.recentAbsent=recentAbsent;
     s.recentHomeworkMissing=recentHw;
     s.consecutiveAbsent=consecutiveAbsent;
+    s.absenceStreak=absenceStreak;
     s.attendanceRate=(s.present+s.absent)?Math.round(s.present*100/(s.present+s.absent)):null;
-    s.riskLevel=consecutiveAbsent||recentAbsent>=3||recentHw>=3?'danger':
-      recentAbsent>=1||recentHw>=2?'watch':
+    s.riskLevel=consecutiveAbsent||recentHw>=3?'danger':
+      absenceStreak>=2||recentAbsent>=1||recentHw>=2?'watch':
       recentAttendance.length||recentHomework.length?'regular':'untracked';
     const group=byGroup.get(s.groupId);
     if(s.riskLevel==='danger'){
       group.atRisk++;
       alerts.push({studentId:s.id,name:s.name,groupId:s.groupId,group:group.name,
-        recentAbsent,recentExcused,recentHomeworkMissing:recentHw,consecutiveAbsent,excused:s.excused});
+        recentAbsent,recentExcused,recentHomeworkMissing:recentHw,consecutiveAbsent,absenceStreak,excused:s.excused});
     }else if(s.riskLevel==='watch')group.watch++;
     else if(s.riskLevel==='untracked')group.untracked++;
     delete s.attendanceHistory;
@@ -288,6 +293,74 @@ function aydaTrackingSummary_(user){
   return {groups:[...byGroup.values()],students:[...byStudent.values()],alerts,
     scope:user.role==='admin'?'all':'own',updatedAt:aydaToday_()};
 }
+
+/** Planlanan dersin bitiminden 12 saat sonra, eksik rapor / eksik yoklamayı saptar.
+ * Uyarılar öğretmen ile yöneticinin girişli panelindedir; otomatik WhatsApp gönderilmez.
+ */
+function aydaReminders_(user){
+ if(user.role!=='admin'&&user.role!=='teacher')throw Error('Giriş gerekli.');
+ const groups=aydaGroups_(user).filter(g=>g.status==='Aktif');
+ const byId=new Map(groups.map(g=>[g.id,g]));
+ const today=aydaToday_(),now=new Date().getTime();
+ const schedules=aydaSchedule_(groups),history=aydaHistory_(user,groups);
+ const existing=new Map(history.map(r=>[r.groupId+'|'+r.date,r]));
+ const attended=new Set(aydaRead_('YOKLAMA').map(r=>String(r['GRUP_ID'])+'|'+aydaDate_(r['TARIH'])));
+ const rosterGroups=new Set(aydaStudentRoster_(user).map(r=>r.groupId)),missing=[];
+ const ref=new Date(today+'T00:00:00Z');
+ for(let back=0;back<=30;back++){
+  const d=new Date(ref.getTime()-back*86400000),date=d.toISOString().slice(0,10),day=aydaWeekday_(date);
+  for(const item of schedules){
+   if(item.day!==day||!byId.has(item.groupId))continue;
+   const group=byId.get(item.groupId);
+   if((group.start&&date<group.start)||(group.end&&date>group.end))continue;
+   const end=String(item.end||'').trim();
+   if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(end))continue;
+   const finish=new Date(date+'T'+end+':00+03:00').getTime();
+   if(!Number.isFinite(finish)||now-finish<12*3600000)continue;
+   const record=existing.get(item.groupId+'|'+date);
+   if(!record)missing.push({type:'report',groupId:group.id,group:group.name,teacherId:group.teacherId,date,end,ageHours:Math.floor((now-finish)/3600000)});
+   else if(record.status==='İşlendi'&&rosterGroups.has(group.id)&&!attended.has(group.id+'|'+date))
+    missing.push({type:'attendance',groupId:group.id,group:group.name,teacherId:group.teacherId,date,end,lessonId:record.id,ageHours:Math.floor((now-finish)/3600000)});
+  }
+ }
+ missing.sort((a,b)=>b.date.localeCompare(a.date)||a.group.localeCompare(b.group));
+ return {thresholdHours:12,scope:user.role==='admin'?'all':'own',total:missing.length,
+  reports:missing.filter(x=>x.type==='report').length,attendance:missing.filter(x=>x.type==='attendance').length,
+  items:missing.slice(0,120),checkedAt:Utilities.formatDate(new Date(),AYDA_TZ,'yyyy-MM-dd HH:mm')};
+}
+/** İsteğe bağlı öğrenci gözlemleri: yalnızca yetkili öğretmen ve yönetici. */
+function aydaStudentNotesSheet_(create){
+ const db=aydaDb_();let sh=db.getSheetByName('OGRENCI_NOTLARI');
+ if(!sh&&create){sh=db.insertSheet('OGRENCI_NOTLARI');sh.appendRow(['NOT_ID','OGRENCI_ID','GRUP_ID','OGRETMEN_ID','NOT','KAYIT_ZAMANI']);sh.setFrozenRows(1);}
+ return sh;
+}
+function aydaStudentNotes_(user,p){
+ const studentId=String((p||{}).studentId||'').trim();
+ const student=aydaStudentRoster_(user).find(s=>s.id===studentId);
+ if(!student)throw Error('Bu öğrencinin notlarına erişim yetkiniz yok.');
+ const sh=aydaStudentNotesSheet_(false);
+ if(!sh||sh.getLastRow()<2)return {studentId,notes:[]};
+ const h=sh.getRange(1,1,1,sh.getLastColumn()).getDisplayValues()[0];
+ const rows=sh.getRange(2,1,sh.getLastRow()-1,h.length).getDisplayValues();
+ const notes=rows.map(r=>Object.fromEntries(h.map((x,i)=>[x,r[i]])))
+ .filter(r=>r['OGRENCI_ID']===studentId&&r['GRUP_ID']===student.groupId)
+ .map(r=>({id:r['NOT_ID'],text:r['NOT'],teacherId:r['OGRETMEN_ID'],created:r['KAYIT_ZAMANI']})).reverse().slice(0,30);
+ return {studentId,notes};
+}
+function aydaSaveStudentNote_(user,p){
+ if(!p||typeof p!=='object')throw Error('Gözlem bilgisi eksik.');
+ const studentId=String(p.studentId||'').trim(),note=String(p.note||'').trim();
+ if(note.length<3||note.length>700)throw Error('Not 3–700 karakter olmalı.');
+ const student=aydaStudentRoster_(user).find(s=>s.id===studentId);
+ if(!student)throw Error('Bu öğrenciye not yazma yetkiniz yok.');
+ const lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  const sh=aydaStudentNotesSheet_(true),id='ON-'+Utilities.getUuid();
+  sh.appendRow([id,student.id,student.groupId,user.id,/^[=+@-]/.test(note)?"'"+note:note,new Date()]);
+  return {saved:true,id};
+ }finally{lock.releaseLock();}
+}
+
 function aydaSetPassword_(user,p){
   if(!p||typeof p!=='object')throw Error('Parola bilgileri eksik.');
   const target=String(p.target||'').trim(),password=String(p.password||'');
@@ -363,6 +436,9 @@ function doGet(e){
     else if(action==='vaultExport')out={ok:true,data:{rows:aydaVaultRows_(user)}};
     else if(action==='studentRoster')out={ok:true,data:{students:aydaStudentRoster_(user)}};
     else if(action==='trackingSummary')out={ok:true,data:aydaTrackingSummary_(user)};
+    else if(action==='reminders')out={ok:true,data:aydaReminders_(user)};
+    else if(action==='studentNotes')out={ok:true,data:aydaStudentNotes_(user,{studentId:p.studentId})};
+    else if(action==='saveStudentNote')out={ok:true,data:aydaSaveStudentNote_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='setPassword')out={ok:true,data:aydaSetPassword_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='save'){
       const input=JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8'));
