@@ -52,6 +52,7 @@ Google giriş / Drive hata sayfası görünüyorsa **GitHub değil Apps Script d
 - Öğrenci listesi ve kişisel devamsızlık raporları yalnızca doğrulanmış girişli panelde gösterilir.
 - Şifresiz `publicDashboard` **öğrenci adları, bireysel yoklama, ödev, öğretmen özel notları, giriş anahtarları veya serbest metin konu bilgileri** döndürmez.
 - Yeni parolalar Script Properties içinde özet değer (hash) olarak saklanır. Eski giriş anahtarları, parola değiştirilene kadar çalışır.
+- **Yeni parola kuralı (16 Ekim 2026):** Yönetici ve tüm öğretmenler için minimum 3 karakterdir; harf, rakam, sembol, boşluk ve bunların kombinasyonları serbesttir. Giriş API'sindeki teknik sınır nedeniyle en fazla 150 karakter kabul edilir. Eski parolalar kullanıcı kendisi değiştirene kadar geçerlidir. Bu kuralın çalışması için güncel `apps-script/Code.gs` yeniden mevcut web uygulamasına **Yeni sürüm** olarak dağıtılmalıdır.
 - **Yazma istekleri ağ hatasında otomatik tekrar edilmez:** dersin iki kez kaydedilmesini önler.
 
 ## Durum
