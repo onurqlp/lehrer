@@ -291,7 +291,7 @@ function aydaPublicDashboard_(){
   const admin={role:'admin',id:'ADMIN',name:'Yönetici'};
   const groups=aydaGroups_(admin).map(g=>({id:g.id,name:g.name,level:g.level,teacherId:g.teacherId,start:g.start,end:g.end,completed:g.completed,total:24,status:g.status,students:Number(g.students)||0}));
   const schedule=aydaSchedule_(groups).map(p=>({groupId:p.groupId,day:p.day,status:p.status,start:p.start,end:p.end}));
-  const history=aydaHistory_(admin,groups).map(r=>({date:r.date,groupId:r.groupId,teacherId:r.teacherId,actual:r.actual,status:r.status,completed:r.completed,topic:String(r.topic||'').slice(0,140)}));
+  const history=aydaHistory_(admin,groups).map(r=>({date:r.date,groupId:r.groupId,teacherId:r.teacherId,actual:r.actual,status:r.status,completed:r.completed}));
   // Özel dersin öğrenci adını, notunu veya diğer özel bilgisini paylaşma.
   const privateHistory=aydaPrivateHistory_(admin).map(r=>({date:r.date,teacherId:r.teacherId,actual:r.actual,status:r.status}));
   const teachers=aydaTeachers_().filter(t=>t.status==='Aktif').map(t=>({id:t.id,name:t.name}));
