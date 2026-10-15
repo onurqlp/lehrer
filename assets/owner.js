@@ -67,7 +67,7 @@
   try{sessionStorage.setItem('aydaOwnerTab',name);}catch(_){}
  }
  async function login(key){
-  if(loading)return;const provided=String(key||'').trim();if(!provided){$('ownerLoginError').textContent='Yönetici parolası gerekli.';return;}
+  if(loading)return;const provided=String(key||'');if(!provided){$('ownerLoginError').textContent='Yönetici parolası gerekli.';return;}
   setLoading(true);$('ownerLoginError').textContent='';errorMessage('');
   try{
    const result=await api('overview',provided);
