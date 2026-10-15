@@ -1,21 +1,21 @@
 # AYDA Akademik Takip
 
 **Öğretmen / girişli yönetici paneli:** https://lehrer.aydadil.com/  
-**Şifresiz salt okunur yönetici akademik özet panosu:** https://lehrer.aydadil.com/yonetici.html
+**Girişli tam yönetici takip merkezi:** https://lehrer.aydadil.com/yonetici.html
 
 
 ## Yeni takip merkezi (15 Ekim 2026)
-- `yonetici.html` parola istemez: herkese açık, salt okunur akademik özet sunar; bireysel öğrenci bilgileri anonim uçta sunulmaz.
-- Şifresiz yönetici menüsü: Genel bakış, Gruplar (ilerleme ve tahmin), Öğretmenler (aylık ders ve CSV).
+- `yonetici.html` yönetici anahtarıyla açılır; öğrenci takibi, yoklama, ödev, ders ve öğretmen özetleri gösterir. Kullanıcı `index.html` üzerinden yönetici olarak giriş yapıp aynı sekmede bu sayfaya geçerse mevcut oturum korunur.
+- Yönetici menüsü: Genel bakış, Öğrenciler (isim, grup, son beş yoklama/ödev), Gruplar (ünite, ilerleme, bitiş tahmini), Öğretmenler (aylık ders, CSV), Ders kayıtları, Uyarılar.
 - Öğretmen ana sayfasında **Öğrencilerim · Takip Merkezi** bulunur. Yeni `trackingSummary` yalnızca öğretmenin yetkili olduğu aktif grupları döndürür.
 - Risk: üst üste 2 mazeretsiz devamsızlık, son 5 yoklamada 3 mazeretsiz devamsızlık veya son 5 ödevde 3 eksik => öncelikli. 1 mazeretsiz devamsızlık ya da son 5'te 2 eksik ödev => takip edilmeli. Kayıt yoksa risk hesaplanmış gibi gösterilmez.
 - **Google tarafında zorunlu işlem:** `apps-script/Code.gs` dosyasının tamamını mevcut **AYDA Akademik Takip CRM** Apps Script projesinin `Kod.gs` dosyasına yapıştır, kaydet; mevcut **Web uygulaması** dağıtımını düzenleyip **Yeni sürüm** olarak yayımla. Erişim: **Herkes**, çalıştıran: **Ben**. Mevcut dağıtım ID'sini değiştirmeyin.
 - Yönetici anahtarı mevcut değilse ilk anahtar kurulmalıdır; daha önce varsa otomatik silinmez. Yönetici anahtarını kimseyle paylaşmayın.
-- `publicDashboard` uç noktası anonim özet verisi döndürür (öğrenci adı, yoklama ve ödev yok); şifresiz yönetici sayfası bu uç noktayı kullanır.
+- `publicDashboard` anonim özet verisi döndürür (öğrenci adı, yoklama ve ödev yok). Ayrıntılı yönetici sayfası ise giriş anahtarı gerektiren `overview` + `trackingSummary` yanıtlarını kullanır.
 
 ## Bileşenler
 - `index.html` + `assets/app.js`: öğretmen ve yönetici girişi, ders raporları, grup yönetimi, kolay parola belirleme.
-- `assets/viewer.js` + `assets/viewer.css`: etkin şifresiz akademik özet panosu. `assets/manager.js` ve `assets/manager.css` henüz kullanılmayan ayrıntılı prototiptir.
+- `assets/manager.js` + `assets/manager.css`: etkin, girişli ayrıntılı yönetici takip merkezi. `assets/viewer.js` ve `assets/viewer.css` önceki anonim özet sürümünden kalmıştır.
 - `assets/teacher-tracking.js` + `assets/teacher-tracking.css`: öğretmenin kendi öğrenci durumları.
 - `assets/attendance-preview.js`: girişten sonra Apps Script `studentRoster` çağrısı, yoklama, mazeret, isteğe bağlı ödev kontrolü; tek rapor kaydı.
 - `assets/viewer.js`: şifresiz akademik pano, **yalnızca** `publicDashboard` salt-okunur çağrısı.
