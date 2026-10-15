@@ -110,7 +110,7 @@ async function load(){
    $('loading').hidden=true;
    $('publicError').textContent=db?'Canlı bağlantı geçici olarak kurulamadı. Son başarılı veriler gösteriliyor; tekrar denemek için Yenile’ye tıklayın.':'Veriler şu anda getirilemedi: '+err.message;
    $('connectionHelp').hidden=false;
-   const testUrl=new URL(apiUrls()[0]);testUrl.searchParams.set('action','publicDashboard');testUrl.searchParams.set('callback','ayda_cb_test123');$('apiTestLink').href=testUrl.toString();
+   const testUrl=new URL(apiUrls()[0]);testUrl.searchParams.set('action','ping');testUrl.searchParams.set('callback','ayda_cb_test123');$('apiTestLink').href=testUrl.toString();
  }finally{loadingNow=false;b.disabled=false;b.textContent='↻ Yenile';}
 }
 $('refresh').hidden=false;$('refresh').addEventListener('click',load);
