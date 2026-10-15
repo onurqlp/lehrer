@@ -3,18 +3,53 @@ const $=id=>document.getElementById(id);let authKey='',data=null,requestNo=0;
 const $el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
 const clear=id=>$(id).replaceChildren();
 function message(id,text,kind='error'){const n=$el('div','message '+kind,text);$(id).replaceChildren(n);}
-function jsonp(action,params={}){
+/* The Google Workspace /a/macros URL may redirect through account selection.
+   Use the public /macros/s URL for the same deployment as a fallback.
+   Never automatically retry a write action: it might already have been saved. */
+let workingApiUrl='';
+function apiCandidates(){
+ const configured=String(window.AYDA_API_URL||'').trim();
+ const match=configured.match(/^https:\/\/script\.google\.com\/a\/macros\/[^/]+\/s\/([^/]+)\/exec$/);
+ const canonical=match?'https://script.google.com/macros/s/'+match[1]+'/exec':configured;
+ return [...new Set([workingApiUrl,canonical,configured].filter(Boolean))];
+}
+function apiTransportError(detail){
+ const err=new Error(detail);err.transport=true;return err;
+}
+function jsonpRequest(api,action,params){
  return new Promise((resolve,reject)=>{
-  const api=String(window.AYDA_API_URL||'').trim();if(!/^https:\/\/script\.google\.com\//.test(api)){reject(Error('API adresi ayarlanmamış.'));return;}
-  const cb='ayda_cb_'+Date.now()+'_'+(++requestNo),url=new URL(api),script=document.createElement('script');let settled=false;
-  const finish=(err,result)=>{if(settled)return;settled=true;delete window[cb];script.remove();clearTimeout(timer);err?reject(err):resolve(result);};
-  const timer=setTimeout(()=>finish(Error('Sunucu yanıt vermedi. Apps Script dağıtım erişimini kontrol edin.')),25000);
-  window[cb]=r=>{if(!r||!r.ok)finish(Error((r&&r.error)||'Bilinmeyen hata.'));else finish(null,r.data);};
+  if(!/^https:\/\/script\.google\.com\/(?:macros\/s\/|a\/macros\/[^/]+\/s\/)/.test(api)){
+   reject(Error('Apps Script API adresi ayarlanmamış.'));return;
+  }
+  const cb='ayda_cb_'+Date.now()+'_'+(++requestNo),url=new URL(api),script=document.createElement('script');
+  let settled=false;
+  const finish=(err,result)=>{if(settled)return;settled=true;clearTimeout(timer);delete window[cb];script.remove();err?reject(err):resolve(result);};
+  const timer=setTimeout(()=>finish(apiTransportError('Apps Script yanıtı zaman aşımına uğradı.')),18000);
+  window[cb]=r=>{if(!r||!r.ok)finish(Error((r&&r.error)||'Sunucudan geçersiz yanıt geldi.'));else finish(null,r.data);};
   url.searchParams.set('callback',cb);url.searchParams.set('action',action);url.searchParams.set('key',authKey);
   for(const [k,v] of Object.entries(params))url.searchParams.set(k,v);
-  script.onerror=()=>finish(Error('API bağlantısı kurulamadı. Apps Script erişimini kontrol edin.'));
+  script.onerror=()=>finish(apiTransportError('Google Apps Script bağlantısı kurulamadı.'));
+  script.onload=()=>{if(!settled)finish(apiTransportError('Google Apps Script JSONP yerine giriş veya hata sayfası döndürdü.'));};
   script.src=url.toString();document.head.append(script);
  });
+}
+async function jsonp(action,params={}){
+ const readOnly=['overview','studentRoster','trackingSummary','vaultExport'].includes(action);
+ const candidates=apiCandidates();
+ let last;
+ for(const address of (readOnly?candidates:candidates.slice(0,1))){
+  try{
+   const response=await jsonpRequest(address,action,params);
+   workingApiUrl=address;
+   return response;
+  }catch(err){
+   last=err;
+   if(!err.transport)throw err;
+  }
+ }
+ if(readOnly&&candidates.length>1)throw Error('Google Apps Script iki adresten de yanıt vermedi. Dağıtımın erişimi “Herkes”, çalıştıranı “Ben” olmalı. '+(last?.message||''));
+ if(last?.transport&&!readOnly)last.unknownCommit=true;
+ throw last||Error('API bağlantısı kurulamadı.');
 }
 function utf8Base64Url(s){const bytes=new TextEncoder().encode(s);let binary='';for(const b of bytes)binary+=String.fromCharCode(b);return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 async function login(key){authKey=String(key||'').trim();$('loginBtn').disabled=true;clear('loginMessage');try{const result=await jsonp('overview');data=result;sessionStorage.setItem('aydaKey',authKey);$('login').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');render();window.dispatchEvent(new Event('ayda:login'));}catch(e){authKey='';message('loginMessage',e.message);}finally{$('loginBtn').disabled=false;}}
@@ -68,7 +103,26 @@ $('groupId').addEventListener('change',()=>{const g=data?.groups.find(x=>x.id===
 $('historyFilter').addEventListener('change',renderHistory);
 $('loginForm').addEventListener('submit',e=>{e.preventDefault();login($('key').value);});
 $('logout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');authKey='';data=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');$('logout').classList.add('hidden');$('key').value='';$('roleChip').textContent='Öğretmen ve Yönetici';history.replaceState(null,'',location.pathname);window.dispatchEvent(new Event('ayda:logout'));});
-$('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$('saveBtn');b.disabled=true;b.textContent='Kaydediliyor...';clear('formMessage');try{const payload={type:$('lessonType').value,student:$('privateStudent').value,groupId:$('groupId').value,date:$('lessonDate').value,unit:Number($('completed').value),completed:Number($('completed').value),actual:$('actual').value,status:$('status').value,topic:'',note:$('note').value.trim()};const tracking=window.AYDA_ATTENDANCE?.collect?.();if(tracking)Object.assign(payload,tracking);const saved=await jsonp('save',{payload:utf8Base64Url(JSON.stringify(payload))});message('formMessage',tracking?(tracking.homeworkEnabled?'Ders raporu, yoklama ve ödev kontrolü kaydedildi.':'Ders raporu ve yoklama kaydedildi.'):'Ders çizelgeye kaydedildi.','success');$('note').value='';window.AYDA_ATTENDANCE?.resetAfterSave?.();data=await jsonp('overview');render();if(data.user.role==='admin')loadTrackingSummary();}catch(err){message('formMessage',err.message);}finally{b.disabled=false;b.textContent='Dersi Kaydet';}});
+$('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$('saveBtn');b.disabled=true;b.textContent='Kaydediliyor...';clear('formMessage');try{
+ const payload={type:$('lessonType').value,student:$('privateStudent').value,groupId:$('groupId').value,date:$('lessonDate').value,unit:Number($('completed').value),completed:Number($('completed').value),actual:$('actual').value,status:$('status').value,topic:'',note:$('note').value.trim()};
+ const tracking=window.AYDA_ATTENDANCE?.collect?.();
+ if(tracking)Object.assign(payload,tracking);
+ const saved=await jsonp('save',{payload:utf8Base64Url(JSON.stringify(payload))});
+ if(!saved?.saved)throw Error('Sunucu kayıt işlemini doğrulamadı.');
+ const trackingVerified=!!tracking&&saved.trackingSaved===true&&saved.attendanceCount===tracking.attendance.length;
+ const confirmation=tracking?(trackingVerified?(tracking.homeworkEnabled?'Ders raporu, yoklama ve ödev kontrolü kaydedildi.':'Ders raporu ve yoklama kaydedildi.'):'Ders raporu kaydedildi ancak yoklama/ödev kaydı doğrulanamadı. Apps Script yeni sürümünü yayımlayın.'):'Ders çizelgeye kaydedildi.';
+ message('formMessage',confirmation,tracking&&!trackingVerified?'error':'success');
+ $('note').value='';
+ window.AYDA_ATTENDANCE?.resetAfterSave?.();
+ try{
+  data=await jsonp('overview');render();
+  if(data.user.role==='admin')loadTrackingSummary();
+ }catch(refreshError){
+  message('formMessage',confirmation+' Liste güncellenemedi; sayfayı yenileyin.',tracking&&!trackingVerified?'error':'success');
+ }
+}catch(err){
+ message('formMessage',err.unknownCommit?'Sunucudan kayıt onayı alınamadı. Yeniden kaydetmeden önce Google Sheets DERS_KAYITLARI sekmesini kontrol edin. ('+err.message+')':err.message);
+}finally{b.disabled=false;b.textContent=window.AYDA_ATTENDANCE?.isConnected?.()?'Dersi ve Yoklamayı Kaydet':'Dersi Kaydet';}});
 
 // Academic planning: one unit per scheduled class date; two further class dates for exam preparation.
 function dateISO(d){return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');}
