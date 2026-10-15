@@ -4,8 +4,7 @@
  const $=id=>document.getElementById(id);
  const el=(tag,cls,label)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(label!==undefined)x.textContent=String(label);return x;};
  const validGroupUrl=value=>{try{const u=new URL(String(value||''));return u.protocol==='https:'&&((u.hostname==='chat.whatsapp.com'&&/^\/[A-Za-z0-9_-]+$/.test(u.pathname))||(u.hostname==='wa.me'&&/^\/[0-9]+$/.test(u.pathname)))?u.href:'';}catch{return '';}};
- const waText=text=>'https://wa.me/905372435123?text='+encodeURIComponent(text);
- const support=el('a','ayda-support','💬 Yardım');support.href=waText('Merhaba, AYDA Akademik Takip paneliyle ilgili yardıma ihtiyacım var.');support.target='_blank';support.rel='noopener noreferrer';support.title='AYDA teknik destek · 0537 243 51 23';document.body.append(support);
+ /* Technical support is a single unobtrusive header action, not a floating promotional button. */
  const root=el('section','ayda-automation hidden');root.id='aydaAutomation';root.setAttribute('aria-label','Hızlı işlemler ve eksik kayıtlar');
  const title=el('div','ayda-auto-title');title.append(el('h2','','Hızlı İşlemler ve Hatırlatmalar'));
  const refresh=el('button','ayda-inline-btn','↻ Yenile');refresh.type='button';title.append(refresh);root.append(title);
