@@ -21,6 +21,8 @@
   list.replaceChildren();
   const valid=statusAvailable()&&!!group;
   byId('attendanceInputs').hidden=!valid;
+  const badge=attendanceBox.querySelector('.attendance-preview-tag');if(badge)badge.textContent=liveRoster?'CANLI':'ÖNİZLEME';
+  const saveButton=byId('saveBtn');if(saveButton&&!saveButton.disabled)saveButton.textContent=liveRoster?'Dersi ve Yoklamayı Kaydet':'Dersi Kaydet';
   if(!valid){const banner=attendanceBox.querySelector('.attendance-caution');if(banner)banner.textContent=liveRoster?'Canlı kayıt hazır. İşlenen bir grup dersini seçerek yoklama alın.':'ÖNİZLEME: Apps Script güncellenene kadar yoklama/ödev kaydedilmez.';empty.textContent=byId('lessonType').value==='private'?'Öğrenci yoklaması grup dersleri için tasarlandı.':!group?'Önce bir grup seçin.':'İptal veya ertelenen derslerde yoklama alınmaz.';empty.hidden=false;counter.textContent='';demoBtn.hidden=true;return;}
   const actual=roster.get(groupId)||[],students=actual.length?actual:(demo?examples:[]);
   demoBtn.hidden=liveRoster||actual.length>0;
