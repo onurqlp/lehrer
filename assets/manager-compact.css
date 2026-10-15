@@ -1,0 +1,109 @@
+
+/* AYDA management: identical functions to the main application, denser alternate presentation. */
+body.manager-compact{--green:#176b59;--dark:#18372d;--bg:#f3f7f4;--line:#dce8e0}
+body.manager-compact header{position:sticky;top:0;z-index:30;box-shadow:0 2px 10px #14372f06}
+body.manager-compact .top{max-width:1440px;padding:11px 22px}
+body.manager-compact .wrap{max-width:1440px;padding:18px 22px 52px}
+body.manager-compact .hero{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:1px 0 10px}
+body.manager-compact .hero h1{font-size:clamp(21px,2.6vw,27px);margin:3px 0}
+body.manager-compact .hero>.muted{font-size:11px}
+body.manager-compact .stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:12px 0}
+body.manager-compact .stats .card{padding:12px 15px;border-radius:12px}
+body.manager-compact .stats .number{font-size:25px;line-height:1.25;margin:5px 0 0}
+body.manager-compact .card{padding:15px;border-radius:13px}
+body.manager-compact .section{margin:16px 0 9px}
+body.manager-compact .section h2{font-size:17px}
+body.manager-compact .adminQuick{padding:10px 13px;border-radius:12px;gap:10px}
+body.manager-compact #adminArea{min-width:0;margin-top:3px}
+body.manager-compact #adminArea .adminNav{position:sticky;top:59px;z-index:18;gap:6px;background:var(--bg);border-bottom:1px solid #dce7de;overflow-x:auto;margin:5px 0 9px;padding:9px 0}
+body.manager-compact .adminNav button{font-size:12px;padding:9px 12px;border-radius:9px}
+body.manager-compact .dash-kpis{gap:8px;margin:9px 0 11px}
+body.manager-compact .dash-kpi{padding:10px 12px;border-radius:10px;gap:3px}
+body.manager-compact .dash-kpi strong{font-size:21px}
+body.manager-compact .academic-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+body.manager-compact .academic-card{padding:13px;border-radius:12px}
+body.manager-compact .academic-top h3{font-size:15px;margin:4px 0 4px}
+body.manager-compact .academic-state{padding:5px 7px}
+body.manager-compact .academic-dates{gap:7px}
+body.manager-compact .unit-tiles{gap:3px}
+body.manager-compact .unit-tile{min-width:0}
+body.manager-compact .dash-controls{gap:9px}
+body.manager-compact .dash-controls label{margin:6px 0}
+body.manager-compact .formgrid{column-gap:12px}
+body.manager-compact label{margin:8px 0 5px}
+body.manager-compact input,body.manager-compact select,body.manager-compact textarea{padding:9px 11px;border-radius:9px}
+body.manager-compact .summarytable{margin-top:8px}
+body.manager-compact .data-table td,body.manager-compact .data-table th{padding:8px 10px;font-size:12px}
+body.manager-compact .tracking-kpis{gap:8px}
+body.manager-compact .tracking-alert{padding:10px}
+body.manager-compact #managerOps[hidden],body.manager-compact #managerStudents360[hidden],body.manager-compact .compact-ops-panel[hidden]{display:none!important}
+.compact-breadcrumb{font-size:11px;text-transform:uppercase;letter-spacing:.11em;font-weight:800;color:#176b59}
+.compact-strip{margin:10px 0;background:#fff;border:1px solid #dde9e1;border-radius:13px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.compact-strip-text strong{font-size:14px;display:block}.compact-strip-text small{font-size:12px;color:#6a7c6f}
+.compact-strip-links{display:flex;flex-wrap:wrap;gap:6px}
+.compact-action{border:1px solid #cedfd3;background:#f6faf7;color:#176b59;border-radius:9px;font-size:12px;font-weight:800;padding:8px 11px;cursor:pointer}
+.compact-action:hover{background:#e6f4eb}
+.compact-action.primary{background:#176b59;color:#fff;border-color:#176b59}
+.compact-insights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:11px 0}
+.compact-insight{background:#fff;border:1px solid #dfeae2;border-radius:12px;padding:12px 14px;min-width:0}
+.compact-insight strong{font-size:13px;display:block;margin:0 0 5px;color:#20392d}
+.compact-insight p{font-size:12px;color:#6a7b70;margin:0;line-height:1.5}
+.compact-insight.danger{border-left:3px solid #bd5260}
+.compact-insight.warn{border-left:3px solid #d5a53e}
+.compact-insight .chip{font-size:10px}
+#managerStudents360{margin:9px 0 0}
+.compact-student-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0}
+.compact-student-head h2{font-size:17px;margin:0}
+.compact-student-count{font-size:12px;color:#60756a}
+.compact-student-filter{display:grid;grid-template-columns:minmax(170px,1.4fr) minmax(140px,1fr) minmax(140px,1fr);gap:10px;background:#fff;border:1px solid #e0ebe3;border-radius:11px;padding:11px;margin-bottom:10px}
+.compact-student-filter label{margin:0;display:flex;flex-direction:column;gap:4px;font-size:11px;color:#4e6859;font-weight:800}
+.compact-student-filter input,.compact-student-filter select{width:100%;margin:0}
+.compact-student-row{border:1px solid #e1eae4;border-radius:11px;background:#fff;margin:0 0 7px;min-width:0;padding:10px 12px}
+.compact-student-main{display:grid;grid-template-columns:minmax(140px,1.4fr) minmax(92px,1fr) minmax(78px,.55fr) minmax(80px,.6fr) minmax(115px,.9fr) minmax(105px,.9fr);gap:12px;align-items:center}
+.compact-student-name{font-size:13px;font-weight:800;color:#1e3b30}
+.compact-student-meta,.compact-student-cell{font-size:12px;color:#4d6657;min-width:0;overflow-wrap:anywhere}
+.compact-student-cell small{display:block;font-size:10px;color:#81958a;margin-bottom:2px}
+.compact-student-risk{display:inline-block;padding:4px 8px;border-radius:20px;font-size:10px;font-weight:800;background:#edf1ee;color:#6c7e72;white-space:nowrap}
+.compact-student-risk.danger{background:#fff0f1;color:#b43a47}
+.compact-student-risk.watch{background:#fff4da;color:#91600a}
+.compact-student-risk.regular{background:#e7f5ed;color:#176b59}
+.compact-student-row details{padding-top:8px;margin-top:8px;border-top:1px solid #edf2ed}
+.compact-student-row summary{font-size:11px;color:#176b59;cursor:pointer;font-weight:800}
+.compact-student-records{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;color:#586f60;font-size:12px}
+.compact-student-records ul{padding-left:17px;margin:4px 0 0}
+.compact-empty{border:1px dashed #bdd4c3;border-radius:12px;background:#fff;padding:24px;text-align:center;color:#66796d;font-size:13px}
+.compact-ops{margin:14px 0}
+.compact-ops-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 15px;border:1px solid #dce6df;background:#fff;border-radius:12px}
+.compact-ops-banner strong{display:block;font-size:14px}
+.compact-ops-banner p{margin:1px 0 0;color:#6a7c71;font-size:11px}
+.compact-ops-nav{display:flex;overflow-x:auto;gap:7px;margin:12px 0}
+.compact-ops-nav button{white-space:nowrap}
+.compact-ops-panel>.section{margin-top:14px}
+.compact-ops-panel>.grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+body.manager-compact .self-password-section{margin:14px 0}
+body.manager-compact #managerOpsPanelDaily .daily{margin:0}
+body.manager-compact .adminNav button[data-target="students360"]{border-color:#bcd9c9}
+@media(max-width:1100px){
+body.manager-compact .academic-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.compact-insights{grid-template-columns:repeat(2,minmax(0,1fr))}
+.compact-student-main{grid-template-columns:minmax(140px,1.2fr) minmax(80px,.8fr) 75px 75px minmax(100px,.8fr)}
+.compact-student-main>.compact-student-cell:nth-child(5){display:none}
+}
+@media(max-width:700px){
+body.manager-compact .wrap{padding:13px 11px 45px}
+body.manager-compact .top{padding:9px 12px}
+body.manager-compact .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.manager-compact .stats .card{padding:10px 11px}
+body.manager-compact .academic-grid{grid-template-columns:1fr}
+body.manager-compact .adminNav{top:49px}
+body.manager-compact .dash-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+.compact-strip{align-items:flex-start}
+.compact-strip-links{width:100%}
+.compact-insights{grid-template-columns:1fr}
+.compact-student-filter{grid-template-columns:1fr}
+.compact-student-main{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:9px}
+.compact-student-main>.compact-student-cell:nth-child(5){display:block}
+.compact-student-cell small{font-size:10px}
+.compact-ops-panel>.grid{grid-template-columns:1fr}
+.compact-ops-banner{align-items:flex-start;flex-direction:column}
+}
