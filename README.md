@@ -4,13 +4,32 @@
 **Girişli tam yönetici takip merkezi:** https://lehrer.aydadil.com/yonetici.html
 
 
+## Yeni akademik takip iş akışı (16 Ekim 2026) — GitHub güncellendi, Apps Script dağıtımı bekliyor
+
+Öğretmene ek zorunlu form yüklemeyen çalışma düzeni:
+
+- **Öğretmen:** Ders ekranına hızlı giriş, WhatsApp grup daveti (yalnızca yönetici tanımlarsa), tüm öğrencileri "Hepsi geldi" ile işaretleme veya tek tek geldi/gelmedi seçimi, mazeretli işaretleme ve isteğe bağlı ödev kontrolü. Yoklama artık varsayılan olarak herkes geldi kabul edilmez; "İşaretlenmedi" ile başlar.
+- **Yoklaması unutulan ders:** Daha önce kaydedilmiş ders raporuna sonradan **ayrı bir yoklama** eklenebilir; ikinci ders raporu oluşmaz. Aynı ders için mükerrer yoklama engellenir.
+- **12 saatlik eksik kayıt tespiti:** Planlı dersin bitiminden 12 saat sonra eksik rapor veya mevcut rapora bağlı eksik yoklama, yetkili **öğretmenin ve yöneticinin** panelinde görünür. Sadece son 30 gün taranır; iptal/ertelendi kaydı mevcutsa eksik sayılmaz. Ders bitiş saati belirtilmemiş programlar taranmaz. Kayıt tamamlanınca yeniden hesaplamada uyarı kendiliğinden kaybolur.
+- **Risk uyarısı:** **Üst üste 3 mazeretsiz devamsızlık** veya **son 4 kontrol edilen ödevin 3'ünün yapılmaması**. Mazeretli devamsızlık katılım istatistiğinde sayılır ancak disiplin uyarısını tetiklemez; "Kontrol edilmedi" ödev başarısızlığı sayılmaz. Risk hesabı salt okunur ve girişli kişiye özeldir.
+- **Öğrenci akademik dosyası:** Sadece yetkili öğretmen/yönetici öğrencinin son yoklama ve ödevlerini görür. Gözlem notu **isteğe bağlıdır**; ilk kayıtla `OGRENCI_NOTLARI` sekmesi oluşur. Yönetici tarafından "Takipte / Çözüldü" işlemi yapılabilir; yeni yoklama/ödevle risk imzası değişirse önceki kapatma otomatik geçersiz olur.
+- **Rapor düzeltme:** Grup dersi raporunun süre veya açıklaması öğretmen ya da yönetici tarafından düzeltilebilir. `RAPOR_DUZELTME_GECMISI` sekmesinde eski ve yeni değerler kaydedilir. Devamsızlık ve ünite ilerlemesi bu işlemde değiştirilmez.
+- **Taslak koruma:** Ders formu taslağı aynı tarayıcı sekmesinin oturumunda saklanır, kayıttan/çıkıştan sonra silinir. Öğrencilerin şifreleri, giriş anahtarları veya yoklama listesi taslağa kaydedilmez.
+- **Yönetici:** Haftalık akademik özet, 12 saatlik eksik kayıt kuyruğu, öğretmene WhatsApp üzerinden elle gönderilebilecek hazır metin (kopyala), öğrencinin istatistiklerini yazdır/PDF, isteğe bağlı takip durumunu güncelle.
+- **Teknik destek:** Öğretmen ve yönetici panolarındaki Yardım bağlantısı **0537 243 51 23** numarasına önceden hazırlanmış WhatsApp mesajı açar. Otomatik mesaj göndermez.
+- **Grup WhatsApp bağlantıları:** Yönetici ana panelde Grup Bilgilerini Düzenle bölümünde `WhatsApp` sütununu güncelleyebilir. Bağlantı girişli öğretmen tarafından görülür, şifresiz panoya aktarılmaz.
+
+**Canlıya alma:** GitHub Pages değişiklikleri yayımlayabilir, ancak `apps-script/Code.gs` otomatik olarak Google Apps Script'e yüklenmez. Önce mevcut `Kod.gs` yedeğini alın; ardından GitHub'daki tam `apps-script/Code.gs` sürümünü kendi Apps Script projenizde yeni sürüm olarak yayımlayın. Bu adım yapılmadığında yeni API eylemleri çalışmaz; mevcut ders raporları korunur. Ders yoklama kaydını ilk kez kullanmadan önce deneme hesabında test edin.
+
+**Bildirim kapsamı:** Bunlar girişli panelde gösterilen otomatik hesaplanmış uyarılardır. Öğretmene/öğrenciye kendiliğinden WhatsApp/SMS veya e-posta **gönderilmez**. Doğrudan otomatik WhatsApp için ayrıca onaylı mesajlaşma entegrasyonu gerekir. İptal/erteleme gibi özel durumlar raporda işaretlenmelidir; bilinmeyen resmî tatiller sistemce otomatik tahmin edilmez.
+
 ## Kurs sahibi takip merkezi (15 Ekim 2026)
 - `yonetici.html` artık **ayrı ve sadece görüntüleme** amaçlı bir yönetici rapor panelidir. Düzenleme, öğretmen oluşturma, grup değiştirme, parola değiştirme, kayıt ekleme/silme, ders kaydetme işlemleri bulunmaz.
 - **Dokuz bölüm:** Genel Bakış; Öğrenciler; Yoklama & Ödev; Gruplar; Ders Kayıtları; Öğretmenler & Saat; Ders Programı; Uyarılar; Hesaplar.
 - Ayrıntılar: Aktif/tüm gruplar, seviye, öğretmen, öğrenci sayısı, müfredat ilerlemesi, planlanan ve tahmini tarihler, haftalık gün/saat, grup ve özel dersler, işlenen konu, öğretmen notu, rapor durumu ve süreleri, öğretmen aylık toplamları/CSV, öğrenci bazında yoklama/ödev istatistikleri, son beş bireysel kayıt, risk uyarıları, öğretmen hesap ve anahtar arşiv durumu.
 - Ana yönetim panelindeki `overview` + `trackingSummary` uç noktalarını mevcut yönetici anahtarıyla **salt okunur** çağırır. Giriş oturumu `index.html` ile aynı sekmede korunur. Veriler menülerde dinamik gösterilir; mobil ve masaüstü için farklı yoğunluklar vardır.
 - **Bu arayüz güncellemesinde Google Apps Script kodu değiştirilmedi; yeni sürüm dağıtmaya gerek yoktur.** Öğretmen sayfasındaki günlük kayıt ve yönetici düzenleme işlemleri `index.html` üzerinden çalışmaya devam eder.
-- Risk sınıflandırması: son beşte üç mazeretsiz devamsızlık veya üst üste iki mazeretsiz devamsızlık ya da beş kontrol edilen ödevden üç eksik = öncelikli. Daha hafif uyarılar = takip edilmeli. Kayıt olmayan öğrenci riskli sayılmaz.
+- Risk sınıflandırması güncellendi: üst üste üç mazeretsiz devamsızlık veya son dört kontrol edilmiş ödevin üçü eksik = öncelikli. Daha hafif durumlar = takip edilmeli; kayıt olmayan öğrenciler riskli sayılmaz.
 
 ## Bileşenler
 - `index.html` + `assets/app.js`: öğretmen ve yönetici girişi, ders raporları, grup yönetimi, kolay parola belirleme.
@@ -18,7 +37,9 @@
 - `assets/owner.js` + `assets/owner.css` + `assets/manager.css`: kurs sahibi için tüm yönetim verilerinin salt okunur, filtrelenebilir ve mobil uyumlu görünümü.
 - `assets/manager.js`, `assets/manager-compact.js`, `assets/viewer.js`: önceki prototipler; `yonetici.html` bunları yüklemez.
 - `assets/teacher-tracking.js` + `assets/teacher-tracking.css`: öğretmenin kendi öğrenci durumları.
-- `assets/attendance-preview.js`: girişten sonra Apps Script `studentRoster` çağrısı, yoklama, mazeret, isteğe bağlı ödev kontrolü; tek rapor kaydı.
+- `assets/attendance-preview.js`: girişten sonra Apps Script `studentRoster` çağrısı, boş başlayan yoklama, toplu geldi, mazeret, isteğe bağlı ödev; aynı tarihte önceden kaydedilmiş rapora eksik yoklama tamamlanabilir.
+- `assets/ayda-workflow.js` / `.css`: yardım, grup WhatsApp hızlı bağlantıları, 12 saatlik eksik kayıt listeleri, taslak koruma.
+- `assets/student-notes.js`: girişli kişilerin öğrenciler için isteğe bağlı akademik gözlem notu eklemesi.
 - `assets/viewer.js`: şifresiz akademik pano, **yalnızca** `publicDashboard` salt-okunur çağrısı.
 - `assets/config.js`: Apps Script dağıtım URL'si.
 - `apps-script/Code.gs`: **tam Apps Script kaynak kodu**; Google Apps Script projesindeki `Kod.gs` ile aynı tutulmalı.
@@ -40,7 +61,7 @@ https://script.google.com/macros/s/DAĞITIM_KİMLİĞİ/exec?action=ping&callbac
 
 Beklenen yanıt:
 ```js
-ayda_cb_test123({"ok":true,"data":{"status":"ok","version":"2026-10-15.4"}});
+ayda_cb_test123({"ok":true,"data":{"status":"ok","version":"2026-10-16.2"}});
 ```
 
 Google giriş / Drive hata sayfası görünüyorsa **GitHub değil Apps Script dağıtım erişimi** sorunludur. Workspace yöneticisi "Herkes" erişimini kısıtlamış olabilir.
@@ -56,4 +77,4 @@ Google giriş / Drive hata sayfası görünüyorsa **GitHub değil Apps Script d
 - **Yazma istekleri ağ hatasında otomatik tekrar edilmez:** dersin iki kez kaydedilmesini önler.
 
 ## Durum
-Kurs sahibi takip merkezi artık yalnızca okumaya yetkilidir ve mevcut Apps Script sürümüyle çalışır. Yeni UI GitHub'da güncellendi, canlı Google verileriyle son tarayıcı kontrolü yapılmalıdır.
+GitHub'daki kaynak ve arayüz güncellendi. Canlı Apps Script sürümü bu GitHub işlemleriyle otomatik değiştirilmedi. Gerçek kullanıcıyla uçtan uca deneme, Apps Script yeni sürüm dağıtımından sonra yapılmalıdır.
