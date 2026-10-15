@@ -10,14 +10,60 @@ function api(){return new Promise((resolve,reject)=>{const address=window.AYDA_A
 const names=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
 function parse(s){const a=String(s||'').split('-').map(Number);return a.length===3&&a.every(Number.isFinite)?new Date(Date.UTC(a[0],a[1]-1,a[2])):null;}
 function iso(d){return d.toISOString().slice(0,10);}function fmt(s){if(!s)return '—';const a=s.split('-');return a.length===3?a[2]+'.'+a[1]+'.'+a[0]:s;}
-function details(g){const completed=Math.max(0,Math.min(24,Number(g.completed)||0)),days=new Set((db.schedule||[]).filter(p=>p.groupId===g.id&&p.status==='Aktif').map(p=>p.day));let unit='Program eksik',exam='Program eksik';if(days.size){let d=parse(g.start>db.today?g.start:db.today),dates=[];if(d){for(let i=0;i<900&&dates.length<26-completed;i++){if(days.has(names[d.getUTCDay()]))dates.push(iso(d));d.setUTCDate(d.getUTCDate()+1);}if(dates.length>=26-completed){unit=completed===24?'Tamamlandı':dates[23-completed];exam=dates[25-completed];}}}return {completed,unit,exam,stage:completed===0?'new':completed>=24?'done':completed>=20?'nearing':'ongoing'};}
+function todayDate(){return parse(db?.today)||parse(iso(new Date()));}
+function diffDays(a,b){const x=parse(a),y=parse(b);return x&&y?Math.round((x-y)/86400000):null;}
+function details(g){
+ const completed=Math.max(0,Math.min(24,Number(g.completed)||0));
+ const start=String(g.start||'').slice(0,10),today=iso(todayDate());
+ const until=diffDays(start,today),upcoming=completed===0&&until!==null&&until>=0&&until<=14;
+ const days=new Set((db.schedule||[]).filter(p=>p.groupId===g.id&&String(p.status||'').toLocaleLowerCase('tr')==='aktif').map(p=>p.day));
+ const remaining=24-completed;
+ let unit='Program eksik',exam='Program eksik',next='Program eksik';
+ if(days.size){
+  const d=parse(start&&start>today?start:today);
+  if(d){
+   const dates=[];
+   for(let i=0;i<900&&dates.length<remaining+2;i++){if(days.has(names[d.getUTCDay()]))dates.push(iso(d));d.setUTCDate(d.getUTCDate()+1);}
+   if(dates.length>=remaining+2){
+    unit=remaining===0?'Tamamlandı':dates[remaining-1];
+    exam=dates[remaining+1];
+    next=dates[0];
+   }
+  }
+ }
+ const stage=completed>=24?'done':upcoming?'upcoming':completed===0?'new':completed>=20?'nearing':'ongoing';
+ return {completed,remaining,unit,exam,next,start,until,stage,weekly:days.size};
+}
 function teacher(id){return(db.teachers||[]).find(t=>t.id===id)?.name||id||'—';}
-function card(g){const d=details(g),a=el('article','group'),heading=el('div','line'),left=el('div');left.append(el('span','level',g.level||''),el('h3','',g.name));heading.append(left,el('span','state '+d.stage,{new:'Başlamadı',ongoing:'Devam ediyor',nearing:'Bitmek üzere',done:'Tamamlandı'}[d.stage]));a.append(heading,el('div','muted',teacher(g.teacherId)+' · '+(Number(g.students)||0)+' öğrenci'));const p=el('div','line');p.append(el('span','big',d.completed+' / 24 ünite'),el('span','muted',Math.round(d.completed/24*100)+'%'));a.append(p);const track=el('div','progress'),bar=el('div');bar.style.width=(d.completed/24*100)+'%';track.append(bar);a.append(track);const tiles=el('div','units');for(let i=1;i<=24;i++){const t=el('span','unit'+(i<=d.completed?' ok':''),i);t.title=i+'. ünite';tiles.append(t);}a.append(tiles);const dates=el('div','dates');for(const [label,val] of [['24. ünite',fmt(d.unit)],['2 ek hazırlık dersi',fmt(d.exam)]]){const box=el('div');box.append(el('small','',label),el('strong','',val));dates.append(box);}a.append(dates);const last=(db.history||[]).filter(h=>h.groupId===g.id&&h.status==='İşlendi').sort((x,y)=>y.date.localeCompare(x.date))[0];a.append(el('div','last',last?'Son ders: '+fmt(last.date)+(last.topic?' • '+last.topic:''):'Henüz ders raporu yok'));return a;}
+function card(g){const d=details(g),a=el('article','group'),heading=el('div','line'),left=el('div');left.append(el('span','level',g.level||''),el('h3','',g.name));heading.append(left,el('span','state '+d.stage,{new:'Başlamadı',ongoing:'Devam ediyor',nearing:'Bitmek üzere',done:'Tamamlandı',upcoming:'Yakında başlıyor'}[d.stage]));a.append(heading,el('div','muted',teacher(g.teacherId)+' · '+(Number(g.students)||0)+' öğrenci'));const p=el('div','line');p.append(el('span','big',d.completed+' / 24 ünite'),el('span','muted',Math.round(d.completed/24*100)+'%'));a.append(p);const track=el('div','progress'),bar=el('div');bar.style.width=(d.completed/24*100)+'%';track.append(bar);a.append(track);const tiles=el('div','units');for(let i=1;i<=24;i++){const t=el('span','unit'+(i<=d.completed?' ok':''),i);t.title=i+'. ünite';tiles.append(t);}a.append(tiles);const dates=el('div','dates');for(const [label,val] of [['24. ünite',fmt(d.unit)],['2 ek hazırlık dersi',fmt(d.exam)]]){const box=el('div');box.append(el('small','',label),el('strong','',val));dates.append(box);}a.append(dates);a.append(el('div','forecast',d.stage==='upcoming'?'🟦 '+(d.until===0?'Bugün başlıyor':d.until+' gün sonra başlayacak')+' · '+fmt(d.start):d.stage==='done'?'🟩 Müfredat tamamlandı':d.unit==='Program eksik'?'⚪ Ders programı eksik':'📅 Haftada '+d.weekly+' ders günü · '+d.remaining+' ünite / '+d.remaining+' ders günü kaldı'));const last=(db.history||[]).filter(h=>h.groupId===g.id&&h.status==='İşlendi').sort((x,y)=>y.date.localeCompare(x.date))[0];a.append(el('div','last',last?'Son ders: '+fmt(last.date)+(last.topic?' • '+last.topic:''):'Henüz ders raporu yok'));return a;}
 function renderGroups(){const all=db.groups||[],target=$('allGroups'),overview=$('overviewGroups');target.replaceChildren();overview.replaceChildren();const l=$('level').value,s=$('stage').value,q=$('search').value.toLocaleLowerCase('tr').trim();const filtered=all.filter(g=>(!l||g.level===l)&&(!s||details(g).stage===s)&&(!q||(g.name+' '+teacher(g.teacherId)).toLocaleLowerCase('tr').includes(q)));for(const g of filtered)target.append(card(g));if(!filtered.length)target.append(el('div','empty','Bu filtreye uygun grup yok.'));for(const g of all.slice().sort((a,b)=>Number(b.completed||0)-Number(a.completed||0)).slice(0,6))overview.append(card(g));if(!all.length)overview.append(el('div','empty','Grup bulunamadı.'));}
-function renderAlerts(){const all=db.groups||[],attention=all.filter(g=>{const x=details(g);return x.stage==='nearing'||x.stage==='done'||x.unit==='Program eksik';}),alerts=$('alerts');alerts.replaceChildren();if(!attention.length){alerts.append(el('div','empty','Acil takip gerektiren grup görünmüyor.'));return;}for(const g of attention){const d=details(g),a=el('div','alert');a.append(el('strong','',g.name+' · '+g.level),el('div','muted',d.unit==='Program eksik'?'Haftalık program eksik veya başlangıç tarihi tanımlanmamış':d.stage==='done'?'24 ünite tamamlandı · Hazırlık derslerini kontrol edin':'Son '+(24-d.completed)+' ünite kaldı · Tahmini bitiş '+fmt(d.unit)));alerts.append(a);}}
+function renderAlerts(){
+ const all=db.groups||[],alerts=$('alerts');alerts.replaceChildren();
+ const attention=all.map(g=>({g,d:details(g)})).filter(x=>x.d.stage==='upcoming'||x.d.stage==='nearing'||x.d.stage==='done'||x.d.unit==='Program eksik');
+ const priority={upcoming:0,nearing:1,done:2,new:3,ongoing:4};
+ attention.sort((a,b)=>(priority[a.d.stage]??5)-(priority[b.d.stage]??5));
+ if(!attention.length){alerts.append(el('div','empty','Şu anda acil takip gerektiren grup yok.'));return;}
+ for(const {g,d} of attention){
+  const a=el('div','alert alert-'+d.stage);
+  const message=d.stage==='upcoming'?'Yeni kurs '+(d.until===0?'bugün başlıyor':d.until+' gün sonra başlıyor')+' · '+fmt(d.start):
+   d.unit==='Program eksik'?'Haftalık ders programı eksik':
+   d.stage==='done'?'24 ünite tamamlandı · Sınav hazırlığını kontrol edin':
+   d.remaining+' ünite kaldı · Tahmini bitiş '+fmt(d.unit);
+  a.append(el('strong','',g.name+' · '+g.level),el('div','muted',message));alerts.append(a);
+ }
+}
 function hours(v){const m=String(v||'').match(/^(\d{1,2}):(\d{2})$/);return m?Number(m[1])+Number(m[2])/60:(Number(v)||0);}
 function renderTeachers(){const month=$('month').value,records=[...(db.history||[]).map(x=>({...x,type:'Grup'})),...(db.privateHistory||[]).map(x=>({...x,type:'Özel'}))].filter(x=>x.date.startsWith(month));const totals=new Map();for(const r of records){const t=totals.get(r.teacherId)||{count:0,group:0,private:0,hours:0,cancel:0};if(r.status==='İşlendi'){t.count++;t.hours+=hours(r.actual);t[r.type==='Özel'?'private':'group']++;}else t.cancel++;totals.set(r.teacherId,t);}monthlyRows=[['Öğretmen','Grup dersi','Özel ders','Toplam ders','Toplam saat','İptal/Erteleme']];for(const [id,x] of totals)monthlyRows.push([teacher(id),x.group,x.private,x.count,x.hours.toLocaleString('tr-TR',{maximumFractionDigits:2}),x.cancel]);$('teacherTotals').replaceChildren();if(totals.size){const wrap=el('div','tableWrap'),table=el('table'),head=el('tr');for(const h of monthlyRows[0])head.append(el('th','',h));table.append(head);for(const row of monthlyRows.slice(1)){const tr=el('tr');for(const x of row)tr.append(el('td','',x));table.append(tr);}wrap.append(table);$('teacherTotals').append(wrap);}else $('teacherTotals').append(el('div','empty','Bu ay için ders raporu bulunmuyor.'));}
-function render(){const gs=db.groups||[],done=gs.filter(g=>Number(g.completed)>=24).length,near=gs.filter(g=>Number(g.completed)>=20&&Number(g.completed)<24).length,students=gs.reduce((n,g)=>n+(Number(g.students)||0),0);$('kpis').replaceChildren();for(const [label,value] of [['Aktif / kayıtlı grup',gs.length],['Toplam öğrenci',students],['Bitmeye yakın',near],['24 ünite tamamlandı',done]]){const c=el('div','kpi');c.append(el('span','label',label),el('strong','',value));$('kpis').append(c);}$('updated').textContent='Son yenileme: '+new Date().toLocaleString('tr-TR');$('month').value ||= db.today.slice(0,7);renderGroups();renderAlerts();renderTeachers();}
+function render(){
+ const gs=db.groups||[],done=gs.filter(g=>details(g).stage==='done').length,near=gs.filter(g=>details(g).stage==='nearing').length,upcoming=gs.filter(g=>details(g).stage==='upcoming').length,students=gs.reduce((n,g)=>n+(Number(g.students)||0),0);
+ $('kpis').replaceChildren();
+ for(const [label,value,tone] of [['Toplam grup',gs.length,''],['Toplam öğrenci',students,''],['Yakında başlayacak',upcoming,'upcoming'],['Bitmeye yakın',near,'nearing'],['24 ünite tamamlandı',done,'done']]){
+  const c=el('div','kpi '+tone);c.append(el('span','label',label),el('strong','',value));$('kpis').append(c);
+ }
+ $('updated').textContent='Son yenileme: '+new Date().toLocaleString('tr-TR');
+ $('month').value ||= (db.today||iso(new Date())).slice(0,7);
+ renderGroups();renderAlerts();renderTeachers();
+}
 let loadingNow=false;
 async function load(){
  if(loadingNow)return;loadingNow=true;
