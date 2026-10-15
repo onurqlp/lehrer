@@ -1,22 +1,26 @@
-# AYDA Akademik Takip — Google Sheets + Apps Script
+# AYDA Akademik Takip — GitHub Pages + Google Sheets
+
+Bu paket `lehrer.aydadil.com` için hazırlanmıştır. Google Sheets veritabanı değiştirilmez.
 
 ## Kurulum
-1. Mevcut **AYDA – Akademik Takip Veritabanı** Google Sheet'inde **Uzantılar > Apps Komut Dosyası** açın.
-2. `apps-script/Code.gs` içeriğini Apps Script'teki `Kod.gs` dosyasına yapıştırın.
-3. Sol tarafta **+ > HTML** ile adı **Index** olan dosya açın; `apps-script/Index.html` içeriğini yapıştırın.
-4. Kaydedin. Fonksiyon listesinden `kurulumAYDA` seçip **Çalıştır**'a basın ve Google izinlerini onaylayın.
-5. **Yürütme günlüğü** içinde oluşturulan admin ve öğretmen PIN'lerini bir kez not edin. Bunları kimseyle toplu paylaşmayın. Bu dosyada veya GitHub'da saklamayın.
-6. **Dağıt > Yeni dağıtım > Web uygulaması**: **Şu kişi olarak yürüt: Ben**; **Erişimi olanlar: Herkes**. Bu seçeneğin anlamı: bağlantı herkese açık olsa da veri işlemleri uygulama içindeki PIN ve rol kontrolüyle korunur. Bu bir başlangıç güvenlik modelidir; daha güçlü kimlik doğrulama ve hız sınırlaması olmadan hassas öğrenci verilerini yüklemeyin.
-7. Oluşan `/exec` URL'sini `github/config.js` dosyasında `window.AYDA_APPS_SCRIPT_URL` alanına yazın.
-8. GitHub Pages için yalnızca `github/` klasöründeki **index.html ve config.js** dosyalarını deponun köküne yükleyin. Apps Script kodu GitHub'dan değil Apps Script üzerinden çalışır.
-9. Önce yönetici olarak giriş yapıp eksik ders programlarını, mevcut tamamlanan üniteleri ve özel ders öğrencilerini ekleyin.
 
-## Önemli
-- GitHub Pages yalnızca **giriş bağlantısını** gösterir. Gerçek uygulama Google Apps Script üzerinde çalışır. Bu, tarayıcıdan doğrudan Apps Script'e yapılan çapraz-kaynak isteklerinde oluşabilecek sorunları önler.
-- Google Sheet'i öğretmenlerle **paylaşmayın**. Öğretmenler uygulamadan kendi PIN'leriyle giriş yapar.
-- Ders süresi: grup **40 dk**, özel **50 dk**. 90 dakikalık bir grup oturumu varsayılan **2 ders saati + 10 dk ara** olarak tanımlandı; gerekirse yönetici düzeltir.
-- Başlangıç verileri **10 grup**, **5 isimlendirilmiş öğretmen** ve bilinen P-Ç-C programlarıdır. CNC programlarının bazı saatleri, atanamayan öğretmenler ve mevcut üniteler boş bırakılmıştır.
-- Ders raporu her program/tarih için tek kayıttır. Hatalı kaydın düzeltilmesi şu an yönetici tarafından Sheet'te yapılır; bu ilk sürümün bir sınırlamasıdır.
-- Bu sürüm **başlangıç üretim adayıdır**, kurulumdan önce canlı çalıştığı doğrulanmış değildir. Gerçek öğrenci kişisel verilerini eklemeden önce PIN yenileme, giriş deneme sınırlaması, güvenli kurtarma, kayıt düzeltme akışı, denetim ve yedekleme testleri tamamlanmalıdır.
-- Google Apps Script CacheService oturumları en fazla 6 saat saklar, erken sona erebilir.
-- Ücretsiz Google kotaları, Google'ın hizmet koşulları ve değişebilen limitlerine tabidir.
+1. `onurqlp/lehrer` GitHub deposuna `index.html`, `assets/`, `CNAME`, `README.md` yükleyin (eski `github/` yönlendirme sayfası kullanılmaz).
+2. `AYDA Ogretmen Sistemi` Apps Script projesinde eski `Kod.gs` içeriğini `apps-script/Code.gs` içeriğiyle değiştirin. Aynı adlı eski fonksiyonların bulunduğu diğer `.gs` dosyalarını kaldırın. `AnahtarKurulum.gs` dosyasını dağıtımdan önce kaldırın (anahtar hash'leri Script Properties'te kalır).
+3. Apps Script: **Dağıt > Dağıtımları yönet > Yeni sürüm**, **Şu kullanıcı olarak çalıştır: Ben**, **Erişim: Herkes**. Apps Script'in verdiği `/exec` adresi `assets/config.js` içindeki `AYDA_API_URL` ile aynı olmalı. Farklıysa config'i değiştirin.
+4. Öğretmenler için daha önce oluşturulan `AYDA_GIRIS_U002` ... `AYDA_GIRIS_U006` Script Properties değerleri aynı projede kalmalıdır. `KULLANICILAR` durumları `Aktif` olmalıdır.
+5. Yönetici erişimi için Apps Script düzenleyicisinde `aydaAdminKeyOlustur` fonksiyonunu **bir kez** çalıştırın. Drive'da oluşan `AYDA - GIZLI YONETICI ANAHTARI` tablosundaki anahtarla giriş yapın.
+6. `https://lehrer.aydadil.com/?key=OGRETMEN_ANAHTARI` öğretmene özel bağlantıdır. Alternatif olarak anahtarı giriş ekranına yapıştırabilirler.
+
+## İşlevler
+
+- Öğretmen bazında gruplar, haftalık ders programı, bugünkü dersler, müfredat ilerlemesi
+- Ders raporu oluşturma; aynı grup ve gün için mükerrer kayıt engeli
+- Ders rapor geçmişi; yönetici için tüm gruplar ve raporlar
+- Mevcut `GRUPLAR`, `HAFTALIK_PROGRAM`, `KULLANICILAR`, `DERS_KAYITLARI` tabloları
+
+## Teknik notlar
+
+- GitHub Pages statik olduğu ve Apps Script'in tarayıcı CORS kısıtlamaları bulunduğu için API JSONP kullanır. Bu, rapor kaydetme işlemini GET üzerinden yapar; kurumsal üretim ortamında POST tabanlı bir API/proxy tercih edilir. Kullanıcı giriş anahtarı sunucu tarafında her istekte doğrulanır. Tokenlar URL'de ve tarayıcı oturum belleğinde bulunabilir.
+- GitHub deposunda gizli giriş anahtarları yoktur. `assets/config.js` içindeki Apps Script URL'si gizli anahtar değildir.
+- GitHub Pages yayın klasörü `/(root)` olarak ayarlanmış olmalıdır.
+- Apps Script web uygulaması için `Herkes` erişimi gereklidir; aksi halde tarayıcıdan API istekleri giriş sayfasına yönlenir.
