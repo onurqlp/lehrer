@@ -1,26 +1,18 @@
-# AYDA Akademik Takip — GitHub Pages + Google Sheets
+# AYDA Akademik Takip — Tam Çizelge Sürümü
 
-Bu paket `lehrer.aydadil.com` için hazırlanmıştır. Google Sheets veritabanı değiştirilmez.
+## Ne yapar?
+- Öğretmen: tek ekranda günlük grup veya özel ders kaydı, ders süresi, ünite ve isteğe bağlı konu/not.
+- Yönetici: tüm gruplar ve son konular, aylık öğretmen bazlı işlenen ders sayısı ve saat toplamı, CSV indirme.
+- Veritabanı: mevcut Google Sheets `GRUPLAR`, `KULLANICILAR`, `HAFTALIK_PROGRAM`, `DERS_KAYITLARI` korunur. Özel ders kaydı için `AYDA_OZEL_DERS_CIZELGESI` ilk kayıt sırasında otomatik açılır.
 
-## Kurulum
+## Yükleme (2 işlem)
+1. ZIP içindeki `index.html`, `assets/`, `CNAME`, `README.md` dosyalarını GitHub `onurqlp/lehrer` deposunun köküne yükleyin (eski dosyaların üzerine).
+2. `apps-script/Code.gs` içeriğini **AYDA Ogretmen Sistemi** projesindeki `Kod.gs` ile tamamen değiştirin; kaydedin; **Dağıt > Dağıtımları yönet > Düzenle > Yeni sürüm > Dağıt**. Eski dağıtım URL'sini koruyun.
 
-1. `onurqlp/lehrer` GitHub deposuna `index.html`, `assets/`, `CNAME`, `README.md` yükleyin (eski `github/` yönlendirme sayfası kullanılmaz).
-2. `AYDA Ogretmen Sistemi` Apps Script projesinde eski `Kod.gs` içeriğini `apps-script/Code.gs` içeriğiyle değiştirin. Aynı adlı eski fonksiyonların bulunduğu diğer `.gs` dosyalarını kaldırın. `AnahtarKurulum.gs` dosyasını dağıtımdan önce kaldırın (anahtar hash'leri Script Properties'te kalır).
-3. Apps Script: **Dağıt > Dağıtımları yönet > Yeni sürüm**, **Şu kullanıcı olarak çalıştır: Ben**, **Erişim: Herkes**. Apps Script'in verdiği `/exec` adresi `assets/config.js` içindeki `AYDA_API_URL` ile aynı olmalı. Farklıysa config'i değiştirin.
-4. Öğretmenler için daha önce oluşturulan `AYDA_GIRIS_U002` ... `AYDA_GIRIS_U006` Script Properties değerleri aynı projede kalmalıdır. `KULLANICILAR` durumları `Aktif` olmalıdır.
-5. Yönetici erişimi için Apps Script düzenleyicisinde `aydaAdminKeyOlustur` fonksiyonunu **bir kez** çalıştırın. Drive'da oluşan `AYDA - GIZLI YONETICI ANAHTARI` tablosundaki anahtarla giriş yapın.
-6. `https://lehrer.aydadil.com/?key=OGRETMEN_ANAHTARI` öğretmene özel bağlantıdır. Alternatif olarak anahtarı giriş ekranına yapıştırabilirler.
-
-## İşlevler
-
-- Öğretmen bazında gruplar, haftalık ders programı, bugünkü dersler, müfredat ilerlemesi
-- Ders raporu oluşturma; aynı grup ve gün için mükerrer kayıt engeli
-- Ders rapor geçmişi; yönetici için tüm gruplar ve raporlar
-- Mevcut `GRUPLAR`, `HAFTALIK_PROGRAM`, `KULLANICILAR`, `DERS_KAYITLARI` tabloları
-
-## Teknik notlar
-
-- GitHub Pages statik olduğu ve Apps Script'in tarayıcı CORS kısıtlamaları bulunduğu için API JSONP kullanır. Bu, rapor kaydetme işlemini GET üzerinden yapar; kurumsal üretim ortamında POST tabanlı bir API/proxy tercih edilir. Kullanıcı giriş anahtarı sunucu tarafında her istekte doğrulanır. Tokenlar URL'de ve tarayıcı oturum belleğinde bulunabilir.
-- GitHub deposunda gizli giriş anahtarları yoktur. `assets/config.js` içindeki Apps Script URL'si gizli anahtar değildir.
-- GitHub Pages yayın klasörü `/(root)` olarak ayarlanmış olmalıdır.
-- Apps Script web uygulaması için `Herkes` erişimi gereklidir; aksi halde tarayıcıdan API istekleri giriş sayfasına yönlenir.
+## Önemli
+- Yönetici girişi mevcut yönetici anahtarıyla, öğretmenler kendi anahtarlarıyla devam eder.
+- Saatler **ders süresidir**, ödeme miktarı değildir; ücret hesaplaması kurumun saatlik ücretlerine göre ayrıca yapılır.
+- `İptal` ve `Ertelendi` kayıtları ders saati toplamına katılmaz.
+- Grup için aynı gün ikinci rapor kabul edilmez; özel derste aynı öğrenci/öğretmen/gün tekrarı engellenir.
+- Güvenlik: GitHub Pages + Apps Script JSONP API, giriş anahtarlarını URL içinde taşır; bu yaklaşımın üretim ortamında erişim kayıtları ve URL geçmişi açısından riskleri vardır. Anahtarları GitHub'a koymayın, paylaşılan anahtarları yenileyin. Para bordrosu kesinleştirmeden önce Sheets ile karşılaştırın.
+- Canlı Google hesabına erişim olmadan uçtan uca test yapılamaz; JavaScript sözdizimi ve dosya paketi yerel olarak doğrulanmıştır.
