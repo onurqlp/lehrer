@@ -6,7 +6,7 @@
  const showEmpty=(id,label)=>$(id).replaceChildren(node('div','owner-empty',label));
  const formats={danger:'Öncelikli',watch:'Takip edilmeli',regular:'Düzenli',untracked:'Henüz veri yok'};
  const days=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
- let token='',overview=null,tracking=null,loading=false,requestIndex=0,lessonLimit=40,tab='overview',exportRows=[];
+ let token='',overview=null,tracking=null,reminders=null,loading=false,requestIndex=0,lessonLimit=40,tab='overview',exportRows=[];
  const API=String(window.AYDA_API_URL||'').trim();
  const fmt=x=>/^\d{4}-\d{2}-\d{2}$/.test(String(x||''))?x.slice(8,10)+'.'+x.slice(5,7)+'.'+x.slice(0,4):(x||'—');
  const round=(n,d)=>d?Math.round(n/d*100)+'%':'—';
@@ -37,7 +37,7 @@
   if(!m)return [API];
   return [...new Set(['https://script.google.com/a/macros/aydadil.com/s/'+m[1]+'/exec','https://script.google.com/a/aydadil.com/macros/s/'+m[1]+'/exec','https://script.google.com/macros/s/'+m[1]+'/exec'])];
  };
- function apiRequest(url,action,key){
+ function apiRequest(url,action,key,params={}){
   return new Promise((resolve,reject)=>{
    if(!/^https:\/\/script\.google\.com\/(?:a\/macros\/[^/]+\/s\/|a\/[^/]+\/macros\/s\/|macros\/s\/)/.test(url)){reject(Error('API adresi geçersiz.'));return;}
    const cb='ayda_cb_'+Date.now()+'_'+(++requestIndex),script=document.createElement('script'),u=new URL(url);
@@ -46,15 +46,15 @@
    const transport=msg=>{const e=Error(msg);e.transport=true;return e;};
    const timer=setTimeout(()=>finish(transport('Google yanıtı zaman aşımına uğradı.')),12000);
    window[cb]=result=>result?.ok?finish(null,result.data):finish(Error(result?.error||'Sunucu geçersiz cevap verdi.'));
-   u.searchParams.set('action',action);u.searchParams.set('callback',cb);u.searchParams.set('key',key);
+   u.searchParams.set('action',action);u.searchParams.set('callback',cb);u.searchParams.set('key',key);for(const [k,v] of Object.entries(params))u.searchParams.set(k,v);
    script.onerror=()=>finish(transport('Google Apps Script bağlantısı kurulamadı.'));
    script.onload=()=>{if(!finished)finish(transport('Apps Script beklenen yanıtı döndürmedi.'));};
    script.src=u.toString();document.head.append(script);
   });
  }
- async function api(action,key){
-  let err;
-  for(const address of candidates()){try{return await apiRequest(address,action,key);}catch(e){err=e;if(!e.transport)throw e;}}
+ async function api(action,key,params={}){
+  const readOnly=['overview','trackingSummary','reminders','studentNotes','vaultExport'].includes(action);let err;
+  for(const address of (readOnly?candidates():candidates().slice(0,1))){try{return await apiRequest(address,action,key,params);}catch(e){err=e;if(!e.transport)throw e;}}
   throw err||Error('Google Apps Script bağlantısı kurulamadı.');
  }
  const errorMessage=message=>{$('ownerError').textContent=message||'';};
@@ -86,6 +86,7 @@
  async function loadTracking(){
   try{const result=await api('trackingSummary',token);if(result?.scope!=='all')throw Error('Google Apps Script takip sürümü güncel değil.');tracking=result;errorMessage('');}
   catch(e){tracking=null;errorMessage('Öğrenci yoklama/ödev verisi yüklenemedi: '+e.message+' · Diğer akademik bilgiler gösteriliyor.');}
+  try{reminders=await api('reminders',token);}catch(e){reminders=null;}
   renderAll();
  }
  async function refresh(){
@@ -114,16 +115,17 @@
    kpi('Eksik ödev',tracking?att.reduce((n,g)=>n+g.homeworkMissing,0):'—','Kontrol edilen kayıtlar','warn'),
    kpi('Öncelikli öğrenci',tracking?(tracking.alerts||[]).length:'—','Takip uyarıları','danger')
   );
-  $('ownerAlertBadge').textContent=tracking?'('+(tracking.alerts||[]).length+')':'';
+  $('ownerAlertBadge').textContent=(tracking||reminders)?'('+((tracking?.alerts||[]).length+(reminders?.total||0))+')':'';
   $('ownerUpdated').textContent='Güncellendi: '+new Date().toLocaleString('tr-TR');
  }
  function renderHighlights(){
   const root=$('ownerHighlights');root.replaceChildren();
   const alerts=tracking?.alerts||[],near=activeGroups().filter(g=>unit(g)-unitsDone(g)<=3&&unit(g)>unitsDone(g));
   const coming=activeGroups().filter(g=>g.start&&g.start>=today()&&difference(g.start,today())<=7);
+  if(reminders?.total){const r=add(root,'article','note-card warn');add(r,'strong','',reminders.total+' eksik akademik kayıt');add(r,'p','','Rapor: '+reminders.reports+' · Yoklama: '+reminders.attendance+' · 12 saat eşiği');r.append(quick('Eksiklere git →',()=>activate('alerts')));}
   for(const a of alerts.slice(0,5)){
    const c=add(root,'article','note-card danger');add(c,'strong','',a.name+' · '+a.group);
-   const p=[];if(a.consecutiveAbsent)p.push('Arka arkaya devamsızlık');if(a.recentAbsent)p.push('Son 5 derste '+a.recentAbsent+' mazeretsiz devamsızlık');if(a.recentHomeworkMissing)p.push(a.recentHomeworkMissing+' eksik ödev');
+   const p=[];if(a.consecutiveAbsent)p.push('Üst üste '+(a.absenceStreak||3)+' mazeretsiz devamsızlık');if(a.recentHomeworkMissing)p.push('Son 4 kontrol edilen ödevde '+a.recentHomeworkMissing+' eksik');
    add(c,'p','',p.join(' · '));
    c.append(quick('Öğrenciye git →',()=>{activate('students');$('ownerStudentSearch').value=a.name;renderStudents();}));
   }
@@ -305,7 +307,7 @@
  }
  $('ownerLoginForm').addEventListener('submit',e=>{e.preventDefault();login($('ownerKey').value);});
  $('ownerRefresh').addEventListener('click',refresh);
- $('ownerLogout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');token='';overview=null;tracking=null;$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';});
+ $('ownerLogout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');token='';overview=null;tracking=null;reminders=null;$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';});
  $('ownerNav').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)activate(b.dataset.tab);});
  for(const b of document.querySelectorAll('[data-jump]'))b.addEventListener('click',()=>activate(b.dataset.jump));
  for(const id of ['ownerStudentSearch','ownerStudentGroup','ownerStudentStatus','ownerStudentSort'])$(id).addEventListener(id==='ownerStudentSearch'?'input':'change',renderStudents);
