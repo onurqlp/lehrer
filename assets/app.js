@@ -36,7 +36,7 @@ function jsonpRequest(api,action,params){
  });
 }
 async function jsonp(action,params={}){
- const readOnly=['overview','studentRoster','trackingSummary','vaultExport'].includes(action);
+ const readOnly=['overview','studentRoster','trackingSummary','vaultExport','reminders','studentNotes'].includes(action);
  const candidates=apiCandidates();
  let last;
  for(const address of (readOnly?candidates:candidates.slice(0,1))){
@@ -55,10 +55,11 @@ async function jsonp(action,params={}){
 }
 function utf8Base64Url(s){const bytes=new TextEncoder().encode(s);let binary='';for(const b of bytes)binary+=String.fromCharCode(b);return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 async function login(key){authKey=String(key||'');$('loginBtn').disabled=true;clear('loginMessage');try{const result=await jsonp('overview');data=result;sessionStorage.setItem('aydaKey',authKey);$('login').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');render();window.dispatchEvent(new Event('ayda:login'));}catch(e){authKey='';message('loginMessage',e.message);}finally{$('loginBtn').disabled=false;}}
+function safeWhatsappLink(value){try{const u=new URL(String(value||''));return u.protocol==='https:'&&((u.hostname==='chat.whatsapp.com'&&/^\/[A-Za-z0-9_-]+$/.test(u.pathname))||(u.hostname==='wa.me'&&/^\/[0-9]+$/.test(u.pathname)))?u.href:'';}catch{return '';}}
 function rowcard(title,subtitle,tag){const n=$el('div','card rowcard'),left=$el('div');left.append($el('strong','',title),$el('div','muted',subtitle));n.append(left,$el('span','tag',tag));return n;}
 function render(){const u=data.user,admin=u.role==='admin',groups=data.groups,schedule=data.schedule,history=data.history;$('roleChip').textContent=admin?'Yönetici Paneli':'Öğretmen Paneli';$('welcome').textContent='Merhaba, '+u.name;$('dateLine').textContent='Bugün: '+data.today;$('groupTitle').textContent=admin?'Tüm Gruplar':'Gruplarım';$('groupCount').textContent=groups.length;$('todayCount').textContent=data.todayLessons.length;$('reportCount').textContent=history.length;$('studentCount').textContent=groups.reduce((n,g)=>n+(Number(g.students)||0),0);$('lessonDate').value=data.today; $('monthFilter').value=data.today.slice(0,7);$('lessonDate').max=data.today;
  clear('todayLessons');if(!data.todayLessons.length)$('todayLessons').append($el('div','card empty','Bugün planlanan ders bulunmuyor.'));for(const p of data.todayLessons)$('todayLessons').append(rowcard(p.group,p.day,p.start+' – '+p.end));
- clear('groups');for(const g of groups){const card=$el('div','card');card.append($el('span','tag',g.level),$el('h3','',g.name),$el('div','muted','Öğrenci: '+g.students+' · Öğretmen ID: '+g.teacherId),$el('div','muted','Tamamlanan ünite: '+g.completed+' / '+g.total));const progress=$el('div','progress'),fill=$el('div');fill.style.width=(g.total?Math.min(100,100*g.completed/g.total):0)+'%';progress.append(fill);card.append(progress);$('groups').append(card);}if(!groups.length)$('groups').append($el('div','card empty','Aktif grup bulunamadı.'));
+ clear('groups');for(const g of groups){const card=$el('div','card');card.append($el('span','tag',g.level),$el('h3','',g.name),$el('div','muted','Öğrenci: '+g.students+' · Öğretmen ID: '+g.teacherId),$el('div','muted','Tamamlanan ünite: '+g.completed+' / '+g.total));const progress=$el('div','progress'),fill=$el('div');fill.style.width=(g.total?Math.min(100,100*g.completed/g.total):0)+'%';progress.append(fill);card.append(progress);const wa=safeWhatsappLink(g.whatsapp);if(wa){const link=$el('a','ayda-group-link','💬 Grup WhatsApp ↗');link.href=wa;link.target='_blank';link.rel='noopener noreferrer';card.append(link);}$('groups').append(card);}if(!groups.length)$('groups').append($el('div','card empty','Aktif grup bulunamadı.'));
  clear('schedule');for(const p of schedule)$('schedule').append(rowcard(p.day+' · '+p.group,p.status,p.start+' – '+p.end));if(!schedule.length)$('schedule').append($el('div','card empty','Haftalık program bulunamadı.'));
  clear('groupId');$('groupId').append(new Option('Grup seçin',''));clear('historyFilter');$('historyFilter').append(new Option('Tüm gruplar',''));for(const g of groups){$('groupId').append(new Option(g.name,g.id));$('historyFilter').append(new Option(g.name,g.id));}renderHistory();renderAdmin();}
 function hours(s){if(typeof s==='number')return s;const m=String(s||'').match(/^(\d{1,2}):(\d{2})$/);return m?Number(m[1])+Number(m[2])/60:0;}
@@ -109,7 +110,11 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  const payload={type:$('lessonType').value,student:$('privateStudent').value,groupId:$('groupId').value,date:$('lessonDate').value,unit:Number($('completed').value),completed:Number($('completed').value),actual:$('actual').value,status:$('status').value,topic:'',note:$('note').value.trim()};
  const tracking=window.AYDA_ATTENDANCE?.collect?.();
  if(tracking)Object.assign(payload,tracking);
- const saved=await jsonp('save',{payload:utf8Base64Url(JSON.stringify(payload))});
+ const previous=payload.type==='group'?(data?.history||[]).find(r=>r.groupId===payload.groupId&&r.date===payload.date):null;
+ const oldAttendance=!!previous;
+ if(previous&&previous.status!=='İşlendi')throw Error('Bu tarihte zaten iptal/erteleme kaydı var. Yönetimden kontrol isteyin.');
+ if(previous&&!tracking)throw Error('Ders raporu zaten kayıtlı. Eksik yoklama için öğrenci listesini işaretleyin.');
+ const saved=oldAttendance?await jsonp('saveAttendance',{payload:utf8Base64Url(JSON.stringify({groupId:payload.groupId,date:payload.date,...tracking}))}):await jsonp('save',{payload:utf8Base64Url(JSON.stringify(payload))});
  if(!saved?.saved)throw Error('Sunucu kayıt işlemini doğrulamadı.');
  const trackingVerified=!!tracking&&saved.trackingSaved===true&&saved.attendanceCount===tracking.attendance.length;
  const confirmation=tracking?(trackingVerified?(tracking.homeworkEnabled?'Ders raporu, yoklama ve ödev kontrolü kaydedildi.':'Ders raporu ve yoklama kaydedildi.'):'Ders raporu kaydedildi ancak yoklama/ödev kaydı doğrulanamadı. Apps Script yeni sürümünü yayımlayın.'):'Ders çizelgeye kaydedildi.';
@@ -122,6 +127,7 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  }catch(refreshError){
   message('formMessage',confirmation+' Liste güncellenemedi; sayfayı yenileyin.',tracking&&!trackingVerified?'error':'success');
  }
+ window.dispatchEvent(new Event('ayda:saved'));
 }catch(err){
  message('formMessage',err.unknownCommit?'Sunucudan kayıt onayı alınamadı. Yeniden kaydetmeden önce Google Sheets DERS_KAYITLARI sekmesini kontrol edin. ('+err.message+')':err.message);
 }finally{b.disabled=false;b.textContent='Dersi Kaydet';}});
@@ -139,7 +145,7 @@ function futureLessons(g,count){
 }
 function plan(g){const total=Number(g.total)||24,remaining=Math.max(0,total-Number(g.completed||0)),dates=futureLessons(g,remaining+2);if(!dates)return {unit:'Program eksik',exam:'Program eksik',remaining};return {unit:remaining?dates[remaining-1]:'Tamamlandı',exam:dates[remaining+1],remaining};}
 function fillAdminSelectors(){const ts=$('newGroupTeacher'),old=ts.value;ts.replaceChildren(new Option('Öğretmen seçin',''));for(const t of data.teachers||[])if(t.status==='Aktif')ts.add(new Option(t.name+' ('+t.id+')',t.id));ts.value=old;const es=$('editGroupId'),prev=es.value;es.replaceChildren(new Option('Grup seçin',''));for(const g of data.groups)es.add(new Option(g.name+' · '+g.level,g.id));es.value=prev;syncEditGroup();if(!$('newGroupStart').value)$('newGroupStart').value=data.today;}
-function syncEditGroup(){const g=data?.groups.find(x=>x.id===$('editGroupId').value);$('editCompleted').value=g?g.completed:'';$('editStudents').value=g?g.students:'';}
+function syncEditGroup(){const g=data?.groups.find(x=>x.id===$('editGroupId').value);$('editCompleted').value=g?g.completed:'';$('editStudents').value=g?g.students:'';if($('editGroupWhatsapp'))$('editGroupWhatsapp').value=g?.whatsapp||'';}
 $('editGroupId').addEventListener('change',syncEditGroup);
 function academicStage(g){const n=Math.max(0,Math.min(24,Number(g.completed)||0));return n===0?'new':n>=24?'done':n>=20?'nearing':'ongoing';}
 function academicDate(s){if(!s||s==='Program eksik'||s==='Tamamlandı')return s||'—';const [y,m,d]=s.split('-');return d+'.'+m+'.'+y;}
@@ -164,7 +170,7 @@ for(const id of ['academicLevel','academicStatus','academicSearch'])$(id).addEve
 async function adminAction(action,payload,output,button){button.disabled=true;clear(output);try{const r=await jsonp(action,{payload:utf8Base64Url(JSON.stringify(payload))});if(r.key){const msg=$el('div','message success','Yeni öğretmen '+r.name+' ('+r.teacherId+') oluşturuldu. Giriş anahtarı yalnızca burada gösterilir.');const area=$el('textarea');area.value=r.key;area.readOnly=true;area.rows=3;$(output).append(msg,area);}else message(output,(r.name||r.id||'Kayıt')+' başarıyla kaydedildi.','success');data=await jsonp('overview');render();}catch(e){message(output,e.message);}finally{button.disabled=false;}}
 $('teacherCreateForm').addEventListener('submit',e=>{e.preventDefault();adminAction('createTeacher',{name:$('newTeacherName').value.trim()},'teacherCreateResult',e.submitter||$('teacherCreateForm').querySelector('button'));});
 $('groupCreateForm').addEventListener('submit',e=>{e.preventDefault();const days=[...$('newGroupDays').querySelectorAll('input:checked')].map(x=>x.value);if(!days.length){message('groupCreateResult','En az bir ders günü seçin.');return;}adminAction('createGroup',{name:$('newGroupName').value.trim(),level:$('newGroupLevel').value,teacherId:$('newGroupTeacher').value,start:$('newGroupStart').value,students:Number($('newGroupStudents').value),total:Number($('newGroupTotal').value),completed:0,days,time:$('newGroupTime').value,end:$('newGroupEnd').value},'groupCreateResult',e.submitter||$('groupCreateForm').querySelector('button'));});
-$('groupUpdateForm').addEventListener('submit',e=>{e.preventDefault();adminAction('updateGroup',{id:$('editGroupId').value,completed:Number($('editCompleted').value),students:Number($('editStudents').value)},'groupUpdateResult',e.submitter||$('groupUpdateForm').querySelector('button'));});
+$('groupUpdateForm').addEventListener('submit',e=>{e.preventDefault();adminAction('updateGroup',{id:$('editGroupId').value,completed:Number($('editCompleted').value),students:Number($('editStudents').value),whatsapp:$('editGroupWhatsapp').value.trim()},'groupUpdateResult',e.submitter||$('groupUpdateForm').querySelector('button'));});
 
 /** Student detail stays inside the authenticated manager screen; never in publicDashboard. */
 function fillPasswordTargets(){
@@ -194,7 +200,7 @@ async function loadTrackingSummary(){
    for(const a of alerts.slice(0,40)){
     const item=$el('div','tracking-alert'),left=$el('div');
     left.append($el('strong','',a.name),$el('div','muted',a.group));
-    const details=$el('span','tracking-warning',(a.consecutiveAbsent?'Arka arkaya devamsızlık · ':'')+'Son 5 ders: '+a.recentAbsent+' mazeretsiz devamsızlık · '+a.recentHomeworkMissing+' ödev eksik');
+    const details=$el('span','tracking-warning',(a.consecutiveAbsent?'Üst üste '+(a.absenceStreak||3)+' devamsızlık · ':'')+'Son 4 kontrolde '+a.recentHomeworkMissing+' eksik ödev');
     item.append(left,details);list.append(item);
    }
    root.append(list);
@@ -206,7 +212,7 @@ async function loadTrackingSummary(){
    const tr=$el('tr');for(const value of [g.name,g.students,percent(g.present,g.present+g.absent),g.excused,percent(g.homeworkDone,g.homeworkDone+g.homeworkMissing)])tr.append($el('td','',value));table.append(tr);
   }
   const scroll=$el('div','summarytable');scroll.append(table);root.append(scroll);
-  root.append($el('p','tiny','Uyarılar: son 5 derste 3 mazeretsiz devamsızlık, üst üste 2 mazeretsiz devamsızlık veya son 5 kontrol edilen ödevden 3 eksik. Mazeretliler ayrıca gösterilir; kontrol edilmeyen ödevler eksik sayılmaz.'));
+  root.append($el('p','tiny','Uyarılar: üst üste 3 mazeretsiz devamsızlık veya son 4 kontrol edilen ödevden 3 eksik. Mazeretliler ayrıca gösterilir; kontrol edilmeyen ödevler eksik sayılmaz.'));
  }catch(e){root.replaceChildren($el('p','muted','Öğrenci takip raporu henüz etkin değil: '+e.message));}
 }
 $('passwordForm').addEventListener('submit',async e=>{
