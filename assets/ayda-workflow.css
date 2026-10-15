@@ -31,3 +31,12 @@
 .ayda-group-link{display:inline-block;margin:10px 0 0;font-size:12px;color:#176b59;font-weight:750}
 @media(max-width:680px){.ayda-auto-metrics{grid-template-columns:repeat(3,1fr)}.ayda-auto-metric{padding:9px}.ayda-auto-metric strong{font-size:20px}.ayda-auto-title h2{font-size:16px}.ayda-auto-line{align-items:stretch}.ayda-auto-line>span,.ayda-auto-copy{flex-basis:100%}.ayda-inline-btn{flex:1}.ayda-support{right:12px;bottom:12px}}
 @media print{.ayda-support,.ayda-automation{display:none!important}}
+/* Teacher correction editor and quick attendance actions */
+.attendance-head{flex-wrap:wrap}
+#attendanceMarkAll{background:#dff1e6;color:#125b44;border-color:#9fcab0}
+.ayda-history-edit{margin-top:10px;border-top:1px solid #e2e9e4;padding-top:10px}
+.ayda-history-edit summary{font-size:12px;color:#176b59;font-weight:750;cursor:pointer}
+.ayda-history-edit textarea,.ayda-history-edit input{width:100%;max-width:100%;box-sizing:border-box;border:1px solid #cadfd2;border-radius:9px;padding:10px;margin:8px 0;font:inherit}
+.ayda-history-edit textarea{min-height:75px}
+.ayda-history-edit button{margin:4px 0}
+@media(max-width:680px){.attendance-head button{flex:1}.ayda-support{padding:12px 15px}}
