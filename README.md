@@ -16,3 +16,11 @@
 - Grup için aynı gün ikinci rapor kabul edilmez; özel derste aynı öğrenci/öğretmen/gün tekrarı engellenir.
 - Güvenlik: GitHub Pages + Apps Script JSONP API, giriş anahtarlarını URL içinde taşır; bu yaklaşımın üretim ortamında erişim kayıtları ve URL geçmişi açısından riskleri vardır. Anahtarları GitHub'a koymayın, paylaşılan anahtarları yenileyin. Para bordrosu kesinleştirmeden önce Sheets ile karşılaştırın.
 - Canlı Google hesabına erişim olmadan uçtan uca test yapılamaz; JavaScript sözdizimi ve dosya paketi yerel olarak doğrulanmıştır.
+
+
+## Güncel kullanım
+- Öğretmen çizelgesinde yalnızca 1/2/3/4 saat seçilir.
+- İşlenen ünite alanı kaldırıldı; yalnızca son tamamlanan ünite ve zorunlu kısa bilgi bulunur. Eski 13 sütunlu veritabanı korunur, işlenen ünite alanına son tamamlanan ünite değeri yazılır.
+- Yönetici panelinde Giriş Anahtarı Yönetimi: aktif öğretmen veya yönetici anahtarını yeniler; yeni anahtar bir defa gösterilir, eski anahtar anında geçersiz olur.
+- İlk yönetici anahtarı mevcut Apps Script kurulumuyla oluşturulmuş olmalıdır. Anahtar yenileme için yönetici girişi gerekir.
+- Güvenlik notu: mevcut mimari JSONP/GET üzerinden anahtar taşır. URL geçmişi ve günlüklerinde açığa çıkma riski nedeniyle üretimde güvenli POST tabanlı API mimarisine geçiş önerilir.
