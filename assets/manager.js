@@ -9,17 +9,28 @@
  const riskLabel={danger:'Öncelikli',watch:'Takip edilmeli',regular:'Düzenli',untracked:'Henüz veri yok'};
  const fmt=date=>/^\d{4}-\d{2}-\d{2}$/.test(String(date||''))?date.slice(8)+'.'+date.slice(5,7)+'.'+date.slice(0,4):(date||'—');
  const today=()=>overview?.today||new Date().toISOString().slice(0,10);
- function api(action,key){
+ async function api(action,key){
+  const id=API.match(/\/s\/([A-Za-z0-9_-]+)\/exec(?:$|\?)/)?.[1];
+  const root='https://script.google.com/';
+  const sources=id?[root+'a/macros/aydadil.com/s/'+id+'/exec',root+'a/aydadil.com/macros/s/'+id+'/exec',root+'macros/s/'+id+'/exec']:[API];
+  let last;
+  for(const url of [...new Set(sources)]){
+    try{return await apiAt(url,action,key);}
+    catch(error){last=error;if(!error.transport)throw error;}
+  }
+  throw last||Error('Google API bağlantısına ulaşılamadı.');
+ }
+ function apiAt(address,action,key){
   return new Promise((resolve,reject)=>{
-   if(!/^https:\/\/script\.google\.com\/(?:macros\/s\/|a\/macros\/[^/]+\/s\/)/.test(API)){reject(Error('Google API adresi eksik.'));return;}
-   const cb='ayda_cb_'+Date.now()+'_'+(++seq),script=document.createElement('script'),url=new URL(API);
+   if(!/^https:\/\/script\.google\.com\/(?:macros\/s\/|a\/macros\/[^/]+\/s\/|a\/[^/]+\/macros\/s\/)/.test(address)){reject(Error('Google API adresi eksik.'));return;}
+   const cb='ayda_cb_'+Date.now()+'_'+(++seq),script=document.createElement('script'),url=new URL(address);
    let done=false;
    const finish=(err,val)=>{if(done)return;done=true;clearTimeout(timer);script.remove();delete window[cb];err?reject(err):resolve(val);};
-   const timer=setTimeout(()=>finish(Error('Google sunucusundan yanıt gelmedi.')),20000);
+   const timer=setTimeout(()=>{const e=Error('Google sunucusundan yanıt gelmedi.');e.transport=true;finish(e);},12000);
    window[cb]=answer=>answer?.ok?finish(null,answer.data):finish(Error(answer?.error||'Sunucu yanıtı geçersiz.'));
    url.searchParams.set('callback',cb);url.searchParams.set('action',action);url.searchParams.set('key',key);
-   script.onerror=()=>finish(Error('Google Apps Script bağlantısına ulaşılamadı.'));
-   script.onload=()=>{if(!done)finish(Error('Apps Script geçerli JSONP yanıtı üretmedi.'));};
+   script.onerror=()=>{const e=Error('Google Apps Script bağlantısına ulaşılamadı.');e.transport=true;finish(e);};
+   script.onload=()=>{if(!done){const e=Error('Apps Script geçerli JSONP yanıtı üretmedi.');e.transport=true;finish(e);}};
    script.src=url.toString();document.head.append(script);
   });
  }
