@@ -1,10 +1,22 @@
 # AYDA Akademik Takip
 
 **Öğretmen / girişli yönetici paneli:** https://lehrer.aydadil.com/  
-**Herkese açık, salt-okunur akademik pano:** https://lehrer.aydadil.com/yonetici.html
+**Girişli, ayrıntılı yönetici takip merkezi:** https://lehrer.aydadil.com/yonetici.html
+
+
+## Yeni takip merkezi (15 Ekim 2026)
+- Yönetici sayfası artık **giriş gerektirir**. Yönetici parolası ile API'nin `overview` ve `trackingSummary` yanıtlarını okur; öğrenci adları anonim uçtan alınmaz.
+- Yönetici menüsü: Genel bakış, Öğrenciler (arama/grup/durum, son 5 yoklama/ödev), Gruplar (ilerleme ve tahmin), Öğretmenler (aylık ders ve CSV), Ders kayıtları, Uyarılar.
+- Öğretmen ana sayfasında **Öğrencilerim · Takip Merkezi** bulunur. Yeni `trackingSummary` yalnızca öğretmenin yetkili olduğu aktif grupları döndürür.
+- Risk: üst üste 2 mazeretsiz devamsızlık, son 5 yoklamada 3 mazeretsiz devamsızlık veya son 5 ödevde 3 eksik => öncelikli. 1 mazeretsiz devamsızlık ya da son 5'te 2 eksik ödev => takip edilmeli. Kayıt yoksa risk hesaplanmış gibi gösterilmez.
+- **Google tarafında zorunlu işlem:** `apps-script/Code.gs` dosyasının tamamını mevcut **AYDA Akademik Takip CRM** Apps Script projesinin `Kod.gs` dosyasına yapıştır, kaydet; mevcut **Web uygulaması** dağıtımını düzenleyip **Yeni sürüm** olarak yayımla. Erişim: **Herkes**, çalıştıran: **Ben**. Mevcut dağıtım ID'sini değiştirmeyin.
+- Yönetici anahtarı mevcut değilse ilk anahtar kurulmalıdır; daha önce varsa otomatik silinmez. Yönetici anahtarını kimseyle paylaşmayın.
+- `publicDashboard` uç noktası anonim özet verisi döndürür (öğrenci adı, yoklama ve ödev yok); yönetici sayfası artık bu uç noktayı kullanmaz.
 
 ## Bileşenler
 - `index.html` + `assets/app.js`: öğretmen ve yönetici girişi, ders raporları, grup yönetimi, kolay parola belirleme.
+- `assets/manager.js` + `assets/manager.css`: girişli yönetici akademik takip merkezi.
+- `assets/teacher-tracking.js` + `assets/teacher-tracking.css`: öğretmenin kendi öğrenci durumları.
 - `assets/attendance-preview.js`: girişten sonra Apps Script `studentRoster` çağrısı, yoklama, mazeret, isteğe bağlı ödev kontrolü; tek rapor kaydı.
 - `assets/viewer.js`: şifresiz akademik pano, **yalnızca** `publicDashboard` salt-okunur çağrısı.
 - `assets/config.js`: Apps Script dağıtım URL'si.
