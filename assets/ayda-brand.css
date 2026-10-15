@@ -172,3 +172,13 @@ body.ayda-internal button:disabled{cursor:not-allowed}
  body.ayda-internal .topright{gap:5px}
  body.ayda-internal .ayda-auto-line>button{white-space:normal}
 }
+
+/* 320px phone: keep essential controls visible without horizontal overflow. */
+@media(max-width:359px){
+ body.ayda-internal .ayda-brand-name{display:none}
+ body.ayda-internal .topright,body.ayda-internal .top-actions{gap:4px}
+ body.ayda-internal .top-actions .nav-link{display:none}
+ body.ayda-internal .ayda-header-help{padding:8px}
+ body.ayda-internal .logout,body.ayda-internal #ownerLogout{padding:8px}
+}
+body.ayda-teacher[data-ayda-role="admin"] .ayda-main-nav a[href="#teacherTracking"]{display:none}
