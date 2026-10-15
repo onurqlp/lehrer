@@ -1,12 +1,11 @@
 "use strict";
-/* Frontend prototype only. No student CSV, attendance, or homework is transmitted or saved.
-   Google Apps Script must provide a secure roster endpoint and save handling before activation. */
+/* Roster is fetched only after authenticated sign-in. Legacy backend safely remains in preview mode. */
 (()=>{
  const byId=id=>document.getElementById(id);
  const node=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=String(text);return el;};
  const attendanceBox=byId('attendancePreview');
  if(!attendanceBox)return;
- let roster=new Map(),rows=new Map(),demo=false,homeworkEnabled=false,activeGroup='';
+ let roster=new Map(),rows=new Map(),demo=false,homeworkEnabled=false,activeGroup='',liveRoster=false,rosterError='';
  const examples=[{id:'sample-1',name:'Örnek Öğrenci 1'},{id:'sample-2',name:'Örnek Öğrenci 2'},{id:'sample-3',name:'Örnek Öğrenci 3'},{id:'sample-4',name:'Örnek Öğrenci 4'}];
  const normalize=s=>String(s||'').trim().toLocaleLowerCase('tr-TR').replace(/\s+/g,' ').replace(/[‐‑–—]/g,'-');
  const statusAvailable=()=>byId('lessonType').value==='group'&&byId('status').value==='İşlendi';
@@ -17,18 +16,21 @@
  function chooser(label,items){const box=make('div','attendance-cell');box.append(make('div','attendance-label',label));const options=make('div','attendance-options');for(const [name,selected,cls,handler] of items)options.append(button(name,selected,cls,handler));box.append(options);return box;}
  function renderRoster(){
   const group=pickGroup(),groupId=group?String(group.id):'';
-  if(groupId!==activeGroup){activeGroup=groupId;rows.clear();demo=false;}
+  if(groupId!==activeGroup){activeGroup=groupId;rows.clear();demo=false;if(byId('attendanceReviewed'))byId('attendanceReviewed').checked=false;}
   const list=byId('attendanceStudentList'),empty=byId('attendanceEmpty'),counter=byId('attendanceCounts'),demoBtn=byId('attendanceDemoButton');
   list.replaceChildren();
   const valid=statusAvailable()&&!!group;
   byId('attendanceInputs').hidden=!valid;
   if(!valid){empty.textContent=byId('lessonType').value==='private'?'Öğrenci yoklaması grup dersleri için tasarlandı.':!group?'Önce bir grup seçin.':'İptal veya ertelenen derslerde yoklama alınmaz.';empty.hidden=false;counter.textContent='';demoBtn.hidden=true;return;}
   const actual=roster.get(groupId)||[],students=actual.length?actual:(demo?examples:[]);
-  demoBtn.hidden=actual.length>0;
+  demoBtn.hidden=liveRoster||actual.length>0;
   demoBtn.textContent=demo?'Örnek listeyi kapat':'4 örnek öğrenciyle ekranı dene';
   empty.hidden=students.length>0;
-  empty.textContent='Bu grubun öğrenci listesi henüz bağlı değil. Yönetici CSV yükleyerek geçici önizleme yapabilir. Kalıcı kayıt için Apps Script bağlantısı gerekli.';
-  byId('attendanceGroupName').textContent=group.name+' · '+(actual.length?actual.length+' öğrenci (CSV önizleme)':'öğrenci listesi bekleniyor');
+  empty.textContent=liveRoster?'Bu gruba atanmış öğrenci bulunamadı. OGRENCILER tablosunda grup ID eşleşmesini kontrol edin.':('Bu grubun öğrenci listesi henüz bağlı değil. '+(rosterError?'Apps Script: '+rosterError+' · ':'')+'Yoklama şimdilik önizleme modunda.');
+  byId('attendanceGroupName').textContent=group.name+' · '+(actual.length?actual.length+' öğrenci'+(liveRoster?' (canlı yoklama)':' (CSV önizleme)'):'öğrenci listesi bekleniyor');
+  const review=byId('attendanceReview');if(review)review.hidden=!liveRoster||!actual.length;
+  const caution=attendanceBox.querySelector('.attendance-caution');if(caution)caution.textContent=liveRoster?'Canlı kayıt hazır. Yoklamayı ve varsa ödevleri kontrol edin; ders raporuyla birlikte tek tuşla kaydedilecek.':'ÖNİZLEME: Yoklama ve ödev bu aşamada kaydedilmez. Dersi Kaydet yalnızca mevcut ders raporunu kaydeder. '+(rosterError?'Sunucu mesajı: '+rosterError:'');
+  const tag=attendanceBox.querySelector('.attendance-preview-tag');if(tag)tag.textContent=liveRoster?'CANLI':'ÖNİZLEME';
   byId('attendanceHomeworkPanel').hidden=!homeworkEnabled;
   for(const student of students){
    const s=stateFor(student.id),row=make('div','attendance-student');
@@ -85,6 +87,7 @@
  if(csvInput){
   csvInput.addEventListener('change',async()=>{
    csvResults.replaceChildren();roster=new Map();rows.clear();demo=false;
+   if(liveRoster){csvMessage.textContent='Öğrenciler doğrudan Google Sheets OGRENCILER sekmesinden yükleniyor. CSV önizlemesi artık gerekli değil.';csvInput.value='';renderRoster();return;}
    const file=csvInput.files&&csvInput.files[0];
    if(!file){csvMessage.textContent='Dosya seçilmedi.';renderRoster();return;}
    if(file.size>2*1024*1024){csvMessage.textContent='Dosya 2 MB sınırını geçiyor.';renderRoster();return;}
@@ -128,5 +131,43 @@
    renderRoster();
   });
  }
+ async function syncRoster(){
+  const signed=typeof data!=='undefined'&&data&&data.user;
+  if(!signed)return;
+  liveRoster=false;rosterError='';roster=new Map();rows.clear();demo=false;
+  const review=byId('attendanceReviewed');if(review)review.checked=false;
+  renderRoster();
+  try{
+   const result=await jsonp('studentRoster');
+   if(!result||!Array.isArray(result.students))throw Error('Öğrenci listesi yanıtı geçersiz.');
+   for(const student of result.students){
+    const id=String(student.groupId||''),studentId=String(student.id||''),name=String(student.name||'');
+    if(!id||!studentId||!name)continue;
+    if(!roster.has(id))roster.set(id,[]);
+    roster.get(id).push({id:studentId,name});
+   }
+   liveRoster=true;
+  }catch(err){rosterError=String(err.message||err);}
+  renderRoster();
+ }
+ window.AYDA_ATTENDANCE={
+  collect(){
+   if(!liveRoster||!statusAvailable())return null;
+   const group=pickGroup();if(!group)return null;
+   const students=roster.get(String(group.id))||[];
+   if(!students.length)throw Error('Bu grubun yoklama listesi boş. Yöneticinizden öğrenci eşleştirmesini kontrol etmesini isteyin.');
+   if(!byId('attendanceReviewed')?.checked)throw Error('Kaydetmeden önce “Yoklamayı kontrol ettim” kutusunu işaretleyin.');
+   return {homeworkEnabled,attendance:students.map(s=>{
+    const r=stateFor(s.id);
+    return {studentId:s.id,status:r.present?'Geldi':'Gelmedi',excused:!r.present&&r.excused,homework:homeworkEnabled?r.homework==='done'?'Yaptı':r.homework==='missing'?'Yapmadı':'Kontrol edilmedi':'Kontrol edilmedi'};
+   })};
+  },
+  resetAfterSave(){
+   rows.clear();const review=byId('attendanceReviewed');if(review)review.checked=false;renderRoster();
+  },
+  isConnected(){return liveRoster;}
+ };
+ window.addEventListener('ayda:login',syncRoster);
+ window.addEventListener('ayda:logout',()=>{roster=new Map();rows.clear();liveRoster=false;rosterError='';demo=false;renderRoster();});
  renderRoster();
 })();
