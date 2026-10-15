@@ -5,7 +5,7 @@
  const node=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=String(text);return el;};
  const attendanceBox=byId('attendancePreview');
  if(!attendanceBox)return;
- let roster=new Map(),rows=new Map(),demo=false,homeworkEnabled=false,activeGroup='',liveRoster=false,rosterLoading=false,rosterError='';
+ let roster=new Map(),rows=new Map(),demo=false,homeworkEnabled=false,activeGroup='',activeDate='',liveRoster=false,rosterLoading=false,rosterError='';
  const examples=[{id:'sample-1',name:'Örnek Öğrenci 1'},{id:'sample-2',name:'Örnek Öğrenci 2'},{id:'sample-3',name:'Örnek Öğrenci 3'},{id:'sample-4',name:'Örnek Öğrenci 4'}];
  const normalize=s=>String(s||'').trim().toLocaleLowerCase('tr-TR').replace(/\s+/g,' ').replace(/[‐‑–—]/g,'-');
  const statusAvailable=()=>byId('lessonType').value==='group'&&byId('status').value==='İşlendi';
@@ -16,13 +16,14 @@
  function chooser(label,items){const box=make('div','attendance-cell');box.append(make('div','attendance-label',label));const options=make('div','attendance-options');for(const [name,selected,cls,handler] of items)options.append(button(name,selected,cls,handler));box.append(options);return box;}
  function renderRoster(){
   const group=pickGroup(),groupId=group?String(group.id):'';
-  if(groupId!==activeGroup){activeGroup=groupId;rows.clear();demo=false;if(byId('attendanceReviewed'))byId('attendanceReviewed').checked=false;}
+  const selectedDate=byId('lessonDate').value;
+  if(groupId!==activeGroup||selectedDate!==activeDate){activeGroup=groupId;activeDate=selectedDate;rows.clear();demo=false;if(byId('attendanceReviewed'))byId('attendanceReviewed').checked=false;}
   const list=byId('attendanceStudentList'),empty=byId('attendanceEmpty'),counter=byId('attendanceCounts'),demoBtn=byId('attendanceDemoButton');
   list.replaceChildren();
   const valid=statusAvailable()&&!!group;
   byId('attendanceInputs').hidden=!valid;
   const badge=attendanceBox.querySelector('.attendance-preview-tag');if(badge)badge.textContent=liveRoster?'CANLI':'ÖNİZLEME';
-  const saveButton=byId('saveBtn');if(saveButton&&!saveButton.disabled)saveButton.textContent=liveRoster?'Dersi ve Yoklamayı Kaydet':'Dersi Kaydet';
+  const saveButton=byId('saveBtn');if(saveButton&&!saveButton.disabled)saveButton.textContent=liveRoster&&valid?'Dersi ve Yoklamayı Kaydet':'Dersi Kaydet';
   if(!valid){const banner=attendanceBox.querySelector('.attendance-caution');if(banner)banner.textContent=liveRoster?'Canlı kayıt hazır. İşlenen bir grup dersini seçerek yoklama alın.':'ÖNİZLEME: Apps Script güncellenene kadar yoklama/ödev kaydedilmez.';empty.textContent=byId('lessonType').value==='private'?'Öğrenci yoklaması grup dersleri için tasarlandı.':!group?'Önce bir grup seçin.':'İptal veya ertelenen derslerde yoklama alınmaz.';empty.hidden=false;counter.textContent='';demoBtn.hidden=true;return;}
   const actual=roster.get(groupId)||[],students=actual.length?actual:(demo?examples:[]);
   demoBtn.hidden=liveRoster||actual.length>0;
@@ -49,12 +50,14 @@
     check.type='checkbox';check.checked=s.excused;check.addEventListener('change',()=>{s.excused=check.checked;renderRoster();});
     excuse.append(check,document.createTextNode('Mazeretli (isteğe bağlı)'));controls.append(excuse);
    }
-   if(homeworkEnabled){
+   if(homeworkEnabled&&s.present){
     controls.append(chooser('Bugünkü ödev',[
      ['Yaptı',s.homework==='done','did',()=>{s.homework='done';renderRoster();}],
      ['Yapmadı',s.homework==='missing','missing',()=>{s.homework='missing';renderRoster();}],
      ['Kontrol edilmedi',s.homework==='unchecked','unchecked',()=>{s.homework='unchecked';renderRoster();}]
     ]));
+   }else if(homeworkEnabled&&!s.present){
+    controls.append(make('div','attendance-label','Ödev: Gelmediği için kontrol edilmedi'));
    }
    row.append(controls);list.append(row);
   }
@@ -88,8 +91,9 @@
  const csvInput=byId('studentCsvPreview'),csvMessage=byId('studentCsvMessage'),csvResults=byId('studentCsvResults');
  if(csvInput){
   csvInput.addEventListener('change',async()=>{
-   csvResults.replaceChildren();roster=new Map();rows.clear();demo=false;
-   if(liveRoster){csvMessage.textContent='Öğrenciler doğrudan Google Sheets OGRENCILER sekmesinden yükleniyor. CSV önizlemesi artık gerekli değil.';csvInput.value='';renderRoster();return;}
+   csvResults.replaceChildren();
+   if(liveRoster){csvMessage.textContent='Öğrenciler Google Sheets OGRENCILER sekmesinden otomatik yükleniyor. CSV karşılaştırması yoklama listesini değiştirmez.';csvInput.value='';renderRoster();return;}
+   roster=new Map();rows.clear();demo=false;
    const file=csvInput.files&&csvInput.files[0];
    if(!file){csvMessage.textContent='Dosya seçilmedi.';renderRoster();return;}
    if(file.size>2*1024*1024){csvMessage.textContent='Dosya 2 MB sınırını geçiyor.';renderRoster();return;}
