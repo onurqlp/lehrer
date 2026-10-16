@@ -96,7 +96,22 @@
   fillMissing();fillStudent();messageTeacher();
   $('aydaMsgContactMeta').textContent=rows().length+' öğretmen profili · '+roster().length+' öğrenci. Telefon bilgileri yalnızca yönetici girişiyle getirilir.';
  }
+
+ function paintInboxOverview(){
+  const preview=$('ownerInboxPreview');if(!preview)return;
+  preview.replaceChildren();
+  if(!inbox)return;
+  const list=inbox.rows||[],newCount=list.filter(r=>r.status==='Yeni').length;
+  const btn=node('button','ayda-owner-inbox-link');btn.type='button';
+  const title=node('strong','',newCount?'Öğretmenlerden '+newCount+' yeni mesaj':'Öğretmen geri bildirimleri');
+  const sub=node('span','',newCount?'Yeni fikir veya sorunları incelemek için Mesaj Merkezi’ni açın.':(list.length?'Tüm geri bildirimler incelenmiş görünüyor.':'Henüz öğretmenlerden mesaj yok.'));
+  btn.append(title,sub,node('span','', 'Mesaj Merkezi →'));
+  btn.addEventListener('click',()=>bridge()?.openTab('messages'));
+  preview.append(btn);
+ }
+
  function showInbox(){
+  paintInboxOverview();
   feedbacks.replaceChildren();
   if(!inbox){feedbacks.append(node('p','ayda-auto-subtle','Öğretmen geri bildirimi servisi için Apps Script güncellenmelidir.'));return;}
   const list=inbox.rows||[];const unopened=list.filter(m=>m.status==='Yeni').length;
@@ -192,7 +207,7 @@
 
  window.addEventListener('ayda:owner-ready',load);
  window.addEventListener('ayda:owner-logout',()=>{
-  loadNo++;contacts=null;inbox=null;students.replaceChildren();teachers.replaceChildren();dateSelect.replaceChildren();feedbacks.replaceChildren();
+  loadNo++;contacts=null;inbox=null;students.replaceChildren();teachers.replaceChildren();dateSelect.replaceChildren();feedbacks.replaceChildren();$('ownerInboxPreview')?.replaceChildren();
   teacherText.value='';studentText.value='';studentSearch.value='';$('aydaMsgContactMeta').textContent='Giriş yapın.';feedbackStatus.textContent='';
  });
  if(bridge()?.ready())load();
