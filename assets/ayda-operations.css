@@ -84,3 +84,79 @@ body.ayda-manager #owner-messages{scroll-margin-top:115px}
 .ayda-note-shortcuts>span{color:var(--ayda-muted);font-size:11px;font-weight:650;width:100%}
 .ayda-note-shortcuts .ayda-inline-btn{font-size:11px;padding:7px 10px;min-height:40px;white-space:normal}
 @media(max-width:390px){.ayda-note-shortcuts .ayda-inline-btn{flex:1 1 44%}}
+
+/* Manager-first navigation and secondary settings */
+body.ayda-is-admin .ayda-main-nav{display:none}
+body.ayda-is-admin #adminArea{margin-top:20px;min-width:0}
+body.ayda-is-admin .ayda-admin-operations-title{margin:28px 0 10px;border-top:1px solid var(--ayda-border);padding-top:22px}
+body.ayda-is-admin .ayda-admin-operations-title h2{margin:0 0 5px;font-size:21px;color:var(--ayda-navy)}
+body.ayda-is-admin .ayda-admin-operations-title p{margin:0;font-size:12px}
+.ayda-admin-priorities{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.ayda-admin-priorities>div:first-child{display:flex;flex-direction:column;gap:4px;max-width:490px}
+.ayda-admin-priorities>div:first-child>span{font-size:12px;line-height:1.6}
+.ayda-admin-priority-links{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+body.ayda-internal .ayda-admin-priority-links>a{
+ display:inline-flex;min-height:44px;align-items:center;padding:8px 13px;border-radius:9px;font-size:12px;
+ background:#fff;color:var(--ayda-navy);border:1px solid var(--ayda-border);text-decoration:none;font-weight:800;
+}
+body.ayda-internal .ayda-admin-priority-links>a:first-child{background:var(--ayda-gold);color:var(--ayda-deep);border-color:#dfb972}
+#adminNav{display:flex;gap:8px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:thin}
+#adminNav button{flex-shrink:0;min-height:44px}
+.admin-settings-nav{border:1px solid var(--ayda-border);border-radius:13px;padding:12px;margin:13px 0 18px;background:#f4f7fa;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.admin-settings-nav[hidden]{display:none!important}
+.admin-settings-intro{flex-basis:100%;font-size:12px;color:var(--ayda-muted);padding:1px 2px 5px}
+.admin-settings-nav button{background:#fff;border:1px solid var(--ayda-border);color:var(--ayda-navy);padding:10px 12px;font-weight:700;border-radius:9px;min-height:44px}
+.admin-settings-nav button.active{background:var(--ayda-navy);color:#fff;border-color:var(--ayda-navy)}
+body.ayda-internal .owner-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+body.ayda-internal .owner-controls .ayda-settings-link{
+ display:inline-flex;align-items:center;min-height:44px;padding:9px 14px;border:1px solid var(--ayda-border);
+ border-radius:9px;background:#fff;color:var(--ayda-navy);font-size:12px;text-decoration:none;font-weight:800;
+}
+body.ayda-internal .owner-controls .ayda-settings-link:hover{background:var(--ayda-sky)}
+/* Optional homework assignment and manager observation */
+.ayda-assignment-section{margin:16px 0 0}
+.ayda-assignment-body{padding:6px 3px 15px}
+.ayda-assignment-form{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;padding:12px;border:1px solid var(--ayda-border);border-radius:12px;background:#fff}
+.ayda-assignment-form label{grid-column:1/-1;font-size:12px;font-weight:750;color:var(--ayda-navy);margin-top:3px}
+.ayda-assignment-form input,.ayda-assignment-form select,.ayda-assignment-form textarea{grid-column:1/-1;width:100%;min-height:44px;box-sizing:border-box}
+.ayda-assignment-form button{grid-column:1/-1;justify-self:start;margin-top:6px;min-height:44px;padding:9px 16px}
+.ayda-assignment-form .ayda-note-state{grid-column:1/-1;margin:0}
+.ayda-assignment-list,.ayda-manager-homework-list{display:grid;gap:9px;margin-top:14px}
+.ayda-assignment-list>h3{font-size:14px;margin:2px 0 2px;color:var(--ayda-navy)}
+.ayda-task-card{padding:14px;border:1px solid var(--ayda-border);border-radius:12px;background:#fff;box-shadow:var(--ayda-shadow)}
+.ayda-task-card.is-overdue{border-left:3px solid var(--ayda-red)}
+.ayda-task-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.ayda-task-card-header strong{font-size:14px;color:var(--ayda-navy);overflow-wrap:anywhere}
+.ayda-task-card small{color:var(--ayda-muted);display:block;margin-top:4px;font-size:11px}
+.ayda-task-card p{font-size:13px;margin:9px 0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ayda-text)}
+.ayda-task-pill{font-size:10px;font-weight:700;white-space:nowrap;color:var(--ayda-green);background:#ebf6f2;padding:5px 8px;border-radius:9px}
+.ayda-task-pill.overdue{background:#fbeae8;color:var(--ayda-red)}
+.ayda-task-extended{color:var(--ayda-gold-ink)!important;font-weight:750}
+.ayda-task-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.ayda-task-actions button{font-size:12px;white-space:normal}
+.ayda-assignment-past{margin-top:7px;border:1px solid var(--ayda-border);padding:11px;border-radius:10px}
+.ayda-assignment-past summary{cursor:pointer;font-size:12px;font-weight:750;color:var(--ayda-blue);min-height:40px;display:flex;align-items:center}
+.ayda-assignment-past>div{display:grid;gap:8px}
+.ayda-owner-inbox-preview,.ayda-owner-homework-preview{margin:10px 0}
+.ayda-owner-inbox-link,.ayda-owner-homework-link{
+ display:flex;align-items:center;flex-wrap:wrap;gap:9px;width:100%;text-align:left;
+ background:#fff;border:1px solid var(--ayda-border);border-radius:13px;padding:13px 15px;
+ color:var(--ayda-navy);min-height:58px;box-shadow:var(--ayda-shadow);
+}
+.ayda-owner-inbox-link strong,.ayda-owner-homework-link strong{font-size:14px}
+.ayda-owner-inbox-link span,.ayda-owner-homework-link span{font-size:12px;color:var(--ayda-muted)}
+.ayda-owner-inbox-link span:last-child,.ayda-owner-homework-link span:last-child{margin-left:auto;font-weight:750;color:var(--ayda-blue)}
+@media(max-width:700px){
+ .ayda-admin-priority-links{width:100%}
+ .ayda-admin-priority-links a{flex:1 1 45%;justify-content:center}
+ .admin-settings-nav{padding:10px}
+ .admin-settings-nav button{flex:1 1 auto}
+ .ayda-owner-inbox-link,.ayda-owner-homework-link{align-items:flex-start;flex-direction:column}
+ .ayda-owner-inbox-link span:last-child,.ayda-owner-homework-link span:last-child{margin-left:0}
+}
+@media(max-width:390px){
+ .ayda-admin-priority-links a{flex:1 1 100%}
+ #adminNav button{font-size:12px;padding:10px}
+ .ayda-task-card-header{flex-wrap:wrap}
+ .ayda-task-actions button{flex:1 1 auto}
+}
