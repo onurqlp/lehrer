@@ -13,7 +13,7 @@
  const card=el('section','ayda-share-followup');card.id='aydaShareFollowup';card.hidden=true;
  const status=el('div','ayda-share-status','3 · WhatsApp sınıf duyurusu');
  const title=el('h3','','Son adım: Sınıf grubuna yaz');
- const intro=el('p','ayda-share-help','Ödevin kaydedildi. Üstteki yeşil “Ödevi WhatsApp grubuna yaz” düğmesine bas, sınıf grubunu seçip gönder. Sonra buradan onayla.');
+ const intro=el('p','ayda-share-help','Ödevin kaydedildi. Üstteki yeşil WhatsApp düğmesine bas, sınıf grubunu seçip mesajı gönder. Sonra buradan “Gruba gönderdim” diyerek tamamla.');
  const preview=el('div','ayda-share-preview'),confirm=el('button','ayda-share-confirm','✓ Gruba gönderdim'),note=el('p','ayda-share-hint');
  confirm.type='button';confirm.disabled=true;note.setAttribute('role','status');
  card.append(status,title,intro,preview,confirm,note);
@@ -58,7 +58,10 @@
    const result=await jsonp('confirmHomeworkShare',{payload});
    if(!result?.saved||result.shareStatus!=='Paylaşıldı')throw Error('Sunucu onay vermedi.');
    pending=pending.filter(x=>x.id!==item.id);
-   if(current?.id===item.id){current=null;card.hidden=true;document.getElementById('sendHomeworkToGroup').hidden=true;}
+   if(current?.id===item.id){
+    current=null;card.hidden=true;document.getElementById('sendHomeworkToGroup').hidden=true;
+    formMessage.replaceChildren(el('div','message success','Ders kaydı ve WhatsApp sınıf duyurusu tamamlandı. ✓'));
+   }
    opened.delete(item.id);paintPending();
    resultText.textContent='Grup paylaşımını yaptığınız bilgisi kaydedildi. ✓';
    window.dispatchEvent(new Event('ayda:homework-shared'));
