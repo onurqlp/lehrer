@@ -126,6 +126,7 @@ function aydaSave_(user,p){
     const yoklama=hasTracking?aydaTrackingHeaders_('YOKLAMA',['YOKLAMA_ID','DERS_KAYIT_ID','TARIH','GRUP_ID','OGRENCI_ID','KATILIM','MAZERETLI','OGRETMEN_ID','KAYIT_ZAMANI']):null;
     const odev=hasTracking&&p.homeworkEnabled===true?aydaTrackingHeaders_('ODEV_TAKIBI',['ODEV_KAYIT_ID','DERS_KAYIT_ID','TARIH','GRUP_ID','OGRENCI_ID','ODEV_DURUMU','OGRETMEN_ID','KAYIT_ZAMANI']):null;
     const homeworkSheet=status==='İşlendi'?aydaTrackingHeaders_('DERS_ODEVLERI',['ODEV_ID','DERS_KAYIT_ID','TARIH','GRUP_ID','OGRETMEN_ID','VERILEN_ODEV','KAYIT_ZAMANI','PAYLASIM_DURUMU','PAYLASIM_ZAMANI','PAYLASAN_OGRETMEN_ID']):null;
+    const homeworkId=homeworkSheet?'DO-'+Utilities.getUuid():'';
     const rows=hasTracking?aydaTrackingRows_(entries,date,groupId,group.teacherId,record['Kayıt ID'],p.homeworkEnabled===true,yoklama.header,odev?odev.header:[]):null;
     // Tek işlem: önce ders, sonra yoklama ve ödev. Başarısızlıkta bu isteğin satırlarını geri al.
     const marks=[{sheet:s,last:s.getLastRow()}];
@@ -139,7 +140,7 @@ function aydaSave_(user,p){
         if(odev&&rows.homework.length)odev.sheet.getRange(odev.sheet.getLastRow()+1,1,rows.homework.length,odev.header.length).setValues(rows.homework);
       }
       if(homeworkSheet){
-        const entry={ODEV_ID:'DO-'+Utilities.getUuid(),DERS_KAYIT_ID:record['Kayıt ID'],TARIH:date,GRUP_ID:groupId,
+        const entry={ODEV_ID:homeworkId,DERS_KAYIT_ID:record['Kayıt ID'],TARIH:date,GRUP_ID:groupId,
           OGRETMEN_ID:user.id,VERILEN_ODEV:safeHomework,KAYIT_ZAMANI:new Date(),PAYLASIM_DURUMU:'Bekliyor',PAYLASIM_ZAMANI:'',PAYLASAN_OGRETMEN_ID:''};
         homeworkSheet.sheet.getRange(homeworkSheet.sheet.getLastRow()+1,1,1,homeworkSheet.header.length)
           .setValues([homeworkSheet.header.map(k=>Object.prototype.hasOwnProperty.call(entry,k)?entry[k]:'')]);
@@ -155,7 +156,7 @@ function aydaSave_(user,p){
       const gs=aydaSheet_('GRUPLAR'),gv=gs.getDataRange().getDisplayValues(),gh=gv[0],idc=gh.indexOf('ID'),uc=gh.indexOf('Son Tamamlanan Ünite');
       if(idc>=0&&uc>=0){const ix=gv.findIndex((r,i)=>i>0&&r[idc]===groupId);if(ix>0){const cell=gs.getRange(ix+1,uc+1);if(completed>(Number(cell.getValue())||0))cell.setValue(completed);}}
     }
-    return {saved:true,id:record['Kayıt ID'],trackingSaved:hasTracking,attendanceCount:entries?entries.length:0,homeworkSaved:!!homeworkSheet};
+    return {saved:true,id:record['Kayıt ID'],trackingSaved:hasTracking,attendanceCount:entries?entries.length:0,homeworkSaved:!!homeworkSheet,homeworkId};
   }finally{lock.releaseLock();}
 }
 function aydaAdminKeyOlustur(){
