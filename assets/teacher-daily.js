@@ -29,7 +29,7 @@
    ['Ünite alıştırmaları',()=>'Ünite '+($('completed')?.value||'—')+' çalışma kitabındaki alıştırmaları tamamlayın.'],
    ['Kelime tekrarı',()=>'Bu ünitedeki yeni kelimeleri tekrar edip her biriyle bir cümle yazın.'],
    ['Konuşma hazırlığı',()=>'Son işlenen konuyla ilgili kısa bir konuşma hazırlayın.'],
-   ['Ödev verilmedi',()=>'Bu derste yeni ödev verilmedi.']
+   ['Yazma çalışması',()=>'Son işlediğimiz konuyla ilgili 5 Almanca cümle yazın.']
   ]){
    noteShortcuts.append(makeButton(label,()=>{noteInput.value=make();noteInput.dispatchEvent(new Event('input',{bubbles:true}));noteInput.focus();}));
   }
