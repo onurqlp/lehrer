@@ -45,6 +45,7 @@
    body=intro+'Akademik Takip panelindeki kayıtlarınızı kontrol etmenizi rica ederiz. Takıldığınız noktaları bizimle paylaşabilirsiniz. Teşekkürler.';
   }
   teacherText.value=body;
+  $('aydaMsgTeacherPhone').value=t.phone?'+'+t.phone:'';
   teacherStatus.textContent=t.phone?'Hazır mesaj WhatsApp ile açılır; gönderme kararı size aittir.':"Bu öğretmenin kullanılabilir numarası yok. Numarayı doğrulayın.";
  }
  function messageStudent(){
@@ -57,18 +58,19 @@
   }else if(studentType.value==='homework'){
    body+=tracking?.recentHomeworkMissing>=3?'Son kontrol edilen ödevlerinizde eksikler görülüyor. Çalışma planınızı birlikte gözden geçirmek isteriz.':'Ders çalışma ve ödev takibiniz hakkında kısa bir değerlendirme yapmak istiyoruz.';
   }else if(studentType.value==='positive'){
-   body+='Derslere gösterdiğiniz ilgiyi takdir ediyoruz. Aynı şekilde devam etmenizi diliyoruz.';
+   body+='Çalışmalarınızda başarılar diliyoruz. Düzenli katılım ve tekrar çalışmalarınızda yanınızdayız.';
   }else{
    body+='Derslerle veya çalışmalarınızla ilgili desteğe ihtiyaç duyuyorsanız bize yazabilirsiniz.';
   }
   studentText.value=body+' İyi çalışmalar dileriz.';
+  $('aydaMsgStudentPhone').value=s.phone?'+'+s.phone:'';
   studentStatus.textContent=s.phone?'Mesaj gönderilmeden önce düzenlenebilir. WhatsApp penceresinden manuel olarak gönderilir.':'Öğrencinin telefon kaydı eksik veya geçersiz. Mesaj hazır ama WhatsApp bağlantısı açılamaz.';
  }
  function fillMissing(){
   const prev=dateSelect.value;dateSelect.replaceChildren();appendOption(dateSelect,'','Kayıttan bağımsız genel mesaj');
   const t=currentTeacher();
   const pending=bridge()?.reminders()?.items||[];
-  for(const r of pending.filter(r=>!t?.teacherId||r.teacherId===t.teacherId)){
+  for(const r of pending.filter(r=>Boolean(t?.teacherId)&&r.teacherId===t.teacherId)){
    appendOption(dateSelect,r.groupId+'|'+r.date+'|'+r.type,(r.type==='attendance'?'Yoklama':'Ders raporu')+' · '+r.group+' · '+fmt(r.date));
   }
   if([...dateSelect.options].some(o=>o.value===prev))dateSelect.value=prev;
@@ -145,6 +147,22 @@
  students.addEventListener('change',messageStudent);studentType.addEventListener('change',messageStudent);
  $('aydaMsgTeacherSend').addEventListener('click',()=>{try{const t=currentTeacher();if(!t)throw Error('Öğretmen seçin.');openWhatsapp(t.phone,teacherText.value);}catch(e){teacherStatus.textContent=e.message;}});
  $('aydaMsgStudentSend').addEventListener('click',()=>{try{const s=currentStudent();if(!s)throw Error('Öğrenci seçin.');openWhatsapp(s.phone,studentText.value);}catch(e){studentStatus.textContent=e.message;}});
+
+ for(const [type,inputId,buttonId,getCurrent,state] of [
+  ['teacher','aydaMsgTeacherPhone','aydaMsgTeacherPhoneSave',currentTeacher,teacherStatus],
+  ['student','aydaMsgStudentPhone','aydaMsgStudentPhoneSave',currentStudent,studentStatus]
+ ]){
+  $(buttonId).addEventListener('click',async()=>{
+   const selected=getCurrent();if(!selected){state.textContent='Önce kişi seçin.';return;}
+   const btn=$(buttonId);btn.disabled=true;state.textContent='Telefon kaydediliyor…';
+   try{const payload=text64(JSON.stringify({type,id:selected.id,phone:$(inputId).value.trim()}));
+    const ok=await bridge().api('updateContact',{payload});if(!ok.saved)throw Error('Onay alınamadı.');
+    state.textContent='Telefon güncellendi.';await load();
+   }catch(e){state.textContent='Numara güncellenemedi: '+e.message;}
+   finally{btn.disabled=false;}
+  });
+ }
+
  $('aydaMsgReload').addEventListener('click',load);
  window.addEventListener('ayda:owner-ready',load);
  window.addEventListener('ayda:owner-logout',()=>{
