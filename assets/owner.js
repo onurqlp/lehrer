@@ -61,14 +61,14 @@
   });
  }
  async function api(action,key,params={}){
-  const readOnly=['overview','trackingSummary','reminders','studentNotes','vaultExport'].includes(action);let err;
+  const readOnly=['overview','trackingSummary','reminders','studentNotes','vaultExport','feedbackInbox','contactDirectory'].includes(action);let err;
   for(const address of (readOnly?[...new Set([activeApi,...candidates()].filter(Boolean))]:[activeApi||candidates()[0]])){try{const data=await apiRequest(address,action,key,params);activeApi=address;return data;}catch(e){err=e;if(!e.transport)throw e;}}
   throw err||Error('Google Apps Script bağlantısı kurulamadı.');
  }
  const errorMessage=message=>{$('ownerError').textContent=message||'';};
  const setLoading=value=>{loading=value;$('ownerLoginButton').disabled=value;$('ownerRefresh').disabled=value;};
  function activate(next){
-  const name=['overview','students','attendance','groups','lessons','teachers','schedule','alerts','accounts'].includes(next)?next:'overview';
+  const name=['overview','students','attendance','groups','lessons','teachers','schedule','alerts','messages','accounts'].includes(next)?next:'overview';
   tab=name;
   for(const p of document.querySelectorAll('.owner-panel'))p.hidden=p.id!=='owner-'+name;
   for(const b of $('ownerNav').querySelectorAll('button[data-tab]')){b.classList.toggle('active',b.dataset.tab===name);b.setAttribute('aria-current',b.dataset.tab===name?'page':'false');}
