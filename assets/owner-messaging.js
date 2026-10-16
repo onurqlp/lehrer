@@ -1,0 +1,155 @@
+"use strict";
+/* AYDA private message center. No phone/name ever ships in public GitHub source or publicDashboard. */
+(()=>{
+ const root=document.getElementById('ownerMessageCenter');if(!root)return;
+ const $=id=>document.getElementById(id);
+ const bridge=()=>window.AYDA_OWNER_BRIDGE;
+ const node=(tag,cls,text)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(text!==undefined)x.textContent=String(text);return x;};
+ const appendOption=(select,value,label)=>select.add(new Option(label,value));
+ const fmt=s=>/^\d{4}-\d\d-\d\d$/.test(String(s||''))?s.slice(8)+'.'+s.slice(5,7)+'.'+s.slice(0,4):s||'';
+ const digits=s=>String(s||'').replace(/\D/g,'');
+ const text64=s=>{const bytes=new TextEncoder().encode(s);let raw='';for(const b of bytes)raw+=String.fromCharCode(b);return btoa(raw).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
+ let contacts=null,inbox=null,loadNo=0;
+ const teachers=$('aydaMsgTeacher'),students=$('aydaMsgStudent');
+ const group=$('aydaMsgGroup'),dateSelect=$('aydaMsgMissing'),studentSearch=$('aydaMsgStudentSearch');
+ const teacherType=$('aydaMsgTeacherType'),studentType=$('aydaMsgStudentType');
+ const teacherText=$('aydaMsgTeacherText'),studentText=$('aydaMsgStudentText');
+ const teacherStatus=$('aydaMsgTeacherStatus'),studentStatus=$('aydaMsgStudentStatus');
+ const feedbacks=$('aydaManagerFeedbackList'),feedbackStatus=$('aydaManagerFeedbackStatus');
+ function rows(){return contacts?.teachers||[];}
+ function roster(){return contacts?.students||[];}
+ function currentTeacher(){return rows().find(t=>t.id===teachers.value);}
+ function currentStudent(){return roster().find(s=>s.id===students.value);}
+ function openWhatsapp(phone,text){
+  const number=digits(phone),message=String(text||'').trim();
+  if(!/^90[1-9]\d{9}$/.test(number))throw Error('Geçerli WhatsApp numarası bulunamadı.');
+  if(message.length<6)throw Error('Mesaj metni çok kısa.');
+  window.open('https://wa.me/'+number+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');
+ }
+ function messageTeacher(){
+  const t=currentTeacher(),item=(bridge()?.reminders()?.items||[]).find(i=>i.groupId+'|'+i.date+'|'+i.type===dateSelect.value);
+  if(!t){teacherText.value='';teacherStatus.textContent='Öğretmen seçin.';return;}
+  const a=t.name.split(/ +/)[0].toLocaleLowerCase('tr-TR');
+  const name=a.slice(0,1).toLocaleUpperCase('tr-TR')+a.slice(1);
+  const intro='Merhaba '+name+' Hocam, ';
+  let body='';
+  if(item&&teacherType.value==='auto'){
+   body=intro+fmt(item.date)+' tarihli '+item.group+' grubunun '+(item.type==='attendance'?'ders yoklaması':'ders raporu')+' sistemde eksik görünüyor. Uygun olduğunuzda AYDA Akademik Takip panelinden tamamlamanızı rica ederiz. Teşekkürler.';
+  }else if(teacherType.value==='report'){
+   body=intro+'AYDA Akademik Takip sistemindeki eksik ders raporlarınızı kontrol ederek tamamlayabilir misiniz? Teşekkürler.';
+  }else if(teacherType.value==='attendance'){
+   body=intro+'AYDA Akademik Takip sistemindeki eksik yoklamalarınızı kontrol ederek tamamlayabilir misiniz? Teşekkürler.';
+  }else if(teacherType.value==='meeting'){
+   body=intro+'Akademik süreçlerle ilgili kısa bir görüşme planlamak istiyoruz. Müsait olduğunuz bir zamanı paylaşabilir misiniz? Teşekkürler.';
+  }else{
+   body=intro+'Akademik Takip panelindeki kayıtlarınızı kontrol etmenizi rica ederiz. Takıldığınız noktaları bizimle paylaşabilirsiniz. Teşekkürler.';
+  }
+  teacherText.value=body;
+  teacherStatus.textContent=t.phone?'Hazır mesaj WhatsApp ile açılır; gönderme kararı size aittir.':"Bu öğretmenin kullanılabilir numarası yok. Numarayı doğrulayın.";
+ }
+ function messageStudent(){
+  const s=currentStudent(),tracking=bridge()?.tracking()?.students?.find(x=>x.id===s?.id);
+  if(!s){studentText.value='';studentStatus.textContent='Öğrenci seçin.';return;}
+  const first=s.name.split(/\s+/)[0];
+  let body='Merhaba '+first+', AYDA Dil Akademisi olarak '+s.group+' grubundaki süreciniz hakkında sizinle iletişime geçiyoruz. ';
+  if(studentType.value==='absence'){
+   body+=tracking?.absenceStreak>=3?'Son derslerde üst üste devamsızlık kaydınız görünüyor. Bir sorun yaşıyorsanız bize bilgi verebilir misiniz?':'Ders katılımınızla ilgili kısa bir görüşme yapmak istiyoruz. Uygun olduğunuzda dönüş yapabilir misiniz?';
+  }else if(studentType.value==='homework'){
+   body+=tracking?.recentHomeworkMissing>=3?'Son kontrol edilen ödevlerinizde eksikler görülüyor. Çalışma planınızı birlikte gözden geçirmek isteriz.':'Ders çalışma ve ödev takibiniz hakkında kısa bir değerlendirme yapmak istiyoruz.';
+  }else if(studentType.value==='positive'){
+   body+='Derslere gösterdiğiniz ilgiyi takdir ediyoruz. Aynı şekilde devam etmenizi diliyoruz.';
+  }else{
+   body+='Derslerle veya çalışmalarınızla ilgili desteğe ihtiyaç duyuyorsanız bize yazabilirsiniz.';
+  }
+  studentText.value=body+' İyi çalışmalar dileriz.';
+  studentStatus.textContent=s.phone?'Mesaj gönderilmeden önce düzenlenebilir. WhatsApp penceresinden manuel olarak gönderilir.':'Öğrencinin telefon kaydı eksik veya geçersiz. Mesaj hazır ama WhatsApp bağlantısı açılamaz.';
+ }
+ function fillMissing(){
+  const prev=dateSelect.value;dateSelect.replaceChildren();appendOption(dateSelect,'','Kayıttan bağımsız genel mesaj');
+  const t=currentTeacher();
+  const pending=bridge()?.reminders()?.items||[];
+  for(const r of pending.filter(r=>!t?.teacherId||r.teacherId===t.teacherId)){
+   appendOption(dateSelect,r.groupId+'|'+r.date+'|'+r.type,(r.type==='attendance'?'Yoklama':'Ders raporu')+' · '+r.group+' · '+fmt(r.date));
+  }
+  if([...dateSelect.options].some(o=>o.value===prev))dateSelect.value=prev;
+ }
+ function fillStudent(){
+  const prev=students.value,query=studentSearch.value.toLocaleLowerCase('tr-TR').trim();
+  students.replaceChildren();appendOption(students,'','Öğrenci seçin');
+  const selected=roster().filter(s=>(!group.value||s.groupId===group.value)&&(!query||s.name.toLocaleLowerCase('tr-TR').includes(query))).sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+  for(const s of selected)appendOption(students,s.id,s.name+' · '+s.group);
+  if([...students.options].some(o=>o.value===prev))students.value=prev;
+  messageStudent();
+ }
+ function fill(){
+  const prevTeacher=teachers.value;
+  teachers.replaceChildren();appendOption(teachers,'','Öğretmen seçin');
+  for(const t of rows().sort((a,b)=>a.name.localeCompare(b.name,'tr')))
+   appendOption(teachers,t.id,t.name+(t.phone?'':' · Telefon eksik')+(t.teacherId?'':' · Giriş hesabı eşleşmemiş'));
+  if([...teachers.options].some(o=>o.value===prevTeacher))teachers.value=prevTeacher;
+  const prevGroup=group.value;group.replaceChildren();appendOption(group,'','Tüm gruplar');
+  const m=new Map(roster().map(s=>[s.groupId,s.group]));
+  for(const [id,name] of m)appendOption(group,id,name);
+  group.value=prevGroup&&m.has(prevGroup)?prevGroup:'';
+  fillMissing();fillStudent();messageTeacher();
+  $('aydaMsgContactMeta').textContent=rows().length+' öğretmen profili · '+roster().length+' öğrenci. Telefon bilgileri yalnızca yönetici girişiyle getirilir.';
+ }
+ function showInbox(){
+  feedbacks.replaceChildren();
+  if(!inbox){feedbacks.append(node('p','ayda-auto-subtle','Öğretmen geri bildirimi servisi için Apps Script güncellenmelidir.'));return;}
+  const list=inbox.rows||[];const unopened=list.filter(m=>m.status==='Yeni').length;
+  const badge=$('aydaMsgBadge');if(badge)badge.textContent=unopened?' ('+unopened+' yeni)':'';
+  feedbackStatus.textContent=unopened?unopened+' okunmamış öğretmen mesajı var.':'Bekleyen yeni mesaj yok.';
+  if(!list.length){feedbacks.append(node('p','ayda-auto-subtle','Henüz öğretmenlerden bir geri bildirim gelmedi.'));return;}
+  for(const item of list.slice(0,50)){
+   const card=node('article','ayda-feedback-inbox'+(item.status==='Yeni'?' is-new':''));
+   const title=node('div','ayda-inbox-title');
+   title.append(node('strong','',item.teacher+' · '+item.category),node('span','',item.status));
+   card.append(title,node('small','',item.created||''),node('p','',item.message));
+   const reply=node('textarea');reply.value=item.reply||'';reply.maxLength=1400;reply.rows=2;reply.placeholder='Hocaya yanıt (isteğe bağlı)';reply.setAttribute('aria-label',item.teacher+' için yönetim yanıtı');
+   const row=node('div','ayda-inbox-actions'),state=node('span','ayda-note-state');
+   const option=node('select');option.setAttribute('aria-label','Geri bildirim durumunu değiştir');
+   for(const n of ['Yeni','İncelendi','Yanıtlandı','Kapatıldı'])option.add(new Option(n,n));
+   option.value=item.status||'Yeni';
+   const save=node('button','ayda-inline-btn','Kaydet');save.type='button';
+   save.addEventListener('click',async()=>{
+    save.disabled=true;state.textContent='Kaydediliyor…';
+    try{const payload=text64(JSON.stringify({id:item.id,reply:reply.value.trim(),status:option.value}));
+     const ok=await bridge().api('feedbackReply',{payload});if(!ok.saved)throw Error('Onay alınamadı.');
+     state.textContent='Kaydedildi.';await loadInbox();
+    }catch(e){state.textContent='Yanıt doğrulanamadı: '+e.message;}
+    finally{save.disabled=false;}
+   });
+   row.append(option,save,state);card.append(reply,row);feedbacks.append(card);
+  }
+ }
+ async function loadInbox(){
+  try{inbox=await bridge().api('feedbackInbox');showInbox();}
+  catch(e){inbox=null;feedbackStatus.textContent=e.message;showInbox();}
+ }
+ async function load(){
+  if(!bridge()?.ready())return;
+  const n=++loadNo;
+  $('aydaMsgContactMeta').textContent='İletişim rehberi yükleniyor…';
+  const [directory,feedback]=await Promise.allSettled([bridge().api('contactDirectory'),bridge().api('feedbackInbox')]);
+  if(n!==loadNo)return;
+  contacts=directory.status==='fulfilled'?directory.value:null;
+  inbox=feedback.status==='fulfilled'?feedback.value:null;
+  if(contacts)fill();else $('aydaMsgContactMeta').textContent='İletişim rehberine erişilemedi. Güncel Apps Script sürümünü yayımlayın.';
+  showInbox();
+ }
+ teachers.addEventListener('change',()=>{fillMissing();messageTeacher();});
+ dateSelect.addEventListener('change',()=>{if(dateSelect.value)teacherType.value='auto';messageTeacher();});
+ teacherType.addEventListener('change',messageTeacher);
+ group.addEventListener('change',fillStudent);studentSearch.addEventListener('input',fillStudent);
+ students.addEventListener('change',messageStudent);studentType.addEventListener('change',messageStudent);
+ $('aydaMsgTeacherSend').addEventListener('click',()=>{try{const t=currentTeacher();if(!t)throw Error('Öğretmen seçin.');openWhatsapp(t.phone,teacherText.value);}catch(e){teacherStatus.textContent=e.message;}});
+ $('aydaMsgStudentSend').addEventListener('click',()=>{try{const s=currentStudent();if(!s)throw Error('Öğrenci seçin.');openWhatsapp(s.phone,studentText.value);}catch(e){studentStatus.textContent=e.message;}});
+ $('aydaMsgReload').addEventListener('click',load);
+ window.addEventListener('ayda:owner-ready',load);
+ window.addEventListener('ayda:owner-logout',()=>{
+  loadNo++;contacts=null;inbox=null;students.replaceChildren();teachers.replaceChildren();dateSelect.replaceChildren();feedbacks.replaceChildren();
+  teacherText.value='';studentText.value='';studentSearch.value='';$('aydaMsgContactMeta').textContent='Giriş yapın.';feedbackStatus.textContent='';
+ });
+ if(bridge()?.ready())load();
+})();
