@@ -4,6 +4,18 @@
 **Girişli tam yönetici takip merkezi:** https://lehrer.aydadil.com/yonetici.html
 
 
+## Yönetici öncelikli ekran + teslim tarihli ödevler (16.10.2026)
+
+- **Günlük yönetim önceliği:** `index.html` yöneticide önce akademik genel bakış, öğrenci takibi ve ders/muhasebeyi gösterir. Eski öğretmen tipindeki ders kaydı, gruplar ve çizelge araçları **aşağıda** korunur; veri/işlev silinmez.
+- **Ayarlar menüsü:** Eski üst seviye altı menü dört ana bölüme indi: **Genel Bakış, Öğrenci Takibi, Ders ve Muhasebe, ⚙ Ayarlar**. Ayarlar altında **Grup İşlemleri, Öğretmenler ve Anahtarlar, Düzenle** alt menüleri vardır. `index.html#ayarlar` adresi doğru yönetici bölümünü açar. `yonetici.html` üzerinden üstteki **⚙ Ayarlar** bağlantısıyla gidilebilir.
+- **Öğretmen fikri/şikâyeti:** Var olan isteğe bağlı `Sistemle ilgili fikrim / sorun bildirimim` bölümü öğretmen menüsünden de erişilebilir. Yönetici `Mesaj Merkezi`nde öğretmen, tarih, kategori ve içerikle görür, inceleme durumunu seçer, yanıtlar. **Genel Bakış** ekranında yeni mesaj sayısını da görür.
+- **İki ayrı ödev kavramı:** (a) `ODEV_TAKIBI` öğrencilerin ders bazında ödevi yapıp yapmadığı bilgisidir ve sonradan işlenebilir. (b) `ODEV_GOREVLERI` öğretmenin gruba verdiği **ödev görevi + açıklama + teslim tarihi** kaydıdır. Bu yeni ödev görevi **isteğe bağlıdır**; yoklamanın parçası veya yeni zorunlu öğretmen formu değildir.
+- **Ek süre:** Öğretmen açık bir ödev görevine **+3 veya +7 gün** ek süre verir; API güvenlik sınırı 1–30 gün/işlem, yeni tarih bugünden en fazla 90 gün ileride olabilir. Tamamlandı ve Yeniden aç durumları vardır. `ODEV_GOREV_GECMISI` eski/yeni tarih, yetkili öğretmen ve işlem zamanını kaydeder. Öğretmen devrinde mevcut yetkili grup öğretmeni görevi yönetebilir.
+- **Yönetim gözetimi:** `yonetici.html` Genel Bakış'ta aktif/gecikmiş ödev görevleri, Yoklama & Ödev ekranında ödev görevleri/teslim tarihleri ve verilen toplam ek süreyi görür; ödev tarihini yönetici yanlışlıkla değiştiremez.
+- **Öğrenciye iletişim:** Ödev duyurusunu öğretmen kopyalayıp ilgili sınıf kanalında kendisi paylaşabilir. Sistemin henüz öğrenci oturumu veya WhatsApp gönderme altyapısı **yoktur**; görevler otomatik olarak öğrencilere iletilmiş sayılmaz.
+- **Veritabanı:** 16 Ekim 2026'da mevcut Google Sheet'e yalnızca `ODEV_GOREVLERI` ve `ODEV_GOREV_GECMISI` sekmeleri (başlık satırı, boş veri) eklendi. Önce **Ödev Planlaması Öncesi** adlı tam yedek kopyası alındı. Mevcut ders/yoklama/ödev/öğrenci kayıtları değişmedi.
+- **API:** `apps-script/Code.gs` 2026-10-16.5 sürümünde `homeworkTasks`, `saveHomeworkTask`, `updateHomeworkTask` eylemleri vardır. Yeni ödev oluşturma/uzatma öğretmen yetkisi, yöneticiye salt okunur görev listesi verir. Mevcut Apps Script'e bu sürüm aktarılıp **mevcut dağıtım yeni sürüm olarak güncellenmeden** canlı yazma özelliği çalışmaz.
+
 ## Öğretmen günlük iş merkezi ve WhatsApp iletişim (16 Ekim 2026)
 
 **Öğretmen öncelikli akış:** Girişte aylık planlanan/işlenen/kalan grup dersleri ve özel ders kayıtları görünür. Ardından bugünkü işler, ders raporu ve **Sonradan tamamla** gelir. Öğrencilerim · Takip Merkezi daha aşağıya alınmıştır. Akademik öğrenci görüşü isteğe bağlıdır.
@@ -50,7 +62,7 @@
 
 ## Kurs sahibi takip merkezi (15 Ekim 2026)
 - `yonetici.html` artık **ayrı, büyük ölçüde rapor/görüntüleme** amaçlı bir yönetici rapor panelidir. Düzenleme, öğretmen oluşturma, grup değiştirme, parola değiştirme, kayıt ekleme/silme, ders kaydetme işlemleri bulunmaz.
-- **Dokuz bölüm:** Genel Bakış; Öğrenciler; Yoklama & Ödev; Gruplar; Ders Kayıtları; Öğretmenler & Saat; Ders Programı; Uyarılar; Hesaplar.
+- **On bölüm:** Genel Bakış; Öğrenciler; Yoklama & Ödev; Gruplar; Ders Kayıtları; Öğretmenler & Saat; Ders Programı; Uyarılar; Mesaj Merkezi; Hesaplar.
 - Ayrıntılar: Aktif/tüm gruplar, seviye, öğretmen, öğrenci sayısı, müfredat ilerlemesi, planlanan ve tahmini tarihler, haftalık gün/saat, grup ve özel dersler, işlenen konu, öğretmen notu, rapor durumu ve süreleri, öğretmen aylık toplamları/CSV, öğrenci bazında yoklama/ödev istatistikleri, son beş bireysel kayıt, risk uyarıları, öğretmen hesap ve anahtar arşiv durumu.
 - Akademik verileri mevcut yönetici anahtarıyla `overview`, `trackingSummary` ve `reminders` üzerinden yetkili olarak getirir. Takip durumu ve isteğe bağlı gözlem notları yönetici hesabıyla değiştirilebilir. Giriş oturumu `index.html` ile aynı sekmede korunur. Veriler menülerde dinamik gösterilir; mobil ve masaüstü için farklı yoğunluklar vardır.
 - **AYDA UI v1.0 tema geçişinde Apps Script kodu değiştirilmedi.** Yeni akademik işlevlerin canlı çalışması için, bu projede daha önce hazırlanan güncel `apps-script/Code.gs` sürümünün yine de ayrıca dağıtılması gerekir.
@@ -58,7 +70,7 @@
 
 ## Bileşenler
 - `index.html` + `assets/app.js`: öğretmen ve yönetici girişi, ders raporları, grup yönetimi, kolay parola belirleme.
-- `yonetici.html`: dokuz sekmeli kurs sahibi kontrol paneli; okuma ağırlıklı analiz, isteğe bağlı takip durumu ve not işlemleri.
+- `yonetici.html`: on sekmeli kurs sahibi kontrol paneli; okuma ağırlıklı analiz, isteğe bağlı takip durumu ve not işlemleri.
 - `assets/owner.js` + `assets/owner.css` + `assets/manager.css`: kurs sahibi için yönetim verilerinin filtrelenebilir ve mobil uyumlu görünümü, takip durumu güncelleme ve öğrenci gözlem notu.
 - `assets/manager.js`, `assets/manager-compact.js`, `assets/viewer.js`: önceki prototipler; `yonetici.html` bunları yüklemez.
 - `assets/teacher-tracking.js` + `assets/teacher-tracking.css`: öğretmenin kendi öğrenci durumları.
@@ -66,6 +78,9 @@
 - `assets/ayda-workflow.js` / `.css`: grup WhatsApp hızlı bağlantıları, 12 saatlik eksik kayıt listeleri, taslak koruma. Yardım bağlantısı artık sabit bir balon değil, header'dadır.
 - `assets/student-notes.js`: girişli kişilerin öğrenciler için isteğe bağlı akademik gözlem notu eklemesi.
 - `assets/teacher-resources.js`: öğretmenin aktif grup seviyesine göre kaynakları; sadece girişli öğretmen bölümünde listeler.
+- `assets/owner-homework.js`: yöneticinin ödev görevi ve teslim tarihi gözetimi.
+- `assets/admin-menu.js`: yönetici odaklı dört ana sekme ve üç alt Ayarlar menüsü.
+- `assets/teacher-daily.js`: ödev görevi oluşturma, teslim süresi uzatma ve öğretmen fikri gönderme.
 - `assets/ayda-brand.css` + `assets/ayda-logo.png`: AYDA UI v1.0 ortak kurumsal tema ve gerçek logo.
 - `assets/viewer.js`: şifresiz akademik pano, **yalnızca** `publicDashboard` salt-okunur çağrısı.
 - `assets/config.js`: Apps Script dağıtım URL'si.
