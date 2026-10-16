@@ -2,6 +2,13 @@
 (()=>{
  const $=id=>document.getElementById(id);
  const payload64=s=>{const b=new TextEncoder().encode(s);let a='';for(const c of b)a+=String.fromCharCode(c);return btoa(a).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
+ window.AYDA_OWNER_BRIDGE={
+  api:(action,params={})=>{if(!token||overview?.user?.role!=='admin')throw Error('Yönetici oturumu gerekli.');return api(action,token,params);},
+  overview:()=>token&&overview?.user?.role==='admin'?overview:null,
+  tracking:()=>token&&overview?.user?.role==='admin'?tracking:null,
+  reminders:()=>token&&overview?.user?.role==='admin'?reminders:null,
+  ready:()=>!!token&&overview?.user?.role==='admin'
+ };
  const node=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=String(value);return e;};
  const add=(parent,tag,cls,value)=>{const e=node(tag,cls,value);parent.append(e);return e;};
  const showEmpty=(id,label)=>$(id).replaceChildren(node('div','owner-empty',label));
@@ -82,6 +89,8 @@
    if(!$('ownerLessonMonth').value)$('ownerLessonMonth').value=today().slice(0,7);
    await loadTracking();
    activate(sessionStorage.getItem('aydaOwnerTab')||'overview');
+   window.dispatchEvent(new Event('ayda:owner-ready'));
+
   }catch(e){token='';$('ownerLogin').hidden=false;$('ownerApp').hidden=true;$('ownerLogout').hidden=true;$('ownerLoginError').textContent=e.message;}
   finally{setLoading(false);}
  }
