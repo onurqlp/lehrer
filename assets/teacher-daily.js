@@ -112,7 +112,8 @@
    let complete=makeButton('Tamamlandı',()=>changeTask(task,'complete',0,state,complete));actions.append(complete);
    const copy=makeButton('Ödev mesajını kopyala',()=>{
     const msg='Merhaba, '+task.group+' grubunun ödevi: '+task.title+'. '+(task.description||'')+' Son teslim tarihi: '+formatDate(task.dueDate)+'. İyi çalışmalar.';
-    navigator.clipboard?.writeText(msg).then(()=>{state.textContent='Mesaj kopyalandı. Grubunuzdan paylaşabilirsiniz.';}).catch(()=>{state.textContent='Tarayıcı kopyalamayı desteklemiyor.';});
+    if(!navigator.clipboard?.writeText){state.textContent='Kopyalama kullanılamıyor. Ödev açıklamasını seçerek kopyalayabilirsiniz.';return;}
+    navigator.clipboard.writeText(msg).then(()=>{state.textContent='Mesaj kopyalandı. Grubunuzdan paylaşabilirsiniz.';}).catch(()=>{state.textContent='Kopyalama başarısız. Tekrar deneyin.';});
    });actions.append(copy);card.append(actions,state);
   }else{
    const state=el('span','ayda-note-state');let re=makeButton('Yeniden aç',()=>changeTask(task,'reactivate',0,state,re));
@@ -281,7 +282,14 @@
  });
  monthInput.addEventListener('change',loadMonth);
  feedback.addEventListener('toggle',()=>{if(feedback.open)loadFeedback();});
- window.addEventListener('ayda:login',()=>{if(!tr())return;monthInput.value=monthOf();monthWrap.classList.remove('hidden');feedback.classList.remove('hidden');suggestDuration();groupOptions();loadMonth();loadMakeup();if(homeworkTasks.open)loadTasks();});
+ function openFeedbackWhenLinked(){
+  if(location.hash==='#aydaTeacherFeedback'&&tr()){
+   feedback.open=true;feedback.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+ }
+ window.addEventListener('hashchange',openFeedbackWhenLinked);
+
+ window.addEventListener('ayda:login',()=>{if(!tr())return;monthInput.value=monthOf();monthWrap.classList.remove('hidden');feedback.classList.remove('hidden');suggestDuration();groupOptions();loadMonth();loadMakeup();if(homeworkTasks.open)loadTasks();openFeedbackWhenLinked();});
  window.addEventListener('ayda:saved',()=>{if(tr()){loadMonth();loadMakeup();if(homeworkTasks.open)loadTasks();}});
  window.addEventListener('ayda:logout',()=>{taskRequest++;taskResult=null;homeworkTasks.open=false;taskList.replaceChildren();assignmentForm.reset();request++;monthWrap.classList.add('hidden');makeup.classList.add('hidden');feedback.classList.add('hidden');feedback.open=false;replies.replaceChildren();makeupBody.replaceChildren();monthNumbers.replaceChildren();text.value='';});
 })();
