@@ -717,7 +717,7 @@ function aydaUpdateHomeworkTask_(user,p){
   if(ic<0||ix<1)throw Error('Ödev bulunamadı.');
   const r=Object.fromEntries(h.map((key,i)=>[key,v[ix][i]]));
   const group=aydaGroups_(user).find(g=>g.id===r['GRUP_ID']&&g.status==='Aktif');
-  if(!group||r['OGRETMEN_ID']!==user.id)throw Error('Bu ödeve işlem yapma yetkiniz yok.');
+  if(!group)throw Error('Bu ödeve işlem yapma yetkiniz yok.'); // Grup yeni öğretmene devredildiyse görev yönetimi yeni yetkiliye geçer.
   if(kind==='extend'&&r['DURUM']!=='Aktif')throw Error('Yalnızca aktif ödevin teslim tarihi uzatılabilir.');
   const oldDate=aydaDate_(r['TESLIM_TARIHI']),newDate=kind==='extend'?aydaHomeworkPlusDays_(oldDate,days):oldDate;
   if(kind==='extend'&&(!aydaValidateDate_(newDate)||newDate<=oldDate||newDate>aydaHomeworkPlusDays_(today,90)))
