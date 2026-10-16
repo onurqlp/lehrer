@@ -125,7 +125,7 @@ function aydaSave_(user,p){
     const entries=hasTracking?aydaTrackingPrepare_(user,groupId,p.attendance,p.homeworkEnabled===true):null;
     const yoklama=hasTracking?aydaTrackingHeaders_('YOKLAMA',['YOKLAMA_ID','DERS_KAYIT_ID','TARIH','GRUP_ID','OGRENCI_ID','KATILIM','MAZERETLI','OGRETMEN_ID','KAYIT_ZAMANI']):null;
     const odev=hasTracking&&p.homeworkEnabled===true?aydaTrackingHeaders_('ODEV_TAKIBI',['ODEV_KAYIT_ID','DERS_KAYIT_ID','TARIH','GRUP_ID','OGRENCI_ID','ODEV_DURUMU','OGRETMEN_ID','KAYIT_ZAMANI']):null;
-    const homeworkSheet=status==='İşlendi'?aydaTrackingHeaders_('DERS_ODEVLERI',['ODEV_ID','DERS_KAYIT_ID','TARIH','GRUP_ID','OGRETMEN_ID','VERILEN_ODEV','KAYIT_ZAMANI']):null;
+    const homeworkSheet=status==='İşlendi'?aydaTrackingHeaders_('DERS_ODEVLERI',['ODEV_ID','DERS_KAYIT_ID','TARIH','GRUP_ID','OGRETMEN_ID','VERILEN_ODEV','KAYIT_ZAMANI','PAYLASIM_DURUMU','PAYLASIM_ZAMANI','PAYLASAN_OGRETMEN_ID']):null;
     const rows=hasTracking?aydaTrackingRows_(entries,date,groupId,group.teacherId,record['Kayıt ID'],p.homeworkEnabled===true,yoklama.header,odev?odev.header:[]):null;
     // Tek işlem: önce ders, sonra yoklama ve ödev. Başarısızlıkta bu isteğin satırlarını geri al.
     const marks=[{sheet:s,last:s.getLastRow()}];
@@ -140,7 +140,7 @@ function aydaSave_(user,p){
       }
       if(homeworkSheet){
         const entry={ODEV_ID:'DO-'+Utilities.getUuid(),DERS_KAYIT_ID:record['Kayıt ID'],TARIH:date,GRUP_ID:groupId,
-          OGRETMEN_ID:user.id,VERILEN_ODEV:safeHomework,KAYIT_ZAMANI:new Date()};
+          OGRETMEN_ID:user.id,VERILEN_ODEV:safeHomework,KAYIT_ZAMANI:new Date(),PAYLASIM_DURUMU:'Bekliyor',PAYLASIM_ZAMANI:'',PAYLASAN_OGRETMEN_ID:''};
         homeworkSheet.sheet.getRange(homeworkSheet.sheet.getLastRow()+1,1,1,homeworkSheet.header.length)
           .setValues([homeworkSheet.header.map(k=>Object.prototype.hasOwnProperty.call(entry,k)?entry[k]:'')]);
       }
@@ -320,9 +320,50 @@ function aydaLessonHomework_(user){
  const list=aydaRead_('DERS_ODEVLERI')
   .filter(r=>allowed.has(r['GRUP_ID']))
   .map(r=>({id:r['ODEV_ID'],lessonId:r['DERS_KAYIT_ID'],date:aydaDate_(r['TARIH']),
-    groupId:r['GRUP_ID'],group:allowed.get(r['GRUP_ID']),teacherId:r['OGRETMEN_ID'],text:r['VERILEN_ODEV']}))
+    groupId:r['GRUP_ID'],group:allowed.get(r['GRUP_ID']),teacherId:r['OGRETMEN_ID'],text:r['VERILEN_ODEV'],
+    shareStatus:r['PAYLASIM_DURUMU']||'Eski kayıt',sharedAt:r['PAYLASIM_ZAMANI']||'',sharedBy:r['PAYLASAN_OGRETMEN_ID']||''}))
   .sort((a,b)=>b.date.localeCompare(a.date));
- return {items:list.slice(0,400),total:list.length,scope:user.role==='admin'?'all':'own'};
+ return {items:list.slice(0,400),total:list.length,pending:list.filter(r=>r.shareStatus==='Bekliyor').length,scope:user.role==='admin'?'all':'own'};
+}
+
+/** Öğretmenin WhatsApp grubuna manuel gönderim beyanı.
+ * WhatsApp gönderimi platform üzerinden doğrulanamaz; bu bir öğretmen onayıdır.
+ * Ders raporuna dokunmaz ve yalnızca yetkili grubun ödev satırını günceller.
+ */
+function aydaConfirmHomeworkShare_(user,p){
+ if(user.role!=='teacher')throw Error('Grup paylaşımını yalnızca öğretmen onaylayabilir.');
+ const id=String(p&&p.id||'').trim();
+ if(!/^DO-[A-Za-z0-9-]{8,80}$/.test(id))throw Error('Ödev kaydı geçersiz.');
+ const lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  const sh=aydaSheet_('DERS_ODEVLERI'),rows=sh.getDataRange().getDisplayValues();
+  if(!rows.length)throw Error('Ödev kayıt tablosu boş.');
+  const header=rows[0].map(v=>String(v).trim());
+  const cols=['ODEV_ID','DERS_KAYIT_ID','GRUP_ID','OGRETMEN_ID','PAYLASIM_DURUMU','PAYLASIM_ZAMANI','PAYLASAN_OGRETMEN_ID'];
+  for(const key of cols)if(!header.includes(key))throw Error('Ödev tablosunda gerekli alan eksik: '+key);
+  const idx=header.indexOf('ODEV_ID');
+  const rowIndex=rows.findIndex((r,i)=>i>0&&r[idx]===id);
+  if(rowIndex<1)throw Error('Ödev kaydı bulunamadı.');
+  const row=rows[rowIndex],gid=row[header.indexOf('GRUP_ID')];
+  if(!aydaGroups_(user).some(g=>g.id===gid&&g.status==='Aktif'))
+    throw Error('Bu grubun WhatsApp paylaşımını onaylama yetkiniz yok.');
+  const statusCol=header.indexOf('PAYLASIM_DURUMU'),status=String(row[statusCol]||'');
+  if(status==='Paylaşıldı')return {saved:true,alreadyShared:true,id,shareStatus:'Paylaşıldı'};
+  if(status!==''&&status!=='Bekliyor')throw Error('Paylaşım durumu güncellenemiyor.');
+  const stampCol=header.indexOf('PAYLASIM_ZAMANI'),byCol=header.indexOf('PAYLASAN_OGRETMEN_ID');
+  const old={status:row[statusCol],stamp:row[stampCol],by:row[byCol]};
+  try{
+   sh.getRange(rowIndex+1,statusCol+1).setValue('Paylaşıldı');
+   sh.getRange(rowIndex+1,stampCol+1).setValue(new Date());
+   sh.getRange(rowIndex+1,byCol+1).setValue(user.id);
+  }catch(err){
+   for(const [column,value] of [[statusCol,old.status],[stampCol,old.stamp],[byCol,old.by]]){
+    try{sh.getRange(rowIndex+1,column+1).setValue(value);}catch(rollbackError){Logger.log('AYDA share rollback: '+rollbackError.message);}
+   }
+   throw Error('Grup paylaşım onayı kaydedilemedi: '+err.message);
+  }
+  return {saved:true,id,shareStatus:'Paylaşıldı'};
+ }finally{lock.releaseLock();}
 }
 
 function aydaReminders_(user){
@@ -824,7 +865,7 @@ function aydaHealthCheck(){
   const required=['GRUPLAR','KULLANICILAR','DERS_KAYITLARI','OGRENCILER','YOKLAMA','ODEV_TAKIBI','ODEV_GOREVLERI','ODEV_GOREV_GECMISI','DERS_ODEVLERI','OGRETMEN_GERI_BILDIRIM'];
   const missing=required.filter(name=>!db.getSheetByName(name));
   if(missing.length)throw Error('Eksik Google Sheets sekmeleri: '+missing.join(', '));
-  const result={ok:true,version:'2026-10-16.6',sheetCount:db.getSheets().length,groups:Math.max(0,db.getSheetByName('GRUPLAR').getLastRow()-1),students:Math.max(0,db.getSheetByName('OGRENCILER').getLastRow()-1)};
+  const result={ok:true,version:'2026-10-16.7',sheetCount:db.getSheets().length,groups:Math.max(0,db.getSheetByName('GRUPLAR').getLastRow()-1),students:Math.max(0,db.getSheetByName('OGRENCILER').getLastRow()-1)};
   Logger.log(JSON.stringify(result));
   return result;
 }
@@ -835,7 +876,7 @@ function doGet(e){
   let out;
   try{
     const action=String(p.action||'overview');
-    if(action==='ping'){out={ok:true,data:{status:'ok',version:'2026-10-16.6'}};}
+    if(action==='ping'){out={ok:true,data:{status:'ok',version:'2026-10-16.7'}};}
     else if(action==='publicDashboard'){out={ok:true,data:aydaPublicDashboard_()};}
     else if(action==='publicTrackingDashboard'){out={ok:false,error:'Öğrenci bilgileri anonim erişime kapalı.'};}
     else {const user=aydaAuth_(p.key);
@@ -859,6 +900,7 @@ function doGet(e){
     else if(action==='makeupList')out={ok:true,data:aydaMakeupList_(user)};
     else if(action==='homeworkTasks')out={ok:true,data:aydaHomeworkTasks_(user)};
     else if(action==='lessonHomework')out={ok:true,data:aydaLessonHomework_(user)};
+    else if(action==='confirmHomeworkShare')out={ok:true,data:aydaConfirmHomeworkShare_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='saveHomeworkTask')out={ok:true,data:aydaSaveHomeworkTask_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='updateHomeworkTask')out={ok:true,data:aydaUpdateHomeworkTask_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='teacherFeedback')out={ok:true,data:aydaTeacherFeedback_(user)};
