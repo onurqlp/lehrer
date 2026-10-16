@@ -15,7 +15,7 @@
  const showEmpty=(id,label)=>$(id).replaceChildren(node('div','owner-empty',label));
  const formats={danger:'Öncelikli',watch:'Takip edilmeli',regular:'Düzenli',untracked:'Henüz veri yok'};
  const days=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
- let token='',overview=null,tracking=null,reminders=null,activeApi='',loading=false,requestIndex=0,lessonLimit=40,tab='overview',exportRows=[];
+ let token='',overview=null,tracking=null,reminders=null,contactDirectory=null,lessonHomework=null,activeApi='',loading=false,requestIndex=0,lessonLimit=40,tab='overview',exportRows=[];
  const API=String(window.AYDA_API_URL||'').trim();
  const fmt=x=>/^\d{4}-\d{2}-\d{2}$/.test(String(x||''))?x.slice(8,10)+'.'+x.slice(5,7)+'.'+x.slice(0,4):(x||'—');
  const round=(n,d)=>d?Math.round(n/d*100)+'%':'—';
@@ -62,7 +62,7 @@
   });
  }
  async function api(action,key,params={}){
-  const readOnly=['overview','trackingSummary','reminders','studentNotes','vaultExport','feedbackInbox','contactDirectory','homeworkTasks'].includes(action);let err;
+  const readOnly=['overview','trackingSummary','reminders','studentNotes','vaultExport','feedbackInbox','contactDirectory','homeworkTasks','lessonHomework'].includes(action);let err;
   for(const address of (readOnly?[...new Set([activeApi,...candidates()].filter(Boolean))]:[activeApi||candidates()[0]])){try{const data=await apiRequest(address,action,key,params);activeApi=address;return data;}catch(e){err=e;if(!e.transport)throw e;}}
   throw err||Error('Google Apps Script bağlantısı kurulamadı.');
  }
@@ -98,7 +98,10 @@
  async function loadTracking(){
   try{const result=await api('trackingSummary',token);if(result?.scope!=='all')throw Error('Google Apps Script takip sürümü güncel değil.');tracking=result;errorMessage('');}
   catch(e){tracking=null;errorMessage('Öğrenci yoklama/ödev verisi yüklenemedi: '+e.message+' · Diğer akademik bilgiler gösteriliyor.');}
-  try{reminders=await api('reminders',token);}catch(e){reminders=null;}
+  const extra=await Promise.allSettled([api('reminders',token),api('contactDirectory',token),api('lessonHomework',token)]);
+  reminders=extra[0].status==='fulfilled'?extra[0].value:null;
+  contactDirectory=extra[1].status==='fulfilled'?extra[1].value:null;
+  lessonHomework=extra[2].status==='fulfilled'?extra[2].value:null;
   renderAll();
  }
  async function refresh(){
@@ -155,6 +158,12 @@
   if(r.student&&r.type==='Özel')add(el,'p','owner-note','Öğrenci: '+r.student);
   if(r.topic)add(el,'p','owner-note','Konu: '+r.topic);
   if(r.note)add(el,'p','owner-note owner-note-teacher','Öğretmen notu: '+r.note);
+  const hw=r.type==='Grup'?(lessonHomework?.items||[]).find(x=>x.lessonId===r.id):null;
+  if(hw&&!compact){
+   const detail=add(el,'details','ayda-lesson-homework-detail');
+   add(detail,'summary','','Verilen sınıf ödevini gör');
+   add(detail,'p','',hw.text);
+  }
   return el;
  }
  function renderOverview(){
@@ -181,6 +190,12 @@
   add(body,'p','','Ders günleri: '+(program.map(p=>p.day+' '+p.start+'–'+p.end).join(' · ')||'Henüz program yok'));
   const latest=(overview.history||[]).filter(r=>r.groupId===g.id).sort((a,b)=>b.date.localeCompare(a.date))[0];
   if(latest)add(body,'p','','Son rapor: '+fmt(latest.date)+' · '+latest.status+(latest.note?' · '+latest.note:''));
+  const assigned=(lessonHomework?.items||[]).filter(r=>r.groupId===g.id).slice(0,6);
+  if(assigned.length){
+   const hw=add(body,'details','ayda-group-homework-detail');
+   add(hw,'summary','','Verilen ödevler · '+assigned.length+' son kayıt');
+   for(const r of assigned)add(hw,'p','',''+fmt(r.date)+' · '+r.text);
+  }
   box.append(quick('Grubun öğrencilerini gör →',()=>{activate('students');$('ownerStudentGroup').value=g.id;renderStudents();}));
   return box;
  }
@@ -316,11 +331,16 @@
    add(c,'strong','',kind+' eksik · '+r.group);
    add(c,'p','','Tarih: '+fmt(r.date)+' · Öğretmen: '+person+' · '+r.ageHours+' saat önce');
    const msg='Merhaba hocam, '+fmt(r.date)+' tarihli '+r.group+' grubu '+kind.toLocaleLowerCase('tr-TR')+' eksik görünüyor. Lütfen sisteme girerek tamamlayınız. Teşekkürler.';
-   c.append(quick('WhatsApp üzerinden hatırlat',()=>{activate('messages');window.dispatchEvent(new CustomEvent('ayda:compose-teacher',{detail:{teacherId:r.teacherId,groupId:r.groupId,date:r.date,type:r.type}}));}));
-   c.append(quick('WhatsApp mesajını kopyala',()=>{
-    if(!navigator.clipboard?.writeText){c.lastChild.textContent='Tarayıcınız kopyalamayı desteklemiyor.';return;}
-    navigator.clipboard.writeText(msg).then(()=>{c.lastChild.textContent='Kopyalandı ✓';}).catch(()=>{c.lastChild.textContent='Kopyalanamadı';});
-   }));
+   const candidates=(contactDirectory?.teachers||[]).filter(t=>t.teacherId===r.teacherId&&t.status==='Aktif'&&/^90[1-9]\d{9}$/.test(String(t.phone||'')));
+   if(candidates.length===1){
+    const phone=candidates[0].phone;
+    const button=quick('WhatsApp üzerinden hatırlat',()=>{
+     window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank','noopener,noreferrer');
+    });
+    c.append(button);
+   }else{
+    add(c,'p','owner-note',candidates.length?'Öğretmen telefonu birden fazla kişiye eşleşiyor.':'Öğretmenin doğrulanmış WhatsApp numarası yok. Mesaj göndermeden önce iletişim rehberini düzeltin.');
+   }
   }
  }
  function renderWeekly(){
@@ -368,7 +388,7 @@
  }
  $('ownerLoginForm').addEventListener('submit',e=>{e.preventDefault();login($('ownerKey').value);});
  $('ownerRefresh').addEventListener('click',refresh);
- $('ownerLogout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');token='';overview=null;tracking=null;reminders=null;activeApi='';$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';const skip=$('ownerSkip');if(skip){skip.href='#ownerLogin';skip.textContent='Giriş bölümüne geç';}window.dispatchEvent(new Event('ayda:owner-logout'));});
+ $('ownerLogout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');token='';overview=null;tracking=null;reminders=null;contactDirectory=null;lessonHomework=null;activeApi='';$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';const skip=$('ownerSkip');if(skip){skip.href='#ownerLogin';skip.textContent='Giriş bölümüne geç';}window.dispatchEvent(new Event('ayda:owner-logout'));});
  $('ownerNav').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)activate(b.dataset.tab);});
  window.addEventListener('hashchange',()=>{const n=location.hash.slice(1);if(['overview','messages','alerts','attendance','students','groups','lessons','teachers','schedule','accounts'].includes(n)&&token)activate(n);});
  for(const b of document.querySelectorAll('[data-jump]'))b.addEventListener('click',()=>activate(b.dataset.jump));
