@@ -651,6 +651,91 @@ function aydaSaveHomework_(user,p){
  }finally{lock.releaseLock();}
 }
 
+
+/** İsteğe bağlı ödev görevleri: günlük yoklama/ödev kontrolünden ayrı, teslim tarihli grup çalışmaları. */
+function aydaHomeworkTasks_(user){
+ if(!['teacher','admin'].includes(user.role))throw Error('Giriş gerekli.');
+ const groups=aydaGroups_(user),allowed=new Map(groups.map(g=>[g.id,g]));
+ const today=aydaToday_();
+ const tasks=aydaRead_('ODEV_GOREVLERI').filter(r=>allowed.has(r['GRUP_ID']))
+  .map(r=>({
+   id:r['GOREV_ID'],groupId:r['GRUP_ID'],group:allowed.get(r['GRUP_ID']).name,
+   teacherId:r['OGRETMEN_ID'],title:r['BASLIK'],description:r['ACIKLAMA'],
+   createdDate:aydaDate_(r['VERILIS_TARIHI']),dueDate:aydaDate_(r['TESLIM_TARIHI']),
+   status:r['DURUM'],updatedAt:r['GUNCELLEME_ZAMANI'],
+   overdue:r['DURUM']==='Aktif'&&aydaDate_(r['TESLIM_TARIHI'])<today
+  })).sort((a,b)=>a.status.localeCompare(b.status,'tr')||a.dueDate.localeCompare(b.dueDate));
+ return {tasks:tasks.slice(0,180),total:tasks.length,overdue:tasks.filter(t=>t.overdue).length,scope:user.role==='admin'?'all':'own',today};
+}
+function aydaHomeworkSafeText_(text){
+ const s=String(text||'').trim();
+ return /^[=+@-]/.test(s)?"'"+s:s;
+}
+function aydaHomeworkPlusDays_(date,days){
+ const d=new Date(String(date)+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+Number(days));return d.toISOString().slice(0,10);
+}
+function aydaSaveHomeworkTask_(user,p){
+ if(user.role!=='teacher')throw Error('Görevi yalnızca yetkili öğretmen ekleyebilir.');
+ if(!p||typeof p!=='object')throw Error('Ödev bilgileri eksik.');
+ const groupId=String(p.groupId||'').trim(),title=String(p.title||'').trim(),
+  description=String(p.description||'').trim(),dueDate=String(p.dueDate||'').trim(),today=aydaToday_();
+ if(!aydaGroups_(user).some(g=>g.id===groupId&&g.status==='Aktif'))throw Error('Bu grupta görev oluşturma yetkiniz yok.');
+ if(title.length<4||title.length>150||description.length>1000)throw Error('Ödev başlığı 4–150, açıklama en fazla 1000 karakter olmalı.');
+ if(!aydaValidateDate_(dueDate)||dueDate<today||dueDate>aydaHomeworkPlusDays_(today,90))throw Error('Teslim tarihi bugünden sonraki 90 gün içinde olmalı.');
+ const lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  const id='HG-'+Utilities.getUuid();
+  aydaAppendNamed_('ODEV_GOREVLERI',{
+   GOREV_ID:id,GRUP_ID:groupId,OGRETMEN_ID:user.id,BASLIK:aydaHomeworkSafeText_(title),
+   ACIKLAMA:aydaHomeworkSafeText_(description),VERILIS_TARIHI:today,TESLIM_TARIHI:dueDate,
+   DURUM:'Aktif',OLUSTURMA_ZAMANI:new Date(),GUNCELLEME_ZAMANI:new Date()
+  });
+  return {saved:true,id,groupId,dueDate};
+ }finally{lock.releaseLock();}
+}
+function aydaUpdateHomeworkTask_(user,p){
+ if(user.role!=='teacher')throw Error('Ödev teslim süresini yalnızca öğretmen değiştirebilir.');
+ if(!p||typeof p!=='object')throw Error('Güncelleme bilgisi eksik.');
+ const id=String(p.id||'').trim(),kind=String(p.kind||'').trim(),today=aydaToday_();
+ if(!['extend','complete','reactivate'].includes(kind))throw Error('Geçersiz ödev işlemi.');
+ const days=Number(p.days||0);
+ if(kind==='extend'&&(!Number.isInteger(days)||days<1||days>30))throw Error('Ek süre 1–30 gün olmalı.');
+ const lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  const sh=aydaSheet_('ODEV_GOREVLERI'),v=sh.getDataRange().getDisplayValues(),h=v[0].map(String),
+   ic=h.indexOf('GOREV_ID'),ix=v.findIndex((r,i)=>i>0&&r[ic]===id);
+  if(ic<0||ix<1)throw Error('Ödev bulunamadı.');
+  const r=Object.fromEntries(h.map((key,i)=>[key,v[ix][i]]));
+  const group=aydaGroups_(user).find(g=>g.id===r['GRUP_ID']&&g.status==='Aktif');
+  if(!group||r['OGRETMEN_ID']!==user.id)throw Error('Bu ödeve işlem yapma yetkiniz yok.');
+  if(kind==='extend'&&r['DURUM']!=='Aktif')throw Error('Yalnızca aktif ödevin teslim tarihi uzatılabilir.');
+  const oldDate=aydaDate_(r['TESLIM_TARIHI']),newDate=kind==='extend'?aydaHomeworkPlusDays_(oldDate,days):oldDate;
+  if(kind==='extend'&&(!aydaValidateDate_(newDate)||newDate<=oldDate||newDate>aydaHomeworkPlusDays_(today,90)))
+   throw Error('Uzatılan teslim tarihi en fazla 90 gün ileriye alınabilir.');
+  const updatedStatus=kind==='complete'?'Tamamlandı':kind==='reactivate'?'Aktif':r['DURUM'];
+  if(updatedStatus===r['DURUM']&&newDate===oldDate)return {saved:true,unchanged:true,id};
+  const dcol=h.indexOf('TESLIM_TARIHI'),scol=h.indexOf('DURUM'),tcol=h.indexOf('GUNCELLEME_ZAMANI');
+  if([dcol,scol,tcol].some(n=>n<0))throw Error('Ödev tablosunda sütun eksik.');
+  const row=ix+1;
+  try{
+   sh.getRange(row,dcol+1).setValue(newDate);
+   sh.getRange(row,scol+1).setValue(updatedStatus);
+   sh.getRange(row,tcol+1).setValue(new Date());
+   aydaAppendNamed_('ODEV_GOREV_GECMISI',{
+    ISLEM_ID:'HGI-'+Utilities.getUuid(),GOREV_ID:id,ESKI_TESLIM_TARIHI:oldDate,
+    YENI_TESLIM_TARIHI:newDate,ISLEM_TURU:kind==='extend'?'Ek süre':kind==='complete'?'Tamamlandı':'Yeniden açıldı',
+    OGRETMEN_ID:user.id,ACIKLAMA:kind==='extend'?days+' gün ek süre':'Durum güncellendi',ZAMAN:new Date()
+   });
+  }catch(e){
+   sh.getRange(row,dcol+1).setValue(oldDate);
+   sh.getRange(row,scol+1).setValue(r['DURUM']);
+   sh.getRange(row,tcol+1).setValue(r['GUNCELLEME_ZAMANI']);
+   throw Error('Ödev güncellenemedi: '+e.message);
+  }
+  return {saved:true,id,dueDate:newDate,status:updatedStatus};
+ }finally{lock.releaseLock();}
+}
+
 function aydaSetPassword_(user,p){
   if(!p||typeof p!=='object')throw Error('Parola bilgileri eksik.');
   const target=String(p.target||'').trim(),password=String(p.password||'');
@@ -700,10 +785,10 @@ function aydaPublicDashboard_(){
 /** Elle çalıştırılabilir kurulum testi: Google yetkilendirmesini tamamlar. */
 function aydaHealthCheck(){
   const db=aydaDb_();
-  const required=['GRUPLAR','KULLANICILAR','DERS_KAYITLARI','OGRENCILER','YOKLAMA','ODEV_TAKIBI'];
+  const required=['GRUPLAR','KULLANICILAR','DERS_KAYITLARI','OGRENCILER','YOKLAMA','ODEV_TAKIBI','ODEV_GOREVLERI','ODEV_GOREV_GECMISI','OGRETMEN_GERI_BILDIRIM'];
   const missing=required.filter(name=>!db.getSheetByName(name));
   if(missing.length)throw Error('Eksik Google Sheets sekmeleri: '+missing.join(', '));
-  const result={ok:true,version:'2026-10-16.4',sheetCount:db.getSheets().length,groups:Math.max(0,db.getSheetByName('GRUPLAR').getLastRow()-1),students:Math.max(0,db.getSheetByName('OGRENCILER').getLastRow()-1)};
+  const result={ok:true,version:'2026-10-16.5',sheetCount:db.getSheets().length,groups:Math.max(0,db.getSheetByName('GRUPLAR').getLastRow()-1),students:Math.max(0,db.getSheetByName('OGRENCILER').getLastRow()-1)};
   Logger.log(JSON.stringify(result));
   return result;
 }
@@ -714,7 +799,7 @@ function doGet(e){
   let out;
   try{
     const action=String(p.action||'overview');
-    if(action==='ping'){out={ok:true,data:{status:'ok',version:'2026-10-16.4'}};}
+    if(action==='ping'){out={ok:true,data:{status:'ok',version:'2026-10-16.5'}};}
     else if(action==='publicDashboard'){out={ok:true,data:aydaPublicDashboard_()};}
     else if(action==='publicTrackingDashboard'){out={ok:false,error:'Öğrenci bilgileri anonim erişime kapalı.'};}
     else {const user=aydaAuth_(p.key);
@@ -736,6 +821,9 @@ function doGet(e){
     else if(action==='updateContact')out={ok:true,data:aydaUpdateContact_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='teacherMonthly')out={ok:true,data:aydaTeacherMonthly_(user,{month:p.month})};
     else if(action==='makeupList')out={ok:true,data:aydaMakeupList_(user)};
+    else if(action==='homeworkTasks')out={ok:true,data:aydaHomeworkTasks_(user)};
+    else if(action==='saveHomeworkTask')out={ok:true,data:aydaSaveHomeworkTask_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
+    else if(action==='updateHomeworkTask')out={ok:true,data:aydaUpdateHomeworkTask_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='teacherFeedback')out={ok:true,data:aydaTeacherFeedback_(user)};
     else if(action==='feedbackInbox')out={ok:true,data:aydaFeedbackInbox_(user)};
     else if(action==='saveFeedback')out={ok:true,data:aydaSaveFeedback_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
