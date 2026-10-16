@@ -4,6 +4,21 @@
 **Girişli tam yönetici takip merkezi:** https://lehrer.aydadil.com/yonetici.html
 
 
+## Öğretmen günlük iş merkezi ve WhatsApp iletişim (16 Ekim 2026)
+
+**Öğretmen öncelikli akış:** Girişte aylık planlanan/işlenen/kalan grup dersleri ve özel ders kayıtları görünür. Ardından bugünkü işler, ders raporu ve **Sonradan tamamla** gelir. Öğrencilerim · Takip Merkezi daha aşağıya alınmıştır. Akademik öğrenci görüşü isteğe bağlıdır.
+
+- `assets/teacher-daily.js` + `assets/ayda-operations.css`: Aylık ders sayısı, planlanan çizelgeye göre kalan ders, eski dersler için eksik yoklama, isteğe bağlı ödev kontrolü, öğretmenden yönetime fikir/sorun gönderme. Sunucu henüz yayımlanmadıysa aylık sayılar mevcut giriş verilerinden hesaplanır.
+- `assets/owner-messaging.js`: Sadece yönetici oturumunda kayıtlı öğretmen/öğrenci kişi listesi, eksik ders/yoklama ve devam/ödev mesajları. Sistem mesajı **hazırlar**; yönetici düzenleyip WhatsApp uygulamasında kendisi gönderir. Belirsiz Gizem eşleşmelerinde yanlış alıcı otomatik seçilmez.
+- Öğretmen geri bildirimleri: Öğretmen Fikir/Sorun/İyileştirme/Diğer kategorilerinden birini seçip önerisini gönderir; yönetici Mesaj Merkezi içinde görür, durumunu değiştirir, yanıt verebilir. Öğretmen kendi mesajını ve yanıtını görebilir.
+- **Sonradan tamamlama:** Var olan ders raporuna yoklama veya var olan yoklamaya ödev kontrolü eklenebilir; ikinci rapor üretilmez. Tekrarlı yoklama/ödev kaydı reddedilir. Kontrol edilmedi ödev başarısızlığı sayılmaz. Ödev her derste zorunlu değildir.
+- `apps-script/Code.gs`: Girişli işlemler teacherMonthly, makeupList, saveHomework, saveFeedback, teacherFeedback, feedbackInbox, feedbackReply, contactDirectory, updateContact. Kişi telefonları sadece yöneticiye açıklanır; publicDashboard iletişim veya öğrenci isimleri taşımaz.
+- Google Sheets: OGRETMEN_REHBERI (18), OGRENCI_ILETISIM (106), OGRETMEN_GERI_BILDIRIM. Telefonlar GitHub deposuna kopyalanmadı; yönetici düzeltme işlemiyle eksik numaralar eklenebilir.
+- Listedeki kişilerle eşleşmeyen Aylin ve Onur öğretmen hesapları pasifleştirildi; U001 yönetici hesabı korundu. Furkan H001; Onur'un yinelenen öğretmen kimliği H006 olarak ayrıldı. A1 Eylül G006 grubunun atanmış öğretmeni pasif kaldı, yeniden atama gerekir. İki Gizem birbirinden emin olunmadığı için eski Gizem grubu otomatik devredilmedi.
+- Rehbere ekleme otomatik giriş hesabı oluşturmaz; yeni öğretmenler için ana panelde hesap açılmalı ve parola tanımlanmalıdır.
+
+**Yayına alma:** GitHub güncellemeleri Apps Script'i otomatik değiştirmez. Mevcut Kod.gs yedeğini aldıktan sonra güncel apps-script/Code.gs sürümünü Apps Script projesine koyup **mevcut web uygulamasında yeni sürüm** dağıtılmalıdır. Aksi takdirde yeni API işlemleri çalışmaz. Sonrasında önce test hesabıyla kayıt yapılmalıdır.
+
 ## AYDA UI v1.0 — Kurum içi akademik tema (16 Ekim 2026)
 
 - **Reklamsız operasyon paneli:** Öğretmen ve yönetici ekranlarında kurs satışı, kayıt çağrısı, fiyat, pop-up, sabit pazarlama WhatsApp balonu veya alakasız CTA bulunmaz. "Dersi kaydet", "Raporu doldur", "Yardım" gibi görev butonları bu yasağın dışında kalan işlevsel işlemlerdir.
