@@ -207,3 +207,78 @@ body.ayda-internal .ayda-group-homework-detail p{font-size:13px;line-height:1.65
  body.ayda-internal .ayda-homework-field{padding:12px}
  body.ayda-internal .daily .actions button{flex:1 1 100%;min-width:0;width:100%}
 }
+
+/* WhatsApp classroom announcement: lesson report is not done until teacher confirms group communication. */
+body.ayda-internal .ayda-no-homework-btn{
+ border:1px solid #d5b978;background:#fff6e3;color:#76521a;border-radius:9px;
+ display:inline-flex;align-items:center;justify-content:center;min-height:43px;
+ font-size:12px;font-weight:750;padding:9px 12px;margin-top:10px;cursor:pointer
+}
+body.ayda-internal .ayda-no-homework-btn:hover{background:#ffefce}
+body.ayda-internal .ayda-no-homework-btn[hidden],
+body.ayda-internal .ayda-share-followup[hidden],
+body.ayda-internal .ayda-share-backlog[hidden],
+body.ayda-internal .ayda-share-pending-notice[hidden]{display:none!important}
+body.ayda-internal .ayda-share-followup{
+ border:1px solid #bdd8c2;border-left:5px solid #19776b;background:#f0faf4;
+ padding:16px 17px;border-radius:13px;margin:14px 0 0;
+ box-shadow:0 8px 22px rgba(17,84,59,.05);scroll-margin-top:115px
+}
+body.ayda-internal .ayda-share-status{
+ display:inline-flex;align-items:center;border-radius:8px;padding:5px 9px;
+ background:#e2f0e6;color:#146444;font-size:11px;font-weight:850
+}
+body.ayda-internal .ayda-share-followup h3{font-size:18px;margin:10px 0 6px;color:#102541}
+body.ayda-internal .ayda-share-help{font-size:13px;line-height:1.7;color:#445b61;margin:4px 0 12px}
+body.ayda-internal .ayda-share-preview{
+ border:1px solid #cfe3d7;border-radius:10px;background:#fff;padding:12px;margin:12px 0
+}
+body.ayda-internal .ayda-share-preview strong{display:block;font-size:13px;color:#102541;margin-bottom:5px}
+body.ayda-internal .ayda-share-preview p{font-size:13px;line-height:1.65;color:#142b44;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
+body.ayda-internal .ayda-share-confirm{
+ display:inline-flex;align-items:center;justify-content:center;min-height:46px;
+ background:#19776b;color:#fff;border:1px solid #157164;
+ border-radius:10px;font-size:13px;font-weight:850;padding:10px 17px
+}
+body.ayda-internal .ayda-share-confirm:disabled{opacity:.5;cursor:not-allowed}
+body.ayda-internal .ayda-share-hint{font-size:12px;color:#45665f;line-height:1.65;margin:8px 0 0}
+body.ayda-internal .ayda-share-backlog{
+ border:1px solid #ead0a1;background:#fffdf6;border-radius:12px;
+ padding:5px 13px 12px;margin:14px 0 24px;scroll-margin-top:115px
+}
+body.ayda-internal .ayda-share-backlog summary{
+ cursor:pointer;display:flex;min-height:48px;align-items:center;font-weight:800;
+ font-size:13px;color:#74511b
+}
+body.ayda-internal .ayda-share-pending-notice{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ background:#fff3d5;color:#74511b;border:1px solid #e6c887;border-radius:11px;
+ min-height:51px;padding:11px 14px;width:100%;text-align:left;margin:10px 0;
+ font-size:12px;cursor:pointer
+}
+body.ayda-internal .ayda-share-pending-notice strong{font-size:13px}
+body.ayda-internal .ayda-share-pending-notice span{font-weight:750}
+body.ayda-internal .ayda-share-pending-list{display:grid;gap:10px}
+body.ayda-internal .ayda-share-pending-item{
+ border:1px solid #eadcbd;border-radius:11px;padding:13px;background:#fff
+}
+body.ayda-internal .ayda-share-pending-head strong{font-size:13px;color:#102541}
+body.ayda-internal .ayda-share-pending-head p{
+ font-size:12px;line-height:1.6;color:#536779;margin:6px 0 10px;
+ overflow-wrap:anywhere;white-space:pre-wrap
+}
+body.ayda-internal .ayda-share-pending-controls{display:flex;gap:8px;flex-wrap:wrap}
+body.ayda-internal .ayda-share-pending-controls button{min-height:44px;padding:9px 13px;font-size:12px}
+body.ayda-internal .ayda-share-open{
+ border:1px solid #bee1c6;background:#e8f7ed;color:#166642;border-radius:9px;font-weight:850
+}
+body.ayda-manager .ayda-share-manager-status{
+ font-size:12px!important;font-weight:750;color:#214d75
+}
+@media(max-width:430px){
+ body.ayda-internal .ayda-no-homework-btn{width:100%}
+ body.ayda-internal .ayda-share-followup{padding:13px}
+ body.ayda-internal .ayda-share-confirm{width:100%}
+ body.ayda-internal .ayda-share-pending-notice{flex-direction:column;align-items:flex-start}
+ body.ayda-internal .ayda-share-pending-controls button{flex:1 1 100%}
+}
