@@ -478,6 +478,33 @@ function aydaContactDirectory_(user){
  }));
  return {students,teachers,missingStudentPhones:students.filter(x=>!x.phone).length,scope:'admin'};
 }
+
+/** Yönetici kişi rehberinde yalnızca tanımlı kaydın telefonunu düzenler. */
+function aydaUpdateContact_(user,p){
+ if(user.role!=='admin')throw Error('Telefon güncelleme yetkisi yalnızca yöneticidedir.');
+ const type=String((p||{}).type||''),id=String((p||{}).id||'').trim();
+ const input=String((p||{}).phone||'').trim();
+ if(!['teacher','student'].includes(type)||!id||id.length>80)throw Error('Kişi kaydı geçersiz.');
+ const phone=input?aydaPhone_(input):'';
+ if(input&&!phone)throw Error('Telefonu 10 haneli Türkiye cep numarası olarak girin.');
+ const sheetName=type==='teacher'?'OGRETMEN_REHBERI':'OGRENCI_ILETISIM';
+ const idCol=type==='teacher'?'KISI_ID':'OGRENCI_ID';
+ const lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  const sh=aydaSheet_(sheetName),v=sh.getDataRange().getDisplayValues(),h=v[0].map(String);
+  const idIndex=h.indexOf(idCol),phoneIndex=h.indexOf('TELEFON');
+  if(idIndex<0||phoneIndex<0)throw Error('Rehber sütunları eksik.');
+  const row=v.findIndex((r,i)=>i>0&&r[idIndex]===id);
+  if(row<1)throw Error('Kişi bulunamadı.');
+  sh.getRange(row+1,phoneIndex+1).setValue(phone?'+'+phone:'');
+  if(type==='teacher'){
+   const match=h.indexOf('ESLESME');
+   if(match>=0&&v[row][match]==='Telefon eksik/geçersiz'&&phone)sh.getRange(row+1,match+1).setValue('Telefon doğrulandı · Hesap eşleştirmesi bekliyor');
+  }
+  return {saved:true,type,id,phone};
+ }finally{lock.releaseLock();}
+}
+
 function aydaFeedbackSheet_(){return aydaSheet_('OGRETMEN_GERI_BILDIRIM');}
 function aydaTeacherFeedback_(user){
  if(user.role!=='teacher')throw Error('Öğretmen oturumu gereklidir.');
@@ -676,7 +703,7 @@ function aydaHealthCheck(){
   const required=['GRUPLAR','KULLANICILAR','DERS_KAYITLARI','OGRENCILER','YOKLAMA','ODEV_TAKIBI'];
   const missing=required.filter(name=>!db.getSheetByName(name));
   if(missing.length)throw Error('Eksik Google Sheets sekmeleri: '+missing.join(', '));
-  const result={ok:true,version:'2026-10-16.3',sheetCount:db.getSheets().length,groups:Math.max(0,db.getSheetByName('GRUPLAR').getLastRow()-1),students:Math.max(0,db.getSheetByName('OGRENCILER').getLastRow()-1)};
+  const result={ok:true,version:'2026-10-16.4',sheetCount:db.getSheets().length,groups:Math.max(0,db.getSheetByName('GRUPLAR').getLastRow()-1),students:Math.max(0,db.getSheetByName('OGRENCILER').getLastRow()-1)};
   Logger.log(JSON.stringify(result));
   return result;
 }
@@ -687,7 +714,7 @@ function doGet(e){
   let out;
   try{
     const action=String(p.action||'overview');
-    if(action==='ping'){out={ok:true,data:{status:'ok',version:'2026-10-16.3'}};}
+    if(action==='ping'){out={ok:true,data:{status:'ok',version:'2026-10-16.4'}};}
     else if(action==='publicDashboard'){out={ok:true,data:aydaPublicDashboard_()};}
     else if(action==='publicTrackingDashboard'){out={ok:false,error:'Öğrenci bilgileri anonim erişime kapalı.'};}
     else {const user=aydaAuth_(p.key);
@@ -706,6 +733,7 @@ function doGet(e){
     else if(action==='updateReport')out={ok:true,data:aydaUpdateReport_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='setFollowup')out={ok:true,data:aydaSetFollowup_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='contactDirectory')out={ok:true,data:aydaContactDirectory_(user)};
+    else if(action==='updateContact')out={ok:true,data:aydaUpdateContact_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='teacherMonthly')out={ok:true,data:aydaTeacherMonthly_(user,{month:p.month})};
     else if(action==='makeupList')out={ok:true,data:aydaMakeupList_(user)};
     else if(action==='teacherFeedback')out={ok:true,data:aydaTeacherFeedback_(user)};
