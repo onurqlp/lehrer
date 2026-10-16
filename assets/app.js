@@ -135,9 +135,40 @@ function renderHistory(){clear('history');const filter=$('historyFilter').value;
 $('groupId').addEventListener('change',()=>{const g=data?.groups.find(x=>x.id===$('groupId').value);if(g)$('completed').value=g.completed||0;});
 $('historyFilter').addEventListener('change',renderHistory);
 $('loginForm').addEventListener('submit',e=>{e.preventDefault();login($('key').value);});
-$('logout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');authKey='';data=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');$('logout').classList.add('hidden');$('key').value='';$('roleChip').textContent='Öğretmen ve Yönetici';document.body.classList.remove('ayda-is-admin');history.replaceState(null,'',location.pathname);window.dispatchEvent(new Event('ayda:logout'));});
+$('logout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');authKey='';data=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');$('logout').classList.add('hidden');$('key').value='';$('roleChip').textContent='Öğretmen ve Yönetici';document.body.classList.remove('ayda-is-admin');history.replaceState(null,'',location.pathname);lastSharedHomework=null;$('sendHomeworkToGroup').hidden=true;$('aydaShareHint').hidden=true;window.dispatchEvent(new Event('ayda:logout'));});
+let lastSharedHomework=null;
+$('sendHomeworkToGroup')?.addEventListener('click',()=>{
+ const hint=$('aydaShareHint');
+ if(!lastSharedHomework){if(hint){hint.hidden=false;hint.textContent='Önce ders kaydını tamamlayın.';}return;}
+ const {groupName,date,text}=lastSharedHomework;
+ const format=/^\d{4}-\d\d-\d\d$/.test(date)?date.slice(8)+'.'+date.slice(5,7)+'.'+date.slice(0,4):date;
+ const message='AYDA DİL AKADEMİSİ · '+groupName+'\n'+format+' tarihli derste verilen ödev:\n'+text+'\nİyi çalışmalar.';
+ // WhatsApp does not provide a standard URL to prefill a specific group chat.
+ // Sharing link lets the teacher choose their own class group, then manually send.
+ const href='https://wa.me/?text='+encodeURIComponent(message);
+ window.open(href,'_blank','noopener,noreferrer');
+ if(hint){hint.hidden=false;hint.textContent='WhatsApp açıldı. Sınıf grubunu seçip Gönder’e basın.';}
+});
+function aydaSyncHomeworkField(){
+ const group=$('lessonType')?.value==='group',status=$('status')?.value||'İşlendi';
+ const label=$('aydaHomeworkLabel'),hint=$('aydaHomeworkHint'),note=$('note');
+ if(!label||!note)return;
+ if(group&&status==='İşlendi'){
+  label.textContent='2 · Verilen ödev';
+  note.placeholder='Örn. Menschen A2, Ünite 6, sayfa 42–43 alıştırmaları.';
+  if(hint)hint.textContent='Yoklamadan sonra bu ödevi yazın. Tekrar yazmanız gerekmeyecek.';
+ }else{
+  label.textContent=status==='İşlendi'?'Kısa ders notu':'İptal / erteleme gerekçesi';
+  note.placeholder=status==='İşlendi'?'Dersin kısa özeti veya verilen çalışma':'Örn. Öğretmen mazereti nedeniyle ertelendi.';
+  if(hint)hint.textContent='Kısa bir açıklama yazın.';
+ }
+}
+$('lessonType')?.addEventListener('change',aydaSyncHomeworkField);
+$('status')?.addEventListener('change',aydaSyncHomeworkField);
+window.addEventListener('ayda:login',aydaSyncHomeworkField);
+
 $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$('saveBtn');b.disabled=true;b.textContent='Kaydediliyor...';clear('formMessage');try{
- const payload={type:$('lessonType').value,student:$('privateStudent').value,groupId:$('groupId').value,date:$('lessonDate').value,unit:Number($('completed').value),completed:Number($('completed').value),actual:$('actual').value,status:$('status').value,topic:'',note:$('note').value.trim()};
+ const payload={type:$('lessonType').value,student:$('privateStudent').value,groupId:$('groupId').value,date:$('lessonDate').value,unit:Number($('completed').value),completed:Number($('completed').value),actual:$('actual').value,status:$('status').value,topic:'',note:$('note').value.trim(),homeworkText:$('note').value.trim()};
  const tracking=window.AYDA_ATTENDANCE?.collect?.();
  if(tracking)Object.assign(payload,tracking);
  const previous=payload.type==='group'?(data?.history||[]).find(r=>r.groupId===payload.groupId&&r.date===payload.date):null;
@@ -145,24 +176,34 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  const oldAttendance=!!previous||(payload.type==='group'&&makeup?.groupId===payload.groupId&&makeup?.date===payload.date);
  if(previous&&previous.status!=='İşlendi')throw Error('Bu tarihte zaten iptal/erteleme kaydı var. Yönetimden kontrol isteyin.');
  if(oldAttendance&&!tracking)throw Error('Bu tarihin ders raporu zaten kayıtlı. Eksik yoklama için öğrenci listesini işaretleyin.');
+ if(payload.type==='group'&&payload.status==='İşlendi'&&!tracking)throw Error('Yoklama tamamlanmadan ders raporu gönderilemez. Öğrencileri işaretleyin.');
+ if(payload.type==='group'&&payload.status==='İşlendi'&&!oldAttendance&&(payload.homeworkText.length<3||payload.homeworkText.length>1000))
+   throw Error('Verilen ödevi yazın (en az 3 karakter).');
  const saved=oldAttendance?await jsonp('saveAttendance',{payload:utf8Base64Url(JSON.stringify({groupId:payload.groupId,date:payload.date,...tracking}))}):await jsonp('save',{payload:utf8Base64Url(JSON.stringify(payload))});
  if(!saved?.saved)throw Error('Sunucu kayıt işlemini doğrulamadı.');
  const trackingVerified=!!tracking&&saved.trackingSaved===true&&saved.attendanceCount===tracking.attendance.length;
- const confirmation=tracking?(trackingVerified?(tracking.homeworkEnabled?'Ders raporu, yoklama ve ödev kontrolü kaydedildi.':'Ders raporu ve yoklama kaydedildi.'):'Ders raporu kaydedildi ancak yoklama/ödev kaydı doğrulanamadı. Apps Script yeni sürümünü yayımlayın.'):'Ders çizelgeye kaydedildi.';
- message('formMessage',confirmation,tracking&&!trackingVerified?'error':'success');
+ const homeworkVerified=oldAttendance||payload.type!=='group'||payload.status!=='İşlendi'||saved.homeworkSaved===true;
+ if(payload.type==='group'&&payload.status==='İşlendi'&&(!trackingVerified||!homeworkVerified))throw Error('Kayıt onayı eksik. Apps Script sürümünü kontrol edin, aynı raporu tekrar göndermeden önce yöneticiyle görüşün.');
+ const confirmation=oldAttendance?'Eksik yoklama tamamlandı.':(payload.type==='group'&&payload.status==='İşlendi'?'Ders, yoklama ve verilen ödev kaydedildi.':'Ders kaydı tamamlandı.');
+ message('formMessage',confirmation,'success');
+ lastSharedHomework=!oldAttendance&&payload.type==='group'&&payload.status==='İşlendi'?{
+   groupId:payload.groupId,groupName:data?.groups?.find(g=>g.id===payload.groupId)?.name||payload.groupId,
+   date:payload.date,text:payload.homeworkText}:null;
+ $('sendHomeworkToGroup').hidden=!lastSharedHomework;
+ $('aydaShareHint').hidden=true;
  $('note').value='';
  window.AYDA_ATTENDANCE?.resetAfterSave?.();
  try{
   data=await jsonp('overview');render();
   if(data.user.role==='admin')loadTrackingSummary();
  }catch(refreshError){
-  message('formMessage',confirmation+' Liste güncellenemedi; sayfayı yenileyin.',tracking&&!trackingVerified?'error':'success');
+  message('formMessage',confirmation+' Liste güncellenemedi; sayfayı yenileyin.','success');
  }
  window.AYDA_MAKEUP_ATTENDANCE=null;
  window.dispatchEvent(new Event('ayda:saved'));
 }catch(err){
  message('formMessage',err.unknownCommit?'Sunucudan kayıt onayı alınamadı. Yeniden kaydetmeden önce Google Sheets DERS_KAYITLARI sekmesini kontrol edin. ('+err.message+')':err.message);
-}finally{b.disabled=false;b.textContent='Dersi Kaydet';}});
+}finally{b.disabled=false;b.textContent=$('lessonType').value==='group'&&$('status').value==='İşlendi'?'Yoklama + ödev + dersi kaydet':'Ders durumunu kaydet';}});
 
 // Academic planning: one unit per scheduled class date; two further class dates for exam preparation.
 function dateISO(d){return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');}
