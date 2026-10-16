@@ -1,0 +1,71 @@
+/* AYDA academic operations — quiet, mobile-first, no promotional CTAs. */
+.ayda-month-overview,.ayda-makeup-center{background:var(--ayda-white,#fff);border:1px solid var(--ayda-border,#dbe3ea);border-radius:17px;padding:18px;margin:16px 0 22px;box-shadow:var(--ayda-shadow)}
+.ayda-month-overview h2,.ayda-makeup-center h2{font-size:20px;margin:0;color:var(--ayda-navy,#102541)}
+.ayda-month-overview .ayda-auto-title,.ayda-makeup-center .ayda-auto-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ayda-month-overview .ayda-auto-title input{max-width:160px;min-height:44px;padding:8px 10px}
+.ayda-month-overview .ayda-auto-metrics{grid-template-columns:repeat(4,minmax(0,1fr));margin:14px 0 9px;gap:10px}
+.ayda-month-overview .ayda-auto-metric{background:#edf5fb;border:1px solid #dbe3ea}
+.ayda-makeup-center .ayda-auto-line{margin:8px 0}
+.ayda-makeup-body>h3,.ayda-feedback-replies>h3{font-size:14px;margin:14px 0 8px;color:var(--ayda-text,#142b44)}
+.ayda-optional-homework{border:1px solid var(--ayda-border);background:#fbfcfe;border-radius:12px;padding:0 13px;margin-top:16px}
+.ayda-optional-homework>summary{cursor:pointer;min-height:50px;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:750;color:var(--ayda-blue,#214d75)}
+.ayda-optional-list{display:grid;gap:10px;padding:4px 0 14px}
+.ayda-makeup-optional{display:flex;align-items:center;gap:9px;flex-wrap:wrap;border:1px solid var(--ayda-border);padding:10px;border-radius:10px;background:white}
+.ayda-makeup-optional>strong{font-size:13px;flex:1;min-width:170px}
+.ayda-makeup-expanded{width:100%;padding-top:10px;border-top:1px solid var(--ayda-border)}
+.ayda-makeup-expanded.hidden{display:none}
+.ayda-makeup-students{max-height:400px;overflow:auto;display:grid;gap:5px;margin:9px 0}
+.ayda-makeup-student{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 10px;border:1px solid #e8edf2;background:#fff;border-radius:9px}
+.ayda-makeup-student>span{font-size:13px;font-weight:650;min-width:0}
+.ayda-makeup-student select{width:auto;min-width:160px;max-width:50%;min-height:44px}
+.ayda-makeup-student select:disabled{opacity:.6}
+.ayda-feedback{background:#fff;border:1px solid var(--ayda-border);border-radius:16px;margin:26px 0 18px;box-shadow:var(--ayda-shadow)}
+.ayda-feedback>summary{cursor:pointer;padding:19px 20px;color:var(--ayda-navy);font-weight:800;min-height:58px;display:flex;align-items:center}
+.ayda-feedback-inner{padding:0 19px 19px}
+.ayda-feedback-form{display:grid;gap:10px}
+.ayda-feedback-form select{max-width:300px}
+.ayda-feedback-form textarea{min-height:85px;width:100%}
+.ayda-feedback-form button{justify-self:start;min-width:160px}
+.ayda-feedback-replies{display:grid;gap:9px;margin-top:10px}
+.ayda-feedback-reply{border:1px solid var(--ayda-border);background:#fcfdff;border-radius:10px;padding:12px}
+.ayda-feedback-reply strong{font-size:12px;color:var(--ayda-navy)}
+.ayda-feedback-reply small{display:block;color:var(--ayda-muted);font-size:11px}
+.ayda-feedback-reply p{white-space:pre-wrap;font-size:12px;margin:8px 0 0}
+.ayda-feedback-admin{background:#edf5fb;border-left:3px solid #214d75;padding:8px 10px;border-radius:6px}
+.ayda-message-composers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;align-items:start}
+.ayda-message-panel{border:1px solid var(--ayda-border);border-radius:16px;background:#fff;padding:18px;box-shadow:var(--ayda-shadow);min-width:0}
+.ayda-message-panel h3{margin:0 0 12px;font-size:18px;color:var(--ayda-navy)}
+.ayda-message-panel label{font-size:12px;font-weight:750;margin:12px 0 5px}
+.ayda-message-panel input,.ayda-message-panel select,.ayda-message-panel textarea{width:100%;font-size:13px;min-height:44px;box-sizing:border-box}
+.ayda-message-panel textarea{min-height:130px;line-height:1.55}
+.ayda-message-panel .actions button{width:100%}
+.ayda-message-panel .micro{line-height:1.5;min-height:18px}
+.ayda-manager-feedback-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ayda-feedback-inbox{background:#fff;border:1px solid var(--ayda-border);border-radius:13px;padding:14px;min-width:0}
+.ayda-feedback-inbox.is-new{border-left:4px solid var(--ayda-gold);background:#fffdf7}
+.ayda-inbox-title{display:flex;justify-content:space-between;gap:9px;align-items:center}
+.ayda-inbox-title strong{color:var(--ayda-navy);font-size:14px}
+.ayda-inbox-title span{background:#edf5fb;color:var(--ayda-blue);border-radius:10px;padding:5px 8px;font-size:11px;font-weight:700}
+.ayda-feedback-inbox small{display:block;font-size:11px;color:var(--ayda-muted);margin:4px 0}
+.ayda-feedback-inbox p{font-size:13px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.ayda-feedback-inbox textarea{min-height:75px;resize:vertical;width:100%;font-size:13px}
+.ayda-inbox-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.ayda-inbox-actions select{width:auto;min-width:140px;max-width:55%;min-height:44px}
+.ayda-inbox-actions button{min-height:44px}
+.ayda-operations-alert{color:#aa514c}
+@media(max-width:900px){
+ .ayda-message-composers,.ayda-manager-feedback-list{grid-template-columns:1fr}
+ .ayda-month-overview .ayda-auto-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:430px){
+ .ayda-month-overview,.ayda-makeup-center{padding:13px;margin:13px 0}
+ .ayda-month-overview .ayda-auto-title{flex-wrap:wrap}
+ .ayda-month-overview .ayda-auto-title input{flex:1;max-width:none;width:100%}
+ .ayda-month-overview h2,.ayda-makeup-center h2{font-size:17px}
+ .ayda-makeup-student{align-items:stretch;flex-direction:column;gap:5px}
+ .ayda-makeup-student select{min-width:0;width:100%;max-width:100%}
+ .ayda-message-panel{padding:14px}
+ .ayda-inbox-actions>*{flex:1}
+ .ayda-inbox-actions select{max-width:100%}
+}
+@media print{.ayda-feedback,.ayda-makeup-center,.ayda-message-composers{display:none!important}}
