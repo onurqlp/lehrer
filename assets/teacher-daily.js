@@ -14,6 +14,43 @@
  const monthNumbers=el('div','ayda-auto-metrics');monthWrap.append(monthNumbers);
  const monthInfo=el('p','ayda-auto-subtle');monthWrap.append(monthInfo);
  const stats=$('app')?.querySelector('.stats');if(stats)stats.insertAdjacentElement('afterend',monthWrap);
+
+ /* Teachers can confirm a concise lesson description with one click; no fabricated automatic note. */
+ const noteInput=$('note'),actualInput=$('actual');
+ if(actualInput){
+  const choices=[['00:30','30 dakika'],['01:00','1 saat'],['01:30','1,5 saat'],['02:00','2 saat'],['02:30','2,5 saat'],['03:00','3 saat'],['03:30','3,5 saat'],['04:00','4 saat']];
+  const previous=actualInput.value;actualInput.replaceChildren();
+  for(const [value,label] of choices)actualInput.add(new Option(label,value));
+  actualInput.value=previous||'02:00';
+ }
+ if(noteInput){
+  const noteShortcuts=el('div','ayda-note-shortcuts');noteShortcuts.append(el('span','', 'Tek dokunuşla kısa bilgi:'));
+  for(const [label,make] of [
+   ['Ünite işlendi',()=>'Ünite '+($('completed')?.value||'—')+' üzerine ders işlendi.'],
+   ['Tekrar',()=>'Önceki konuların tekrarı yapıldı.'],
+   ['Konuşma',()=>'Konuşma pratiği yapıldı.'],
+   ['Sınav hazırlığı',()=>'Sınav hazırlığı çalışması yapıldı.']
+  ]){
+   noteShortcuts.append(makeButton(label,()=>{noteInput.value=make();noteInput.dispatchEvent(new Event('input',{bubbles:true}));noteInput.focus();}));
+  }
+  noteInput.insertAdjacentElement('afterend',noteShortcuts);
+ }
+ function suggestDuration(){
+  if(!tr()||$('lessonType')?.value!=='group'||!actualInput)return;
+  const gid=$('groupId')?.value,day=$('lessonDate')?.value;
+  if(!gid||!day)return;
+  const wd=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'][new Date(day+'T12:00:00Z').getUTCDay()];
+  const schedule=(data.schedule||[]).find(item=>item.groupId===gid&&item.day===wd);
+  if(!schedule)return;
+  const a=String(schedule.start||'').match(/^(\d{1,2}):(\d{2})/),b=String(schedule.end||'').match(/^(\d{1,2}):(\d{2})/);
+  if(!a||!b)return;
+  const minutes=(+b[1]*60+(+b[2]))-(+a[1]*60+(+a[2]));
+  if(minutes<=0||minutes>240)return;
+  const value=String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');
+  if([...actualInput.options].some(opt=>opt.value===value))actualInput.value=value;
+ }
+ for(const id of ['lessonDate','groupId','lessonType'])$(id)?.addEventListener('change',suggestDuration);
+
  const daily=$('daily'),groupTitle=$('groupTitle')?.closest('.section');
  if(daily&&groupTitle){groupTitle.parentNode.insertBefore(daily,groupTitle);}
  const tracker=$('teacherTracking'),history=$('history'),historyTitle=history?.previousElementSibling;
@@ -151,7 +188,7 @@
  });
  monthInput.addEventListener('change',loadMonth);
  feedback.addEventListener('toggle',()=>{if(feedback.open)loadFeedback();});
- window.addEventListener('ayda:login',()=>{if(!tr())return;monthInput.value=monthOf();monthWrap.classList.remove('hidden');feedback.classList.remove('hidden');loadMonth();loadMakeup();});
+ window.addEventListener('ayda:login',()=>{if(!tr())return;monthInput.value=monthOf();monthWrap.classList.remove('hidden');feedback.classList.remove('hidden');suggestDuration();loadMonth();loadMakeup();});
  window.addEventListener('ayda:saved',()=>{if(tr()){loadMonth();loadMakeup();}});
  window.addEventListener('ayda:logout',()=>{request++;monthWrap.classList.add('hidden');makeup.classList.add('hidden');feedback.classList.add('hidden');feedback.open=false;replies.replaceChildren();makeupBody.replaceChildren();monthNumbers.replaceChildren();text.value='';});
 })();
