@@ -36,7 +36,7 @@ function jsonpRequest(api,action,params){
  });
 }
 async function jsonp(action,params={}){
- const readOnly=['overview','studentRoster','trackingSummary','vaultExport','reminders','studentNotes'].includes(action);
+ const readOnly=['overview','studentRoster','trackingSummary','vaultExport','reminders','studentNotes','teacherMonthly','makeupList','teacherFeedback','feedbackInbox','contactDirectory'].includes(action);
  const candidates=apiCandidates();
  let last;
  for(const address of (readOnly?candidates:candidates.slice(0,1))){
