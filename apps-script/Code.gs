@@ -111,7 +111,7 @@ function aydaSave_(user,p){
     if(di<0||gi<0)throw Error('DERS_KAYITLARI başlıkları eksik.');
     if(values.slice(1).some(r=>r[gi]===groupId&&aydaDate_(r[di])===date))throw Error('Bu grup ve tarihe ait rapor zaten var.');
     const plan=aydaSchedule_([group]).find(x=>x.day===aydaWeekday_(date));
-    const record={'Kayıt ID':'DK-'+Utilities.getUuid(),'Tarih':date,'Grup ID':groupId,'Öğretmen ID':group.teacherId,'Planlanan Başlangıç':plan?plan.start:'','Planlanan Bitiş':plan&&plan.end!=='Belirtilmemiş'?plan.end:'','Gerçekleşen Ders Saati':actual,'Durum':status,'İşlenen Ünite':unit,'Tamamlanan Ünite':completed,'İşlenen Konu':topic,'Öğretmen Notu':note,'Kayıt Zamanı':new Date()};
+    const record={'Kayıt ID':'DK-'+Utilities.getUuid(),'Tarih':date,'Grup ID':groupId,'Öğretmen ID':group.teacherId,'Planlanan Başlangıç':plan?plan.start:'','Planlanan Bitiş':plan&&plan.end!=='Belirtilmemiş'?plan.end:'','Gerçekleşen Ders Saati':actual,'Durum':status,'İşlenen Ünite':unit,'Tamamlanan Ünite':completed,'İşlenen Konu':/^[=+@-]/.test(topic)?"'"+topic:topic,'Öğretmen Notu':/^[=+@-]/.test(note)?"'"+note:note,'Kayıt Zamanı':new Date()};
     if(Object.keys(record).some(k=>!h.includes(k)))throw Error('DERS_KAYITLARI tablosunun başlıkları eksik.');
     // İşlenen grup dersi için yoklama + verilen ödev zorunlu; iptal/erteleme istisnadır.
     if(Object.prototype.hasOwnProperty.call(p,'attendance')&&!Array.isArray(p.attendance))throw Error('Yoklama biçimi geçersiz.');
