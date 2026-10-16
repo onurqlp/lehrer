@@ -4,6 +4,18 @@
 **Girişli tam yönetici takip merkezi:** https://lehrer.aydadil.com/yonetici.html
 
 
+## Ders sonu en kısa akış — 16 Ekim 2026 (Apps Script v2026-10-16.6)
+
+- **1. Yoklama:** İşlenen grup dersi seçilince yoklama otomatik açılır. **Hepsi geldi** veya öğrenci bazında Geldi/Gelmedi işaretlenir. *Tek bir öğrenci bile işaretlenmediyse; öğrenci listesi eksik, yüklenememiş veya sunucu bağlantısı eskiyse ders raporu gönderilemez.* İptal/ertelenmiş dersler yoklama gerektirmez. Mevcut raporlara sonradan yoklama tamamlama özelliği korunur.
+- **2. Verilen ödev (zorunlu):** Yeni bir zorunlu form eklenmedi. Mevcut "Kısa bilgi" alanı, işlenen grup derslerinde **"Verilen ödev"** başlığıyla kullanılır. Öğretmen ödevi tek sefer yazar; metin hem mevcut ders notunda hem de ayrı **DERS_ODEVLERI** sekmesinde ders kayıt ID'siyle tutulur. Verilen ödev boşsa kaydetme reddedilir. Gerçekten ödev verilmediyse bunun açıklaması yazılabilir. Öğrenci bazında ödev **kontrolü** ayrı ve isteğe bağlı kalır. Önceki raporlar değiştirilmez.
+- **3. Kaydet ve gruba paylaş:** Başarılı işlenen grup dersinden sonra **"Ödevi gruba yaz →"** tek tuşu çıkar. WhatsApp paylaşma ekranında sınıf ödevi, grup adı ve tarih hazır bulunur; öğretmen **sınıf grubunu seçip mesajı manuel gönderir**. WhatsApp mevcut linklerle belirli bir grubu otomatik önceden seçmeye izin vermediği için otomatik gönderim iddia edilmez. İsteğe bağlı, ayrı teslim tarihli ödev görevleri için de aynı paylaşım düğmesi vardır.
+- **Ders süresi:** Yeni grup ve özel ders raporlarında **yalnızca 1–6 tam saat** (`01:00`–`06:00`). Yarım saat seçenekleri kaldırıldı. Geçmiş derslerin eski süreleri veya kayıtları otomatik değiştirilmedi. Rapor süresi düzeltirken de yalnız tam saat seçilebilir.
+- **Yönetici tek tık hatırlatma:** 12 saatlik eksik ders/yoklama kartındaki **"WhatsApp üzerinden hatırlat"** artık Mesaj Merkezi'ne götürmez; özel `OGRETMEN_REHBERI` sekmesinde tek bir aktif öğretmen kimliği ve geçerli telefon varsa ilgili hocanın WhatsApp taslağını doğrudan açar. Mesaj ilgili grup/tarih/eksik işlemle dolu olur. Telefon yok, Gizem gibi kimlik belirsiz veya eşleşme çoğulsa **yanlış kişiye gönderilmez**; uyarı görünür.
+- **Yönetici inceleme:** `yonetici.html` **Ders Kayıtları → Rapor → Verilen sınıf ödevini gör** veya **Gruplar → Program, son rapor ve tahmini tarihler → Verilen ödevler** altında görevleri açabilir. Ana ekran ödev metinleriyle doldurulmaz. Ayrı teslim tarihli ödev görevleri ise **Yoklama & Ödev** bölümünde listelenir.
+- **Özel/gizli veriler:** `DERS_ODEVLERI` yetkili personel API'si `lessonHomework` üzerinden okunabilir. Anonim `publicDashboard` hiçbir öğrenci adı veya ödev içeriği paylaşmaz; iletişim rehberi GitHub'a taşınmaz.
+- **Veritabanı öncesi yedek:** `AYDA Akademik Takip | YEDEK 2026-10-16 · Zorunlu Yoklama Öncesi` alındı; asıl sayfaya boş **DERS_ODEVLERI** sekmesi eklendi. Var olan veri satırlarına dokunulmadı.
+- **Yayımlama:** GitHub'daki `apps-script/Code.gs` yeni sürüm olarak Google Apps Script'teki mevcut web uygulamasına ayrıca dağıtılmalıdır. `aydaHealthCheck` çalıştırıldığında sürüm `2026-10-16.6` görünmelidir. Canlı kullanımdan önce tek deneme grup dersini kontrol edin. GitHub tek başına Apps Script güncellemez.
+
 ## Yönetici öncelikli ekran + teslim tarihli ödevler (16.10.2026)
 
 - **Günlük yönetim önceliği:** `index.html` yöneticide önce akademik genel bakış, öğrenci takibi ve ders/muhasebeyi gösterir. Eski öğretmen tipindeki ders kaydı, gruplar ve çizelge araçları **aşağıda** korunur; veri/işlev silinmez.
