@@ -36,7 +36,7 @@ function jsonpRequest(api,action,params){
  });
 }
 async function jsonp(action,params={}){
- const readOnly=['overview','studentRoster','trackingSummary','vaultExport','reminders','studentNotes','teacherMonthly','makeupList','teacherFeedback','feedbackInbox','contactDirectory','homeworkTasks'].includes(action);
+ const readOnly=['ping','overview','studentRoster','trackingSummary','vaultExport','reminders','studentNotes','teacherMonthly','makeupList','teacherFeedback','feedbackInbox','contactDirectory','homeworkTasks','lessonHomework'].includes(action);
  const candidates=apiCandidates();
  let last;
  for(const address of (readOnly?candidates:candidates.slice(0,1))){
@@ -138,8 +138,17 @@ function renderHistory(){clear('history');const filter=$('historyFilter').value;
 $('groupId').addEventListener('change',()=>{const g=data?.groups.find(x=>x.id===$('groupId').value);if(g)$('completed').value=g.completed||0;});
 $('historyFilter').addEventListener('change',renderHistory);
 $('loginForm').addEventListener('submit',e=>{e.preventDefault();login($('key').value);});
-$('logout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');authKey='';data=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');$('logout').classList.add('hidden');$('key').value='';$('roleChip').textContent='Öğretmen ve Yönetici';document.body.classList.remove('ayda-is-admin');history.replaceState(null,'',location.pathname);lastSharedHomework=null;$('sendHomeworkToGroup').hidden=true;$('aydaShareHint').hidden=true;window.dispatchEvent(new Event('ayda:logout'));});
-let lastSharedHomework=null;
+$('logout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');authKey='';data=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');$('logout').classList.add('hidden');$('key').value='';$('roleChip').textContent='Öğretmen ve Yönetici';document.body.classList.remove('ayda-is-admin');history.replaceState(null,'',location.pathname);lastSharedHomework=null;shareBackendChecked=false;$('sendHomeworkToGroup').hidden=true;$('aydaShareHint').hidden=true;window.dispatchEvent(new Event('ayda:logout'));});
+let lastSharedHomework=null,shareBackendChecked=false;
+async function aydaVerifyShareBackend(){
+ if(shareBackendChecked)return;
+ const ping=await jsonp('ping');
+ const match=String(ping?.version||'').match(/^2026-10-16\.(\d+)$/);
+ if(!match||Number(match[1])<7)
+  throw Error('Yeni WhatsApp ödev paylaşım takibi için Google Apps Script 2026-10-16.7 sürümünü dağıtın. Bu işlem yapılmadan ders raporu kaydedilemez.');
+ shareBackendChecked=true;
+}
+
 $('sendHomeworkToGroup')?.addEventListener('click',()=>{
  const hint=$('aydaShareHint');
  if(!lastSharedHomework){if(hint){hint.hidden=false;hint.textContent='Önce ders kaydını tamamlayın.';}return;}
@@ -150,7 +159,8 @@ $('sendHomeworkToGroup')?.addEventListener('click',()=>{
  // Sharing link lets the teacher choose their own class group, then manually send.
  const href='https://wa.me/?text='+encodeURIComponent(message);
  window.open(href,'_blank','noopener,noreferrer');
- if(hint){hint.hidden=false;hint.textContent='WhatsApp açıldı. Sınıf grubunu seçip Gönder’e basın.';}
+ window.dispatchEvent(new CustomEvent('ayda:homework-share-opened',{detail:{id:lastSharedHomework.id}}));
+ if(hint){hint.hidden=false;hint.textContent='WhatsApp’ta sınıf grubunu seçip mesajı gönderin. Sonra bu sayfaya dönerek “Gruba gönderdim” düğmesine basın.';}
 });
 function aydaSyncHomeworkField(){
  const group=$('lessonType')?.value==='group',status=$('status')?.value||'İşlendi';
@@ -182,18 +192,22 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  if(payload.type==='group'&&payload.status==='İşlendi'&&!tracking)throw Error('Yoklama tamamlanmadan ders raporu gönderilemez. Öğrencileri işaretleyin.');
  if(payload.type==='group'&&payload.status==='İşlendi'&&!oldAttendance&&(payload.homeworkText.length<3||payload.homeworkText.length>1000))
    throw Error('Verilen ödevi yazın (en az 3 karakter).');
+ if(payload.type==='group'&&payload.status==='İşlendi'&&!oldAttendance)await aydaVerifyShareBackend();
  const saved=oldAttendance?await jsonp('saveAttendance',{payload:utf8Base64Url(JSON.stringify({groupId:payload.groupId,date:payload.date,...tracking}))}):await jsonp('save',{payload:utf8Base64Url(JSON.stringify(payload))});
  if(!saved?.saved)throw Error('Sunucu kayıt işlemini doğrulamadı.');
  const trackingVerified=!!tracking&&saved.trackingSaved===true&&saved.attendanceCount===tracking.attendance.length;
- const homeworkVerified=oldAttendance||payload.type!=='group'||payload.status!=='İşlendi'||saved.homeworkSaved===true;
+ const homeworkVerified=oldAttendance||payload.type!=='group'||payload.status!=='İşlendi'||(saved.homeworkSaved===true&&/^DO-[A-Za-z0-9-]{8,80}$/.test(saved.homeworkId||''));
  if(payload.type==='group'&&payload.status==='İşlendi'&&(!trackingVerified||!homeworkVerified))throw Error('Kayıt onayı eksik. Apps Script sürümünü kontrol edin, aynı raporu tekrar göndermeden önce yöneticiyle görüşün.');
- const confirmation=oldAttendance?'Eksik yoklama tamamlandı.':(payload.type==='group'&&payload.status==='İşlendi'?'Ders, yoklama ve verilen ödev kaydedildi.':'Ders kaydı tamamlandı.');
+ const confirmation=oldAttendance?'Eksik yoklama tamamlandı.':(payload.type==='group'&&payload.status==='İşlendi'?'Ders ve yoklama kaydedildi. Son adım: Ödevi WhatsApp grubuna yazın.':'Ders kaydı tamamlandı.');
  message('formMessage',confirmation,'success');
  lastSharedHomework=!oldAttendance&&payload.type==='group'&&payload.status==='İşlendi'?{
-   groupId:payload.groupId,groupName:data?.groups?.find(g=>g.id===payload.groupId)?.name||payload.groupId,
+   id:saved.homeworkId,lessonId:saved.id,groupId:payload.groupId,
+   groupName:data?.groups?.find(g=>g.id===payload.groupId)?.name||payload.groupId,
    date:payload.date,text:payload.homeworkText}:null;
  $('sendHomeworkToGroup').hidden=!lastSharedHomework;
+ $('sendHomeworkToGroup').textContent='Ödevi WhatsApp grubuna yaz →';
  $('aydaShareHint').hidden=true;
+ if(lastSharedHomework)window.dispatchEvent(new CustomEvent('ayda:homework-saved',{detail:lastSharedHomework}));
  $('note').value='';
  window.AYDA_ATTENDANCE?.resetAfterSave?.();
  try{
