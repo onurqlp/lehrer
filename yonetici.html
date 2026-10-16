@@ -35,7 +35,7 @@
 <button type="button" data-tab="teachers">Öğretmenler &amp; Saat</button>
 <button type="button" data-tab="schedule">Ders Programı</button>
 <button type="button" data-tab="alerts">Uyarılar <span id="ownerAlertBadge"></span></button>
-<button type="button" data-tab="accounts">Hesaplar</button></nav>
+<button type="button" data-tab="messages">Mesaj Merkezi <span id="aydaMsgBadge"></span></button><button type="button" data-tab="accounts">Hesaplar</button></nav>
 <section id="owner-overview" class="owner-panel">
 <div class="owner-section-title"><h2>Bugün &amp; öncelikli işler</h2><p>İlgilenilmesi gereken öğrenciler, yeni ve bitmek üzere olan gruplar</p></div>
 <div id="ownerHighlights" class="owner-highlights"></div><div class="owner-section-title"><h2>Haftalık akademik özet</h2><p>Son 7 günün otomatik özeti</p></div><div id="ownerWeekly" class="owner-highlights"></div>
@@ -83,6 +83,30 @@
 <section id="owner-alerts" class="owner-panel" hidden>
 <div class="owner-section-title"><h2>Takip gerektiren öğrenciler</h2><p>Üst üste 3 mazeretsiz devamsızlık veya son 4 kontrol edilen ödevde 3 eksik</p></div><div id="ownerAlertList" class="owner-student-list"></div><div class="owner-section-title"><h2>Eksik ders raporu ve yoklamalar</h2><p>Ders bitiminden 12 saat sonra tespit edilir. Öğretmene göndermek için hatırlatma mesajını kopyalayın.</p></div><div id="ownerMissingRecords" class="owner-highlights"></div>
 <div class="owner-section-title"><h2>Yaklaşan akademik tarihler</h2></div><div id="ownerDateAlerts" class="owner-highlights"></div></section>
+
+<section id="owner-messages" class="owner-panel" hidden>
+<div class="owner-section-title"><h2>WhatsApp Mesaj Merkezi</h2><p>Öğretmen ve öğrenci adları sistemden gelir. Hazır mesajı düzenleyip WhatsApp'ta manuel gönderirsiniz; otomatik mesaj gönderilmez.</p><button id="aydaMsgReload" type="button" class="outline">↻ Rehberi yenile</button></div>
+<p class="micro" id="aydaMsgContactMeta" role="status" aria-live="polite">Giriş yapın.</p>
+<div class="ayda-message-composers">
+<div class="ayda-message-panel"><h3>Öğretmene mesaj</h3>
+<label for="aydaMsgTeacher">Öğretmen</label><select id="aydaMsgTeacher"><option value="">Öğretmen seçin</option></select>
+<label for="aydaMsgMissing">Sistemden tespit edilen eksik kayıt (isteğe bağlı)</label><select id="aydaMsgMissing"><option value="">Genel mesaj</option></select>
+<label for="aydaMsgTeacherType">Mesaj türü</label><select id="aydaMsgTeacherType"><option value="auto">Eksik kayıt seçildiyse otomatik doldur</option><option value="attendance">Eksik yoklama uyarısı</option><option value="report">Eksik ders raporu uyarısı</option><option value="meeting">Toplantı / koordinasyon</option><option value="general">Genel hatırlatma</option></select>
+<label for="aydaMsgTeacherText">Düzenlenebilir mesaj</label><textarea id="aydaMsgTeacherText" rows="5" maxlength="2200" placeholder="Öğretmen ve mesaj türünü seçin."></textarea>
+<div class="actions"><button id="aydaMsgTeacherSend" type="button" class="primary">WhatsApp'ta aç →</button></div>
+<p id="aydaMsgTeacherStatus" class="micro" role="status"></p></div>
+<div class="ayda-message-panel"><h3>Öğrenciye mesaj</h3>
+<label for="aydaMsgGroup">Öğrenci grubu</label><select id="aydaMsgGroup"><option value="">Tüm gruplar</option></select>
+<label for="aydaMsgStudentSearch">Öğrenci ara</label><input type="search" id="aydaMsgStudentSearch" autocomplete="off" placeholder="Ad veya soyad">
+<label for="aydaMsgStudent">Öğrenci</label><select id="aydaMsgStudent"><option value="">Öğrenci seçin</option></select>
+<label for="aydaMsgStudentType">Mesaj türü</label><select id="aydaMsgStudentType"><option value="general">Genel akademik görüşme</option><option value="absence">Devamsızlık hakkında</option><option value="homework">Ödev ve çalışma</option><option value="positive">Teşekkür ve motivasyon</option></select>
+<label for="aydaMsgStudentText">Düzenlenebilir mesaj</label><textarea id="aydaMsgStudentText" rows="5" maxlength="2200" placeholder="Öğrenci seçin."></textarea>
+<div class="actions"><button id="aydaMsgStudentSend" type="button" class="primary">WhatsApp'ta aç →</button></div>
+<p id="aydaMsgStudentStatus" class="micro" role="status"></p></div>
+</div>
+<div class="owner-section-title"><h2>Öğretmenlerden Gelen Mesajlar</h2><p>Öğretmenlerin sistemle ilgili sorun, fikir ve kullanım önerileri burada listelenir. İsterseniz yanıt yazabilirsiniz.</p></div>
+<p id="aydaManagerFeedbackStatus" class="micro" role="status"></p><div id="aydaManagerFeedbackList" class="ayda-manager-feedback-list"></div>
+</section>
 <section id="owner-accounts" class="owner-panel" hidden>
 <div class="owner-section-title"><h2>Öğretmen hesapları ve anahtar durumu</h2><p>Hesap, kullanıcı ID, aktiflik, öğretmen eşleşmesi ve anahtar oluşturulma bilgileri (salt okunur)</p></div>
 <div class="table-panel" id="ownerAccountsTable"></div><div class="owner-section-title"><h2>Giriş anahtarı arşiv durumu</h2></div><div class="table-panel" id="ownerVaultTable"></div><div class="owner-archive-actions"><button id="ownerVaultReveal" type="button" class="outline">Arşivdeki giriş anahtarlarını görüntüle</button><button id="ownerVaultHide" type="button" class="outline" hidden>Anahtarları gizle</button></div><div id="ownerVaultSecrets" class="table-panel" hidden></div></section>
@@ -90,5 +114,5 @@
 </section></main>
 <footer class="ayda-internal-footer"><strong>AYDA Dil Akademisi</strong> · Yönetici Akademik Kontrol Merkezi<br>Yalnızca kurum içi kullanım.</footer>
 <script src="assets/config.js?v=20261015-main-crm-v2"></script>
-<script src="assets/student-notes.js?v=20261016-1"></script><script src="assets/owner.js?v=20261016-ayda-v1c"></script>
+<script src="assets/student-notes.js?v=20261016-1"></script><script src="assets/owner.js?v=20261016-msg1"></script><script src="assets/owner-messaging.js?v=20261016-msg1"></script>
 </body></html>
