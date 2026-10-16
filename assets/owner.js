@@ -157,8 +157,8 @@
   for(const x of [(r.actual?'Ders süresi: '+r.actual+' saat':'Saat belirtilmedi'),(r.completed!==undefined&&r.completed!==''?'Tamamlanan ünite: '+r.completed:''),(r.plannedStart?'Plan: '+r.plannedStart+' – '+(r.plannedEnd||'—'):'')])if(x)add(facts,'span','',x);
   if(r.student&&r.type==='Özel')add(el,'p','owner-note','Öğrenci: '+r.student);
   if(r.topic)add(el,'p','owner-note','Konu: '+r.topic);
-  if(r.note)add(el,'p','owner-note owner-note-teacher','Öğretmen notu: '+r.note);
   const hw=r.type==='Grup'?(lessonHomework?.items||[]).find(x=>x.lessonId===r.id):null;
+  if(r.note&&(!hw||r.note!==hw.text))add(el,'p','owner-note owner-note-teacher','Öğretmen notu: '+r.note);
   if(hw&&!compact){
    const detail=add(el,'details','ayda-lesson-homework-detail');
    add(detail,'summary','','Verilen sınıf ödevini gör');
