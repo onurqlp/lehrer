@@ -59,6 +59,99 @@
  const head=el('div','ayda-auto-title');head.append(el('h2','','Sonradan tamamla'));const reload=makeButton('↻ Yenile',()=>loadMakeup());head.append(reload);
  const makeupIntro=el('p','ayda-auto-subtle','Eksik yoklama için yeni ders raporu yazılmaz. Ödev kontrolü ise tamamen isteğe bağlıdır.');const makeupBody=el('div','ayda-makeup-body');makeup.append(head,makeupIntro,makeupBody);
  daily?.insertAdjacentElement('afterend',makeup);
+
+ const homeworkTasks=el('details','ayda-optional-homework ayda-assignment-section');
+ homeworkTasks.id='aydaHomeworkTasks';
+ homeworkTasks.append(el('summary','','Yeni ödev ver / teslim süresini uzat (isteğe bağlı)'));
+ const homeworkBody=el('div','ayda-assignment-body');
+ homeworkBody.append(el('p','ayda-auto-subtle','Ödev başlığı ve teslim tarihi girin. Bu ayrı bir görev planıdır; yoklama ve ödev kontrolü notlarını değiştirmez. Öğrenciye otomatik mesaj gönderilmez.'));
+ const assignmentForm=el('form','ayda-assignment-form');assignmentForm.id='aydaAssignmentForm';
+ const groupLabel=el('label','','Grup');groupLabel.htmlFor='aydaAssignmentGroup';
+ const groupSelect=el('select');groupSelect.id='aydaAssignmentGroup';groupSelect.required=true;
+ const titleLabel=el('label','','Ödev adı');titleLabel.htmlFor='aydaAssignmentTitle';
+ const assignmentTitle=el('input');assignmentTitle.id='aydaAssignmentTitle';assignmentTitle.maxLength=150;assignmentTitle.minLength=4;assignmentTitle.required=true;assignmentTitle.placeholder='Örn. Menschen A2 · Ünite 7 alıştırmaları';
+ const descLabel=el('label','','Kısa açıklama (isteğe bağlı)');descLabel.htmlFor='aydaAssignmentDescription';
+ const assignmentDesc=el('textarea');assignmentDesc.id='aydaAssignmentDescription';assignmentDesc.maxLength=1000;assignmentDesc.rows=2;assignmentDesc.placeholder='Sayfa, etkinlik ve çalışma yönlendirmesi';
+ const dueLabel=el('label','','Teslim tarihi');dueLabel.htmlFor='aydaAssignmentDue';
+ const assignmentDue=el('input');assignmentDue.type='date';assignmentDue.id='aydaAssignmentDue';assignmentDue.required=true;
+ const sendTask=el('button','primary','Ödevi kaydet');sendTask.type='submit';
+ const taskFeedback=el('p','ayda-note-state');taskFeedback.setAttribute('role','status');
+ assignmentForm.append(groupLabel,groupSelect,titleLabel,assignmentTitle,descLabel,assignmentDesc,dueLabel,assignmentDue,sendTask,taskFeedback);
+ const taskList=el('div','ayda-assignment-list');homeworkBody.append(assignmentForm,taskList);homeworkTasks.append(homeworkBody);
+ makeup.append(homeworkTasks);
+ let taskRequest=0,taskResult=null;
+ function nextDay(date,plus=1){const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+plus);return d.toISOString().slice(0,10);}
+ function groupOptions(){
+  const old=groupSelect.value;groupSelect.replaceChildren(new Option('Grup seçin',''));
+  for(const g of (data?.groups||[]).filter(g=>g.status==='Aktif'))groupSelect.add(new Option(g.name,g.id));
+  if([...groupSelect.options].some(o=>o.value===old))groupSelect.value=old;
+  assignmentDue.min=String(data?.today||'');assignmentDue.max=nextDay(String(data?.today||'2026-10-16'),90);
+  if(!assignmentDue.value)assignmentDue.value=nextDay(String(data?.today||'2026-10-16'),3);
+ }
+ async function changeTask(task,kind,days=0,feedbackNode,button){
+  if(button)button.disabled=true;
+  if(feedbackNode)feedbackNode.textContent='Güncelleniyor…';
+  try{
+   const payload=utf8Base64Url(JSON.stringify({id:task.id,kind,days}));
+   const result=await jsonp('updateHomeworkTask',{payload});if(!result.saved)throw Error('Kayıt onayı alınamadı.');
+   if(feedbackNode)feedbackNode.textContent='Güncellendi.';
+   await loadTasks();
+  }catch(e){if(feedbackNode)feedbackNode.textContent='İşlem doğrulanamadı: '+e.message;}
+  finally{if(button)button.disabled=false;}
+ }
+ function assignmentCard(task){
+  const card=el('article','ayda-task-card'),header=el('div','ayda-task-card-header');
+  header.append(el('strong','',task.title),el('span','ayda-task-pill'+(task.overdue?' overdue':''),task.status==='Aktif'?(task.overdue?'Teslim tarihi geçti':'Aktif'):task.status));
+  card.append(header,el('small','',task.group+' · Son teslim: '+formatDate(task.dueDate)));
+  if(task.description)card.append(el('p','',task.description));
+  if(task.status==='Aktif'){
+   const actions=el('div','ayda-task-actions'),state=el('span','ayda-note-state');
+   for(const days of [3,7]){
+    let b=makeButton('+'+days+' gün',()=>changeTask(task,'extend',days,state,b));actions.append(b);
+   }
+   let complete=makeButton('Tamamlandı',()=>changeTask(task,'complete',0,state,complete));actions.append(complete);
+   const copy=makeButton('Ödev mesajını kopyala',()=>{
+    const msg='Merhaba, '+task.group+' grubunun ödevi: '+task.title+'. '+(task.description||'')+' Son teslim tarihi: '+formatDate(task.dueDate)+'. İyi çalışmalar.';
+    navigator.clipboard?.writeText(msg).then(()=>{state.textContent='Mesaj kopyalandı. Grubunuzdan paylaşabilirsiniz.';}).catch(()=>{state.textContent='Tarayıcı kopyalamayı desteklemiyor.';});
+   });actions.append(copy);card.append(actions,state);
+  }else{
+   const state=el('span','ayda-note-state');let re=makeButton('Yeniden aç',()=>changeTask(task,'reactivate',0,state,re));
+   card.append(re,state);
+  }
+  return card;
+ }
+ function paintTasks(result){
+  taskList.replaceChildren();
+  const tasks=(result?.tasks||[]).slice().sort((a,b)=>(a.status==='Aktif'?0:1)-(b.status==='Aktif'?0:1)||a.dueDate.localeCompare(b.dueDate));
+  const active=tasks.filter(t=>t.status==='Aktif');
+  taskList.append(el('h3','',active.length+' aktif ödev görevi'));
+  if(!tasks.length){taskList.append(el('p','ayda-auto-subtle','Henüz ödev görevi kaydedilmemiş.'));return;}
+  for(const t of active.slice(0,25))taskList.append(assignmentCard(t));
+  const previous=tasks.filter(t=>t.status!=='Aktif');
+  if(previous.length){
+   const old=el('details','ayda-assignment-past');old.append(el('summary','','Tamamlanan ve arşivlenen ödevler · '+previous.length));
+   const list=el('div');for(const t of previous.slice(0,15))list.append(assignmentCard(t));
+   old.append(list);taskList.append(old);
+  }
+ }
+ async function loadTasks(){
+  if(!tr())return;
+  const n=++taskRequest;
+  taskList.replaceChildren(el('p','ayda-auto-subtle','Ödev görevleri yükleniyor…'));
+  try{const x=await jsonp('homeworkTasks');if(n!==taskRequest)return;taskResult=x;paintTasks(x);}
+  catch(e){if(n===taskRequest)taskList.replaceChildren(el('p','ayda-auto-subtle','Ödev görevleri için Apps Script 2026-10-16.5 sürümünü yayımlayın.'));}
+ }
+ assignmentForm.addEventListener('submit',async(e)=>{
+  e.preventDefault();if(!tr())return;sendTask.disabled=true;taskFeedback.textContent='Kaydediliyor…';
+  try{const p={groupId:groupSelect.value,title:assignmentTitle.value.trim(),description:assignmentDesc.value.trim(),dueDate:assignmentDue.value};
+   const result=await jsonp('saveHomeworkTask',{payload:utf8Base64Url(JSON.stringify(p))});
+   if(!result.saved)throw Error('Görev kaydı doğrulanamadı.');
+   assignmentTitle.value='';assignmentDesc.value='';taskFeedback.textContent='Ödev görevi kaydedildi. Öğrencilere otomatik mesaj gönderilmedi.';await loadTasks();
+  }catch(err){taskFeedback.textContent='Kayıt doğrulanamadı: '+err.message;}
+  finally{sendTask.disabled=false;}
+ });
+ homeworkTasks.addEventListener('toggle',()=>{if(homeworkTasks.open&&tr()){groupOptions();loadTasks();}});
+
  const feedback=el('details','ayda-feedback hidden');feedback.id='aydaTeacherFeedback';
  feedback.append(el('summary','','Sistemle ilgili fikrim / sorun bildirimim'));
  const inner=el('div','ayda-feedback-inner');inner.append(el('p','ayda-auto-subtle','Sistemi daha iyi yapmak için önerinizi doğrudan AYDA yönetimine iletin. Ders kayıtlarını etkilemez.'));
@@ -188,7 +281,7 @@
  });
  monthInput.addEventListener('change',loadMonth);
  feedback.addEventListener('toggle',()=>{if(feedback.open)loadFeedback();});
- window.addEventListener('ayda:login',()=>{if(!tr())return;monthInput.value=monthOf();monthWrap.classList.remove('hidden');feedback.classList.remove('hidden');suggestDuration();loadMonth();loadMakeup();});
- window.addEventListener('ayda:saved',()=>{if(tr()){loadMonth();loadMakeup();}});
- window.addEventListener('ayda:logout',()=>{request++;monthWrap.classList.add('hidden');makeup.classList.add('hidden');feedback.classList.add('hidden');feedback.open=false;replies.replaceChildren();makeupBody.replaceChildren();monthNumbers.replaceChildren();text.value='';});
+ window.addEventListener('ayda:login',()=>{if(!tr())return;monthInput.value=monthOf();monthWrap.classList.remove('hidden');feedback.classList.remove('hidden');suggestDuration();groupOptions();loadMonth();loadMakeup();if(homeworkTasks.open)loadTasks();});
+ window.addEventListener('ayda:saved',()=>{if(tr()){loadMonth();loadMakeup();if(homeworkTasks.open)loadTasks();}});
+ window.addEventListener('ayda:logout',()=>{taskRequest++;taskResult=null;homeworkTasks.open=false;taskList.replaceChildren();assignmentForm.reset();request++;monthWrap.classList.add('hidden');makeup.classList.add('hidden');feedback.classList.add('hidden');feedback.open=false;replies.replaceChildren();makeupBody.replaceChildren();monthNumbers.replaceChildren();text.value='';});
 })();
