@@ -164,6 +164,32 @@
  }
 
  $('aydaMsgReload').addEventListener('click',load);
+
+ async function applyTeacherContext(ctx){
+  if(!bridge()?.ready())return;
+  if(!contacts)await load();
+  const found=rows().filter(t=>t.teacherId===ctx.teacherId);
+  if(found.length!==1){
+   teacherStatus.textContent='Bu dersin öğretmeni rehberde kesin olarak eşleşmiyor. Yanlış kişiye mesaj gitmemesi için öğretmeni siz seçin.';
+   return;
+  }
+  teachers.value=found[0].id;fillMissing();
+  const key=ctx.groupId+'|'+ctx.date+'|'+ctx.type;
+  if([...dateSelect.options].some(o=>o.value===key)){dateSelect.value=key;teacherType.value='auto';}
+  else teacherType.value=ctx.type==='attendance'?'attendance':'report';
+  messageTeacher();
+ }
+ async function applyStudentContext(ctx){
+  if(!bridge()?.ready())return;
+  if(!contacts)await load();
+  group.value=ctx.groupId;studentSearch.value='';fillStudent();students.value=ctx.studentId;
+  const profile=bridge().tracking()?.students?.find(s=>s.id===ctx.studentId);
+  studentType.value=(profile?.absenceStreak||0)>=3?'absence':(profile?.recentHomeworkMissing||0)>=3?'homework':'general';
+  messageStudent();
+ }
+ window.addEventListener('ayda:compose-teacher',e=>{applyTeacherContext(e.detail||{}).catch(err=>{teacherStatus.textContent=err.message;});});
+ window.addEventListener('ayda:compose-student',e=>{applyStudentContext(e.detail||{}).catch(err=>{studentStatus.textContent=err.message;});});
+
  window.addEventListener('ayda:owner-ready',load);
  window.addEventListener('ayda:owner-logout',()=>{
   loadNo++;contacts=null;inbox=null;students.replaceChildren();teachers.replaceChildren();dateSelect.replaceChildren();feedbacks.replaceChildren();
