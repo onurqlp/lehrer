@@ -166,16 +166,23 @@ function aydaSyncHomeworkField(){
  const group=$('lessonType')?.value==='group',status=$('status')?.value||'İşlendi';
  const label=$('aydaHomeworkLabel'),hint=$('aydaHomeworkHint'),note=$('note');
  if(!label||!note)return;
+ const noHomeworkBtn=$('aydaNoHomeworkBtn');if(noHomeworkBtn)noHomeworkBtn.hidden=!(group&&status==='İşlendi');
  if(group&&status==='İşlendi'){
   label.textContent='2 · Verilen ödev';
   note.placeholder='Örn. Menschen A2, Ünite 6, sayfa 42–43 alıştırmaları.';
-  if(hint)hint.textContent='Yoklamadan sonra bu ödevi yazın. Tekrar yazmanız gerekmeyecek.';
+  if(hint)hint.textContent='Yoklamadan sonra ödevi yazın. Ders kaydı bitince aynı metni WhatsApp grubuna bildirin.';
  }else{
   label.textContent=status==='İşlendi'?'Kısa ders notu':'İptal / erteleme gerekçesi';
   note.placeholder=status==='İşlendi'?'Dersin kısa özeti veya verilen çalışma':'Örn. Öğretmen mazereti nedeniyle ertelendi.';
   if(hint)hint.textContent='Kısa bir açıklama yazın.';
  }
 }
+$('aydaNoHomeworkBtn')?.addEventListener('click',()=>{
+ const field=$('note');
+ field.value='Bu derste ödev verilmedi.';
+ field.dispatchEvent(new Event('input',{bubbles:true}));
+ field.focus({preventScroll:true});
+});
 $('lessonType')?.addEventListener('change',aydaSyncHomeworkField);
 $('status')?.addEventListener('change',aydaSyncHomeworkField);
 window.addEventListener('ayda:login',aydaSyncHomeworkField);
