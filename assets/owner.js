@@ -7,7 +7,8 @@
   overview:()=>token&&overview?.user?.role==='admin'?overview:null,
   tracking:()=>token&&overview?.user?.role==='admin'?tracking:null,
   reminders:()=>token&&overview?.user?.role==='admin'?reminders:null,
-  ready:()=>!!token&&overview?.user?.role==='admin'
+  ready:()=>!!token&&overview?.user?.role==='admin',
+  openTab:next=>activate(next)
  };
  const node=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=String(value);return e;};
  const add=(parent,tag,cls,value)=>{const e=node(tag,cls,value);parent.append(e);return e;};
@@ -61,7 +62,7 @@
   });
  }
  async function api(action,key,params={}){
-  const readOnly=['overview','trackingSummary','reminders','studentNotes','vaultExport','feedbackInbox','contactDirectory'].includes(action);let err;
+  const readOnly=['overview','trackingSummary','reminders','studentNotes','vaultExport','feedbackInbox','contactDirectory','homeworkTasks'].includes(action);let err;
   for(const address of (readOnly?[...new Set([activeApi,...candidates()].filter(Boolean))]:[activeApi||candidates()[0]])){try{const data=await apiRequest(address,action,key,params);activeApi=address;return data;}catch(e){err=e;if(!e.transport)throw e;}}
   throw err||Error('Google Apps Script bağlantısı kurulamadı.');
  }
@@ -88,7 +89,7 @@
    if(!$('ownerTeacherMonth').value)$('ownerTeacherMonth').value=today().slice(0,7);
    if(!$('ownerLessonMonth').value)$('ownerLessonMonth').value=today().slice(0,7);
    await loadTracking();
-   activate(sessionStorage.getItem('aydaOwnerTab')||'overview');
+   activate(['messages','alerts','attendance','students','groups','lessons','teachers','schedule','accounts'].includes(location.hash.slice(1))?location.hash.slice(1):(sessionStorage.getItem('aydaOwnerTab')||'overview'));
    window.dispatchEvent(new Event('ayda:owner-ready'));
 
   }catch(e){token='';$('ownerLogin').hidden=false;$('ownerApp').hidden=true;$('ownerLogout').hidden=true;$('ownerLoginError').textContent=e.message;}
@@ -369,6 +370,7 @@
  $('ownerRefresh').addEventListener('click',refresh);
  $('ownerLogout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');token='';overview=null;tracking=null;reminders=null;activeApi='';$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';const skip=$('ownerSkip');if(skip){skip.href='#ownerLogin';skip.textContent='Giriş bölümüne geç';}window.dispatchEvent(new Event('ayda:owner-logout'));});
  $('ownerNav').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)activate(b.dataset.tab);});
+ window.addEventListener('hashchange',()=>{const n=location.hash.slice(1);if(['overview','messages','alerts','attendance','students','groups','lessons','teachers','schedule','accounts'].includes(n)&&token)activate(n);});
  for(const b of document.querySelectorAll('[data-jump]'))b.addEventListener('click',()=>activate(b.dataset.jump));
  for(const id of ['ownerStudentSearch','ownerStudentGroup','ownerStudentStatus','ownerStudentSort'])$(id).addEventListener(id==='ownerStudentSearch'?'input':'change',renderStudents);
  for(const id of ['ownerGroupSearch','ownerGroupLevel','ownerGroupStatus'])$(id).addEventListener(id==='ownerGroupSearch'?'input':'change',renderGroups);
