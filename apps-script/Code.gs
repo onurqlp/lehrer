@@ -657,12 +657,22 @@ function aydaHomeworkTasks_(user){
  if(!['teacher','admin'].includes(user.role))throw Error('Giriş gerekli.');
  const groups=aydaGroups_(user),allowed=new Map(groups.map(g=>[g.id,g]));
  const today=aydaToday_();
+ const extensions=new Map();
+ for(const h of aydaRead_('ODEV_GOREV_GECMISI')){
+  if(h['ISLEM_TURU']!=='Ek süre')continue;
+  const id=h['GOREV_ID'],item=extensions.get(id)||{count:0,days:0};
+  const oldDate=aydaDate_(h['ESKI_TESLIM_TARIHI']),newDate=aydaDate_(h['YENI_TESLIM_TARIHI']);
+  const diff=oldDate&&newDate?(new Date(newDate+'T12:00:00Z')-new Date(oldDate+'T12:00:00Z'))/86400000:0;
+  item.count++;item.days+=Number.isFinite(diff)&&diff>0?diff:0;
+  extensions.set(id,item);
+ }
  const tasks=aydaRead_('ODEV_GOREVLERI').filter(r=>allowed.has(r['GRUP_ID']))
   .map(r=>({
    id:r['GOREV_ID'],groupId:r['GRUP_ID'],group:allowed.get(r['GRUP_ID']).name,
    teacherId:r['OGRETMEN_ID'],title:r['BASLIK'],description:r['ACIKLAMA'],
    createdDate:aydaDate_(r['VERILIS_TARIHI']),dueDate:aydaDate_(r['TESLIM_TARIHI']),
    status:r['DURUM'],updatedAt:r['GUNCELLEME_ZAMANI'],
+   extensionCount:extensions.get(r['GOREV_ID'])?.count||0,extraDays:extensions.get(r['GOREV_ID'])?.days||0,
    overdue:r['DURUM']==='Aktif'&&aydaDate_(r['TESLIM_TARIHI'])<today
   })).sort((a,b)=>a.status.localeCompare(b.status,'tr')||a.dueDate.localeCompare(b.dueDate));
  return {tasks:tasks.slice(0,180),total:tasks.length,overdue:tasks.filter(t=>t.overdue).length,scope:user.role==='admin'?'all':'own',today};
