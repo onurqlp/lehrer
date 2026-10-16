@@ -1,7 +1,7 @@
 "use strict";
 /* AYDA private message center. No phone/name ever ships in public GitHub source or publicDashboard. */
 (()=>{
- const root=document.getElementById('ownerMessageCenter');if(!root)return;
+ const root=document.getElementById('owner-messages');if(!root)return;
  const $=id=>document.getElementById(id);
  const bridge=()=>window.AYDA_OWNER_BRIDGE;
  const node=(tag,cls,text)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(text!==undefined)x.textContent=String(text);return x;};
