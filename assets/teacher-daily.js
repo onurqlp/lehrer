@@ -18,18 +18,18 @@
  /* Teachers can confirm a concise lesson description with one click; no fabricated automatic note. */
  const noteInput=$('note'),actualInput=$('actual');
  if(actualInput){
-  const choices=[['00:30','30 dakika'],['01:00','1 saat'],['01:30','1,5 saat'],['02:00','2 saat'],['02:30','2,5 saat'],['03:00','3 saat'],['03:30','3,5 saat'],['04:00','4 saat']];
+  const choices=[1,2,3,4,5,6].map(n=>['0'+n+':00',n+' saat']);
   const previous=actualInput.value;actualInput.replaceChildren();
   for(const [value,label] of choices)actualInput.add(new Option(label,value));
   actualInput.value=previous||'02:00';
  }
  if(noteInput){
-  const noteShortcuts=el('div','ayda-note-shortcuts');noteShortcuts.append(el('span','', 'Tek dokunuşla kısa bilgi:'));
+  const noteShortcuts=el('div','ayda-note-shortcuts');noteShortcuts.append(el('span','', 'Ödevini hızlı yaz:'));
   for(const [label,make] of [
-   ['Ünite işlendi',()=>'Ünite '+($('completed')?.value||'—')+' üzerine ders işlendi.'],
-   ['Tekrar',()=>'Önceki konuların tekrarı yapıldı.'],
-   ['Konuşma',()=>'Konuşma pratiği yapıldı.'],
-   ['Sınav hazırlığı',()=>'Sınav hazırlığı çalışması yapıldı.']
+   ['Ünite alıştırmaları',()=>'Ünite '+($('completed')?.value||'—')+' çalışma kitabındaki alıştırmaları tamamlayın.'],
+   ['Kelime tekrarı',()=>'Bu ünitedeki yeni kelimeleri tekrar edip her biriyle bir cümle yazın.'],
+   ['Konuşma hazırlığı',()=>'Son işlenen konuyla ilgili kısa bir konuşma hazırlayın.'],
+   ['Ödev verilmedi',()=>'Bu derste yeni ödev verilmedi.']
   ]){
    noteShortcuts.append(makeButton(label,()=>{noteInput.value=make();noteInput.dispatchEvent(new Event('input',{bubbles:true}));noteInput.focus();}));
   }
@@ -45,8 +45,8 @@
   const a=String(schedule.start||'').match(/^(\d{1,2}):(\d{2})/),b=String(schedule.end||'').match(/^(\d{1,2}):(\d{2})/);
   if(!a||!b)return;
   const minutes=(+b[1]*60+(+b[2]))-(+a[1]*60+(+a[2]));
-  if(minutes<=0||minutes>240)return;
-  const value=String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');
+  if(minutes<=0||minutes>360)return;
+  const value='0'+Math.max(1,Math.min(6,Math.round(minutes/60)))+':00';
   if([...actualInput.options].some(opt=>opt.value===value))actualInput.value=value;
  }
  for(const id of ['lessonDate','groupId','lessonType'])$(id)?.addEventListener('change',suggestDuration);
@@ -110,11 +110,11 @@
     let b=makeButton('+'+days+' gün',()=>changeTask(task,'extend',days,state,b));actions.append(b);
    }
    let complete=makeButton('Tamamlandı',()=>changeTask(task,'complete',0,state,complete));actions.append(complete);
-   const copy=makeButton('Ödev mesajını kopyala',()=>{
-    const msg='Merhaba, '+task.group+' grubunun ödevi: '+task.title+'. '+(task.description||'')+' Son teslim tarihi: '+formatDate(task.dueDate)+'. İyi çalışmalar.';
-    if(!navigator.clipboard?.writeText){state.textContent='Kopyalama kullanılamıyor. Ödev açıklamasını seçerek kopyalayabilirsiniz.';return;}
-    navigator.clipboard.writeText(msg).then(()=>{state.textContent='Mesaj kopyalandı. Grubunuzdan paylaşabilirsiniz.';}).catch(()=>{state.textContent='Kopyalama başarısız. Tekrar deneyin.';});
-   });actions.append(copy);card.append(actions,state);
+   const share=makeButton('Ödevi gruba yaz →',()=>{
+    const msg='AYDA Dil Akademisi · '+task.group+'\nVerilen ödev: '+task.title+'\n'+(task.description||'')+'\nSon teslim: '+formatDate(task.dueDate)+'\nİyi çalışmalar.';
+    window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank','noopener,noreferrer');
+    state.textContent='WhatsApp açıldı. Grubunuzu seçip Gönder’e basın.';
+   });actions.append(share);card.append(actions,state);
   }else{
    const state=el('span','ayda-note-state');let re=makeButton('Yeniden aç',()=>changeTask(task,'reactivate',0,state,re));
    card.append(re,state);
