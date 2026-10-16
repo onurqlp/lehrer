@@ -23,7 +23,7 @@
 </section>
 <section id="ownerApp" hidden>
 <div class="owner-heading"><div><span class="eyebrow">AYDA · KURUMSAL OPERASYON</span><h1>Akademik kontrol merkezi</h1><p>Öğrenci ve eğitmen takibi · dersler · akademik ilerleme · raporlar</p></div>
-<div class="owner-controls"><span id="ownerUpdated" class="micro"></span><button id="ownerRefresh" class="outline" type="button">↻ Verileri yenile</button></div></div>
+<div class="owner-controls"><span id="ownerUpdated" class="micro"></span><a class="outline ayda-settings-link" href="./index.html#ayarlar" aria-label="Yönetim ayarlarına git">⚙ Ayarlar</a><button id="ownerRefresh" class="outline" type="button">↻ Verileri yenile</button></div></div>
 <div id="ownerError" class="inline-error" role="alert"></div>
 <div id="ownerKpis" class="owner-kpis"></div>
 <nav id="ownerNav" class="owner-tabs" aria-label="Yönetim takip kategorileri">
@@ -38,7 +38,7 @@
 <button type="button" data-tab="messages">Mesaj Merkezi <span id="aydaMsgBadge"></span></button><button type="button" data-tab="accounts">Hesaplar</button></nav>
 <section id="owner-overview" class="owner-panel">
 <div class="owner-section-title"><h2>Bugün &amp; öncelikli işler</h2><p>İlgilenilmesi gereken öğrenciler, yeni ve bitmek üzere olan gruplar</p></div>
-<div id="ownerHighlights" class="owner-highlights"></div><div class="owner-section-title"><h2>Haftalık akademik özet</h2><p>Son 7 günün otomatik özeti</p></div><div id="ownerWeekly" class="owner-highlights"></div>
+<div id="ownerHighlights" class="owner-highlights"></div><div id="ownerInboxPreview" class="ayda-owner-inbox-preview" aria-live="polite"></div><div id="ownerHomeworkPreview" class="ayda-owner-homework-preview"></div><div class="owner-section-title"><h2>Haftalık akademik özet</h2><p>Son 7 günün otomatik özeti</p></div><div id="ownerWeekly" class="owner-highlights"></div>
 <div class="owner-dual"><div><div class="owner-section-title"><h2>Bugünkü ders programı</h2></div><div id="ownerToday"></div></div>
 <div><div class="owner-section-title"><h2>Son girilen ders raporları</h2><button type="button" class="text-button" data-jump="lessons">Tüm raporlar →</button></div><div id="ownerRecent"></div></div></div>
 <div class="owner-section-title"><h2>Grup ilerleme özeti</h2><button type="button" class="text-button" data-jump="groups">Tüm gruplar →</button></div><div id="ownerGroupPreview" class="owner-group-grid"></div></section>
@@ -54,7 +54,7 @@
 <div id="ownerAttendanceKpis" class="owner-mini-kpis"></div>
 <div class="owner-dual"><div><div class="owner-section-title"><h2>Grup bazında yoklama</h2></div><div class="table-panel" id="ownerAttendanceGroups"></div></div>
 <div><div class="owner-section-title"><h2>Ödev performansı</h2></div><div class="table-panel" id="ownerHomeworkGroups"></div></div></div>
-<div class="owner-section-title"><h2>Öğrenci bazında devam ve ödev durumu</h2></div>
+<div class="owner-section-title"><h2>Verilen ödevler ve teslim tarihleri</h2><p>Öğretmenlerin oluşturduğu görevler, son teslim günleri ve uzatmalar (öğrencilere otomatik mesaj gönderilmez).</p></div><div id="ownerHomeworkTasks" class="ayda-manager-homework-list"></div><div class="owner-section-title"><h2>Öğrenci bazında devam ve ödev durumu</h2></div>
 <div class="owner-filters"><label>Grup<select id="ownerAttendanceFilter"><option value="">Tüm gruplar</option></select></label></div>
 <div class="table-panel" id="ownerAttendanceStudents"></div></section>
 <section id="owner-groups" class="owner-panel" hidden>
