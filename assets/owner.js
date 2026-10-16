@@ -163,6 +163,7 @@
    const detail=add(el,'details','ayda-lesson-homework-detail');
    add(detail,'summary','','Verilen sınıf ödevini gör');
    add(detail,'p','',hw.text);
+   add(detail,'p','ayda-share-manager-status',hw.shareStatus==='Paylaşıldı'?'WhatsApp grubuna gönderildi (öğretmen onayı)':hw.shareStatus==='Bekliyor'?'WhatsApp grup paylaşımı bekliyor':'Önceki kayıt · paylaşım bilgisi yok');
   }
   return el;
  }
@@ -193,8 +194,9 @@
   const assigned=(lessonHomework?.items||[]).filter(r=>r.groupId===g.id).slice(0,6);
   if(assigned.length){
    const hw=add(body,'details','ayda-group-homework-detail');
-   add(hw,'summary','','Verilen ödevler · '+assigned.length+' son kayıt');
-   for(const r of assigned)add(hw,'p','',''+fmt(r.date)+' · '+r.text);
+   const pending=assigned.filter(r=>r.shareStatus==='Bekliyor').length;
+   add(hw,'summary','','Verilen ödevler · '+assigned.length+' son kayıt'+(pending?' · '+pending+' WhatsApp bekliyor':''));
+   for(const r of assigned)add(hw,'p','',fmt(r.date)+' · '+r.text+' · '+(r.shareStatus==='Paylaşıldı'?'Gruba gönderildi (öğretmen onayı)':r.shareStatus==='Bekliyor'?'Paylaşım bekliyor':'Paylaşım bilgisi yok'));
   }
   box.append(quick('Grubun öğrencilerini gör →',()=>{activate('students');$('ownerStudentGroup').value=g.id;renderStudents();}));
   return box;
