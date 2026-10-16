@@ -4,6 +4,18 @@
 **Girişli tam yönetici takip merkezi:** https://lehrer.aydadil.com/yonetici.html
 
 
+## WhatsApp sınıf ödevi paylaşımını tamamlama — sürüm 2026-10-16.7
+
+**Öğretmen için 3 aşama:** (1) İşlenen grup dersinde tüm öğrencilerin yoklamasını işaretle. (2) Zorunlu **Verilen ödev** alanını doldur. Ödev gerçekten verilmediyse **Bu derste ödev verilmedi** düğmesi bunu hazır metin olarak yazar. (3) Dersi kaydedince **Ödevi WhatsApp grubuna yaz →** ile hazır metin WhatsApp paylaşma ekranına açılır. Öğretmen sınıf grubunu seçip mesajı gönderir ve siteye dönüp **Gruba gönderdim** düğmesine basar.
+
+- **Tek seferlik metin:** Ödev yeniden yazılmaz. Grup adı, ders tarihi ve ödev metni WhatsApp taslağına otomatik eklenir. Ödev verilmediyse *Bu derste ödev verilmedi.* mesajı da gruba bildirilir.
+- **Dış uygulama sınırı:** WhatsApp'ın normal paylaşım bağlantısı belirli WhatsApp grubuna sessizce mesaj gönderemez. Öğretmenin grubu seçmesi ve mesajı göndermesi gerekir. Sistem WhatsApp gönderimini doğrulayamaz. **Paylaşıldı**, öğretmenin manuel onay beyanıdır; okunma veya teslim belgesi değildir.
+- **Kalıcı eksik takip:** DERS_ODEVLERI'nde yeni PAYLASIM_DURUMU, PAYLASIM_ZAMANI, PAYLASAN_OGRETMEN_ID sütunları var. Yeni ders ödevleri önce Bekliyor; yalnız yetkili öğretmen confirmHomeworkShare ile Paylaşıldı yapar. Sonraki girişte **Bekleyen grup duyuruları** listesi korunur. Çift onay ikinci kayıt üretmez.
+- **Yöneticide:** yonetici.html sayfasında Ders Kayıtları veya Gruplar detayındaki verilen ödevlerde paylaşım durumu görülür. Ana ekran metinlerle doldurulmaz.
+- **Yetki:** Öğretmen yalnızca kendisine aktif atanmış grubun paylaşımını onaylar. GitHub'da öğrenci iletişim bilgisi yok, anonim pano ödev metni içermez.
+- **Yeni kod:** apps-script/Code.gs v2026-10-16.7; kayıt homeworkId döndürür, lessonHomework paylaşım durumlarını listeler, confirmHomeworkShare onay yazar. Frontend eski sürüme yanlışlıkla rapor kaydetmemek için ping kontrolü yapar. **Canlı Apps Script mevcut dağıtımını yeni sürümle yeniden yayımlamak gerekir.**
+- **Veri yedeği:** WhatsApp Paylaşım Takibi Öncesi isimli yedek alındı. Mevcut ders satırlarına dokunulmadı. Eski ödevlerin boş paylaşım alanları Eski kayıt sayılır; sahte eksik duyuru oluşturulmaz.
+
 ## Ders sonu en kısa akış — 16 Ekim 2026 (Apps Script v2026-10-16.6)
 
 - **1. Yoklama:** İşlenen grup dersi seçilince yoklama otomatik açılır. **Hepsi geldi** veya öğrenci bazında Geldi/Gelmedi işaretlenir. *Tek bir öğrenci bile işaretlenmediyse; öğrenci listesi eksik, yüklenememiş veya sunucu bağlantısı eskiyse ders raporu gönderilemez.* İptal/ertelenmiş dersler yoklama gerektirmez. Mevcut raporlara sonradan yoklama tamamlama özelliği korunur.
