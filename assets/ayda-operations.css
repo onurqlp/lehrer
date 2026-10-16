@@ -160,3 +160,50 @@ body.ayda-internal .owner-controls .ayda-settings-link:hover{background:var(--ay
  .ayda-task-card-header{flex-wrap:wrap}
  .ayda-task-actions button{flex:1 1 auto}
 }
+
+/* 1–2–3 teacher flow: soft instructional color, no marketing surfaces */
+body.ayda-internal .attendance-panel{
+ border:1px solid #bdd4e6;border-left:4px solid #214d75;
+ border-radius:13px;background:#f3f8fc;box-shadow:0 3px 13px rgba(10,28,46,.035)
+}
+body.ayda-internal .attendance-panel>summary{
+ color:#102541;min-height:58px;cursor:pointer
+}
+body.ayda-internal .attendance-panel[open] .attendance-body{background:#fff;border-radius:0 0 12px 12px}
+body.ayda-internal .ayda-homework-field{
+ background:#fffaf0;border:1px solid #eedaa9;border-left:4px solid #c59b40;
+ border-radius:13px;padding:14px 15px;margin-top:6px
+}
+body.ayda-internal .ayda-homework-field label{
+ display:flex;align-items:center;flex-wrap:wrap;gap:8px;color:#6d4f1c;
+ font-size:14px;font-weight:850;margin-bottom:7px
+}
+body.ayda-internal .ayda-homework-field textarea{
+ background:#fff;width:100%;min-height:84px;border-color:#dac18a;font-size:15px;line-height:1.6
+}
+body.ayda-internal .ayda-homework-field textarea:focus-visible{outline-color:#ad7b24}
+body.ayda-internal .ayda-homework-hint{
+ display:block;font-size:12px;line-height:1.5;color:#715e3d;padding:5px 0 0
+}
+body.ayda-internal .daily #saveBtn{
+ min-height:52px;min-width:220px;font-size:14px;font-weight:850;border-radius:11px
+}
+body.ayda-internal .daily .ayda-whatsapp-share{
+ min-height:52px;color:#14633e!important;background:#e9f8ee;border:1px solid #9bc9aa;border-radius:11px;font-weight:800
+}
+body.ayda-internal .daily .ayda-whatsapp-share:hover{background:#d9f3e3}
+body.ayda-internal .ayda-lesson-homework-detail,
+body.ayda-internal .ayda-group-homework-detail{
+ border:1px solid var(--ayda-border);background:#fffaf0;border-radius:10px;
+ padding:9px 12px;margin-top:11px
+}
+body.ayda-internal .ayda-lesson-homework-detail summary,
+body.ayda-internal .ayda-group-homework-detail summary{
+ color:#74511b;font-size:12px;font-weight:800;cursor:pointer;min-height:40px;display:flex;align-items:center
+}
+body.ayda-internal .ayda-lesson-homework-detail p,
+body.ayda-internal .ayda-group-homework-detail p{font-size:13px;line-height:1.65;margin:9px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:430px){
+ body.ayda-internal .ayda-homework-field{padding:12px}
+ body.ayda-internal .daily .actions button{flex:1 1 100%;min-width:0;width:100%}
+}
