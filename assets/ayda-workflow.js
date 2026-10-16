@@ -28,6 +28,7 @@
   $('daily').scrollIntoView({behavior:'smooth',block:'start'});
   if(!forAttendance)$('note').focus({preventScroll:true});
  }
+ window.AYDA_OPEN_LESSON=(groupId,date,forAttendance=false)=>openLesson(groupId,date,forAttendance);
  function metric(label,value){const c=el('div','ayda-auto-metric');c.append(el('strong','',value),el('span','',label));metrics.append(c);}
  function render(){
   if(!data?.user){root.classList.add('hidden');return;}
