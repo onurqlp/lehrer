@@ -69,3 +69,12 @@
  .ayda-inbox-actions select{max-width:100%}
 }
 @media print{.ayda-feedback,.ayda-makeup-center,.ayda-message-composers{display:none!important}}
+
+/* Phone corrections are tucked away; contact fields never appear for unauthenticated users. */
+.ayda-phone-editor{margin-top:13px;border-top:1px solid var(--ayda-border);padding-top:10px}
+.ayda-phone-editor summary{cursor:pointer;min-height:40px;color:var(--ayda-blue);font-size:12px;font-weight:750;display:flex;align-items:center}
+.ayda-phone-editor label{font-size:12px;margin:8px 0 4px}
+.ayda-phone-editor input{margin-bottom:8px}
+.ayda-phone-editor button{min-height:44px;width:100%}
+body.ayda-teacher #teacherTracking{scroll-margin-top:120px}
+body.ayda-manager #owner-messages{scroll-margin-top:115px}
