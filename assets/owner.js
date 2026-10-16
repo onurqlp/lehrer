@@ -215,6 +215,7 @@
    if(!rows.length)add(ul,'li','','Henüz kayıt yok');
   }
   window.AYDA_NOTES?.mount(box,s,(action,params)=>api(action,token,params));
+  box.append(quick('Öğrenciye WhatsApp mesajı hazırla',()=>{activate('messages');window.dispatchEvent(new CustomEvent('ayda:compose-student',{detail:{studentId:s.id,groupId:s.groupId}}));}));
   box.append(quick('Öğrenci raporunu yazdır / PDF',()=>printStudent(s)));
   return box;
  }
@@ -314,6 +315,7 @@
    add(c,'strong','',kind+' eksik · '+r.group);
    add(c,'p','','Tarih: '+fmt(r.date)+' · Öğretmen: '+person+' · '+r.ageHours+' saat önce');
    const msg='Merhaba hocam, '+fmt(r.date)+' tarihli '+r.group+' grubu '+kind.toLocaleLowerCase('tr-TR')+' eksik görünüyor. Lütfen sisteme girerek tamamlayınız. Teşekkürler.';
+   c.append(quick('WhatsApp üzerinden hatırlat',()=>{activate('messages');window.dispatchEvent(new CustomEvent('ayda:compose-teacher',{detail:{teacherId:r.teacherId,groupId:r.groupId,date:r.date,type:r.type}}));}));
    c.append(quick('WhatsApp mesajını kopyala',()=>{
     if(!navigator.clipboard?.writeText){c.lastChild.textContent='Tarayıcınız kopyalamayı desteklemiyor.';return;}
     navigator.clipboard.writeText(msg).then(()=>{c.lastChild.textContent='Kopyalandı ✓';}).catch(()=>{c.lastChild.textContent='Kopyalanamadı';});
