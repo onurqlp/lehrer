@@ -39,6 +39,7 @@
    for(const issue of integrity?.issues||[])result.append(make('p','',issue));
    if(backupStatus?.installed&&backupStatus?.exists){
     result.append(make('p','','Günlük Drive yedeği açık · Son yedek: '+(backupStatus.at||'bilinmiyor')));
+    if(backupStatus.url){const link=make('a','','Son doğrulanmış yedeği Drive’da aç ↗');link.href=backupStatus.url;link.target='_blank';link.rel='noopener noreferrer';result.append(link);}
     if(backupStatus.error)result.append(make('p','','Son yedekleme uyarısı: '+backupStatus.error));
    }else{
     result.append(make('p','','Otomatik yedekleme doğrulanamadı. Önce günlük yedeklemeyi kurun.'));
