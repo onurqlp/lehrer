@@ -167,3 +167,5 @@ Google giriş / Drive hata sayfası görünüyorsa **GitHub değil Apps Script d
 
 ## Durum
 GitHub'daki kaynak ve arayüz güncellendi. Canlı Apps Script sürümü bu GitHub işlemleriyle otomatik değiştirilmedi. Gerçek kullanıcıyla uçtan uca deneme, Apps Script yeni sürüm dağıtımından sonra yapılmalıdır.
+
+<!-- V4.5: panel geçişi ve performans düzenlemesi hazırlık dalı. -->
