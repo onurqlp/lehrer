@@ -1,0 +1,46 @@
+/* Teacher Focus v3.0 — fully separated screens. Owner remains unchanged. */
+body.ayda-teacher[data-ayda-teacher-view] #app > [data-ayda-page]{display:none!important}
+body.ayda-teacher[data-ayda-teacher-view] #app > [data-ayda-active="true"]:not(.hidden):not([hidden]){display:block!important}
+body.ayda-teacher[data-ayda-teacher-view] #app > .section[data-ayda-active="true"]{display:flex!important}
+body.ayda-teacher[data-ayda-teacher-view] #app > .grid[data-ayda-active="true"]{display:grid!important}
+body.ayda-teacher[data-ayda-teacher-view] #app > .stats{display:none!important}
+body.ayda-teacher[data-ayda-teacher-view] #app > [data-ayda-page="unused"]{display:none!important}
+body.ayda-teacher[data-ayda-teacher-view] #app>.hero{margin-bottom:12px!important}
+body.ayda-teacher[data-ayda-teacher-view] #app>.hero>.muted:first-child{font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:#dceaf8}
+body.ayda-teacher[data-ayda-teacher-view] #app>.hero h1{font-size:clamp(25px,3vw,35px);margin:4px 0 9px}
+body.ayda-teacher[data-ayda-teacher-view] #app>.hero #dateLine{color:#dceaf8!important}
+.ayda-teacher-home-actions{display:flex;align-items:center;gap:10px;margin:16px 0 28px}
+.ayda-teacher-home-actions button{min-height:49px;border-radius:12px;padding:13px 19px;font-weight:800;font-size:13px;cursor:pointer}
+.ayda-teacher-primary-action{background:#102541;border:1px solid #102541;color:white}
+.ayda-teacher-secondary-action{background:#fff;border:1px solid #d5e0eb;color:#163550}
+.ayda-teacher-home-actions button:hover{filter:brightness(.94)}
+.ayda-teacher-view-intro{padding:5px 0 13px;border-bottom:1px solid #e2eaf1;margin-bottom:22px;position:relative}
+.ayda-teacher-crumb{font-size:10px;letter-spacing:.16em;font-weight:850;color:#9a793e;margin-bottom:7px}
+.ayda-teacher-view-intro h1{font-size:clamp(25px,3vw,34px);letter-spacing:-.035em;color:#102541;margin:0 0 7px}
+.ayda-teacher-view-intro p{font-size:13px;color:#586f85;margin:0;max-width:580px}
+.ayda-teacher-back{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 14px;margin-top:15px;border:1px solid #e0e8f0;background:white;border-radius:10px;color:#244564;font-size:12px;font-weight:750;cursor:pointer}
+body.ayda-teacher[data-ayda-teacher-view="home"] #app .section{margin:21px 0 11px}
+body.ayda-teacher[data-ayda-teacher-view="home"] #app #todayLessons{max-width:850px}
+body.ayda-teacher[data-ayda-teacher-view="home"] #app #todayLessons .rowcard{padding:18px 20px;min-height:72px}
+body.ayda-teacher[data-ayda-teacher-view="home"] #app #todayLessons .rowcard strong{font-size:15px}
+body.ayda-teacher[data-ayda-teacher-view="students"] #app #teacherTracking{scroll-margin-top:80px}
+body.ayda-teacher[data-ayda-teacher-view="students"] #app #teacherTracking .teacher-track-heading{margin-top:0}
+body.ayda-teacher[data-ayda-teacher-view="daily"] #app #daily>.section{margin-top:0}
+body.ayda-teacher[data-ayda-teacher-view] #aydaTeacherRail .ayda-rail-link.active{color:#0e2947;background:#eef3f8;box-shadow:inset 3px 0 0 #d6ad68}
+@media(min-width:769px){.ayda-teacher-view-intro{padding:13px 0 21px}.ayda-teacher-back{position:absolute;right:2px;top:20px;margin:0}}
+@media(max-width:768px){
+ body.ayda-teacher[data-ayda-teacher-view] #app>.hero{padding:22px 19px!important}
+ .ayda-teacher-home-actions{display:grid;grid-template-columns:1fr;gap:9px;margin:12px 0 21px}
+ .ayda-teacher-home-actions button{width:100%;text-align:center;min-height:52px;font-size:14px}
+ .ayda-teacher-view-intro{margin-bottom:12px;padding:5px 0 16px}
+ .ayda-teacher-view-intro h1{font-size:26px}
+ .ayda-teacher-view-intro p{font-size:12px}
+ .ayda-teacher-back{margin-top:13px}
+ body.ayda-teacher[data-ayda-teacher-view="home"] #app #todayLessons .rowcard{padding:15px}
+ body.ayda-teacher[data-ayda-teacher-view="home"] #app .section{gap:8px;align-items:center}
+ body.ayda-teacher[data-ayda-teacher-view="home"] #app .section h2{font-size:18px}
+ body.ayda-teacher[data-ayda-teacher-view="home"] #app .section .primary-link{display:none}
+}
+@media print{body.ayda-teacher[data-ayda-teacher-view] #app > [data-ayda-page]{display:block!important}body.ayda-teacher[data-ayda-teacher-view] #app>.stats{display:none!important}}
+/* Remove repetitive institutional footer while in the authenticated teacher workspace. */
+body.ayda-teacher[data-ayda-teacher-view] .ayda-internal-footer{display:none!important}
