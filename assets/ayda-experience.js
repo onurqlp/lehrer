@@ -14,7 +14,7 @@
  const full=isOwner?[
   ['overview','Genel Bakış'],['students','Öğrenciler'],['attendance','Yoklama ve Ödev'],['groups','Gruplar'],['lessons','Ders Kayıtları'],['teachers','Öğretmenler ve Saat'],['schedule','Ders Programı'],['alerts','Uyarılar'],['messages','Mesaj Merkezi'],['accounts','Hesaplar']
  ]:[
-  ['todayLessons','Bugünkü Dersler'],['daily','Ders Kaydı ve Yoklama'],['groups','Gruplarım'],['teacherTracking','Öğrenci Takibi'],['schedule','Ders Programı'],['history','Geçmiş Ders Raporları'],['aydaTeacherFeedback','Öneri ve Sorun Bildirimi'],['selfPassword','Parolamı Değiştir']
+  ['todayLessons','Ana Sayfa'],['daily','Ders Kaydı ve Yoklama'],['groups','Gruplarım'],['teacherTracking','Öğrenciler'],['schedule','Ders Programı'],['history','Ders Geçmişim'],['aydaTeacherFeedback','Öneri ve Sorun Bildirimi'],['selfPassword','Parolamı Değiştir']
  ];
  if(!isOwner){
   const rail=el('aside','ayda-teacher-rail');rail.id='aydaTeacherRail';rail.setAttribute('aria-label','Öğretmen hızlı erişim');
@@ -41,6 +41,7 @@
  function go(key){
   closeSheet();
   if(isOwner){const native=qs('#ownerNav button[data-tab="'+key+'"]');if(native){native.click();updateActive(key);const title=qs('.owner-heading');if(title)title.scrollIntoView({behavior:'smooth',block:'start'});}return;}
+  if(window.AYDA_TEACHER_VIEWS?.open?.(key)){updateActive(key);return;}
   const target=document.getElementById(key);if(!target)return;
   if(target.classList.contains('hidden')||target.hidden)return;
   updateActive(key);target.scrollIntoView({behavior:'smooth',block:'start'});
