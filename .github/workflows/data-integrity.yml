@@ -1,0 +1,27 @@
+name: AYDA Data Integrity Tests
+on:
+  push:
+    branches: [main, ayda-v4-4-data-integrity-20261019]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  records:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JavaScript syntax
+        run: |
+          node --check tests/data-integrity.test.mjs
+          node --check assets/app.js
+          node --check assets/owner.js
+          node --check assets/teacher-daily.js
+          node --check apps-script/Code.gs
+      - name: Run isolated data regression tests
+        run: node --test tests/data-integrity.test.mjs
