@@ -3,7 +3,7 @@
 :root{--ux-ink:#132840;--ux-navy:#0d2340;--ux-deep:#091a30;--ux-gold:#d6ad68;--ux-paper:#f7f9fb;--ux-line:#e0e7ee;--ux-soft:#eef3f8;--ux-muted:#5d6e80;--ux-radius:18px;--ux-elev:0 12px 36px rgba(15,37,64,.055)}
 html{scroll-padding-top:108px}
 body.ayda-internal{background:var(--ux-paper);color:var(--ux-ink);-webkit-tap-highlight-color:transparent}
-body.ayda-internal .ayda-site-header{background:#fff;border-bottom:1px solid var(--ux-line);box-shadow:0 2px 12px rgba(20,42,70,.025)}
+body.ayda-internal .ayda-site-header{background:var(--ux-deep);border-bottom:1px solid #284360;box-shadow:0 3px 12px rgba(7,20,35,.14)}
 body.ayda-internal :is(.card,.owner-kpi,.note-card,.owner-student-card,.owner-group-card,.owner-lesson,.owner-teacher-card,.ayda-month-overview,.ayda-makeup-center){border-color:var(--ux-line);box-shadow:var(--ux-elev)}
 body.ayda-internal :is(input:not([type=checkbox]):not([type=radio]),select,textarea){accent-color:var(--ux-navy);border-radius:11px;max-width:100%;min-height:44px}
 body.ayda-internal :is(button,.primary-link,.outline,.text-button){transition:background-color .16s ease,border-color .16s ease,color .16s ease,transform .16s ease;touch-action:manipulation}
