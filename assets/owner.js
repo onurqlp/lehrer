@@ -284,27 +284,28 @@
  }
  function teacherData(){
   const month=$('ownerTeacherMonth').value,teachers=new Map();
-  for(const t of overview.teachers||[])teachers.set(t.id,{teacher:t,groups:0,students:0,group:0,private:0,done:0,canceled:0,hours:0});
+  for(const t of overview.teachers||[])teachers.set(t.id,{teacher:t,groups:0,students:0,group:0,private:0,done:0,canceled:0,postponed:0,hours:0});
   for(const g of overview.groups||[]){const t=teachers.get(g.teacherId);if(t){t.groups++;t.students+=Number(g.students)||0;}}
   for(const r of lessons().filter(r=>r.date?.startsWith(month))){
    const t=teachers.get(r.teacherId);if(!t)continue;
    if(r.status==='İşlendi'){t.done++;t[r.type==='Özel'?'private':'group']++;t.hours+=hours(r.actual);}
-   else t.canceled++;
+   else if(r.status==='İptal')t.canceled++;
+    else if(r.status==='Ertelendi')t.postponed++;
   }
   return [...teachers.values()].sort((a,b)=>b.hours-a.hours||a.teacher.name.localeCompare(b.teacher.name,'tr'));
  }
  function renderTeachers(){
-  const rows=teacherData(),tot=rows.reduce((o,t)=>({count:o.count+t.done,hours:o.hours+t.hours,private:o.private+t.private,canceled:o.canceled+t.canceled}),{count:0,hours:0,private:0,canceled:0});
-  $('ownerTeacherSummary').replaceChildren(kpi('İşlenen ders',tot.count),kpi('Toplam ders saati',hoursText(tot.hours)),kpi('Özel ders',tot.private),kpi('İptal / erteleme',tot.canceled));
-  const headers=['Öğretmen','Hesap','Grup','Öğrenci','Grup dersi','Özel ders','İşlenen','Ders saati','İptal/erteleme'];
-  exportRows=[headers,...rows.map(x=>[x.teacher.name,x.teacher.status,x.groups,x.students,x.group,x.private,x.done,hoursText(x.hours),x.canceled])];
+  const rows=teacherData(),tot=rows.reduce((o,t)=>({count:o.count+t.done,hours:o.hours+t.hours,private:o.private+t.private,canceled:o.canceled+t.canceled,postponed:o.postponed+t.postponed}),{count:0,hours:0,private:0,canceled:0,postponed:0});
+  $('ownerTeacherSummary').replaceChildren(kpi('İşlenen ders',tot.count),kpi('Toplam ders saati',hoursText(tot.hours)),kpi('Özel ders',tot.private),kpi('İptal',tot.canceled),kpi('Ertelenen',tot.postponed));
+  const headers=['Öğretmen','Hesap','Grup','Öğrenci','Grup dersi','Özel ders','İşlenen','Ders saati','İptal','Ertelenen'];
+  exportRows=[headers,...rows.map(x=>[x.teacher.name,x.teacher.status,x.groups,x.students,x.group,x.private,x.done,hoursText(x.hours),x.canceled,x.postponed])];
   table('ownerTeacherTable',headers,exportRows.slice(1));
   const root=$('ownerTeacherCards');root.replaceChildren();
   for(const t of rows){
    const box=add(root,'article','owner-teacher-card');const hd=add(box,'div','owner-group-head');add(hd,'h3','',t.teacher.name);hd.append(pill(t.teacher.status||'—',t.teacher.status==='Aktif'?'regular':'watch'));
    const gs=(overview.groups||[]).filter(g=>g.teacherId===t.teacher.id);
    add(box,'p','','Grupları: '+(gs.map(g=>g.name+' ('+g.level+')').join(', ')||'Atanmış grup yok'));
-   add(box,'p','','Bu ay: '+t.done+' ders · '+hoursText(t.hours)+' saat · '+t.canceled+' iptal/erteleme');
+   add(box,'p','','Bu ay: '+t.done+' ders · '+hoursText(t.hours)+' saat · '+t.canceled+' iptal · '+t.postponed+' erteleme');
    add(box,'p','','Öğretmen ID: '+t.teacher.id+' · Kullanıcı ID: '+(t.teacher.userId||'—'));
   }
   if(!rows.length)showEmpty('ownerTeacherCards','Öğretmen hesabı bulunamadı.');
@@ -353,11 +354,6 @@
  }
  function renderWeekly(){
   const root=$('ownerWeekly');if(!root)return;root.replaceChildren();
-  const cutoff=new Date((today()||'').slice(0,10)+'T00:00:00Z');cutoff.setUTCDate(cutoff.getUTCDate()-6);
-  const since=cutoff.toISOString().slice(0,10);
-  const past=(overview?.history||[]).filter(r=>r.date>=since&&r.date<=today());
-  const done=past.filter(r=>r.status==='İşlendi').length;
-  const privateDone=(overview?.privateHistory||[]).filter(r=>r.date>=since&&r.date<=today()&&r.status==='İşlendi').length;
   const month=today().slice(0,7),year=Number(month.slice(0,4)),mon=Number(month.slice(5,7)),totalDays=new Date(Date.UTC(year,mon,0)).getUTCDate();
   const weekdays=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
   const byId=new Map(activeGroups().map(g=>[g.id,g])),planned=new Set();
