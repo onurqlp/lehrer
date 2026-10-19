@@ -967,6 +967,52 @@ function aydaBackupStatus_(user){
  return {installed,exists,at:props.getProperty('AYDA_LAST_BACKUP_AT')||'',error:props.getProperty('AYDA_LAST_BACKUP_ERROR')||''};
 }
 
+/** Salt-okunur, yöneticiye özel veri bütünlüğü sayacı; kişisel kayıt içermez. */
+function aydaIntegrityStatus_(user){
+ if(user.role!=='admin')throw Error('Veri kontrolünü yalnızca yönetici yapabilir.');
+ const required=['GRUPLAR','HAFTALIK_PROGRAM','DERS_KAYITLARI','OGRENCILER','YOKLAMA','DERS_ODEVLERI','ODEV_TAKIBI','ODEV_GOREVLERI'];
+ const counts={},issues=[],db=aydaDb_();
+ for(const name of required){
+  const sheet=db.getSheetByName(name);
+  if(!sheet){issues.push('Eksik tablo: '+name);continue;}
+  counts[name]=Math.max(0,sheet.getLastRow()-1);
+ }
+ if(issues.length)return {ok:false,issues,counts,checkedAt:Utilities.formatDate(new Date(),AYDA_TZ,'yyyy-MM-dd HH:mm')};
+ const groups=aydaRead_('GRUPLAR'),lessons=aydaRead_('DERS_KAYITLARI'),att=aydaRead_('YOKLAMA');
+ const names=new Set(groups.map(g=>String(g['ID']))),ids=new Set(),keys=new Set();
+ let duplicateLessons=0,orphanLessons=0,orphanAttendance=0,duplicateAttendance=0,incompleteAttendance=0,orphanHomework=0;
+ for(const lesson of lessons){
+  const id=String(lesson['Kayıt ID']||''),key=String(lesson['Grup ID']||'')+'|'+aydaDate_(lesson['Tarih']);
+  if(!id||ids.has(id)||keys.has(key))duplicateLessons++;
+  ids.add(id);keys.add(key);
+  if(!names.has(String(lesson['Grup ID']||'')))orphanLessons++;
+ }
+ const attendance=new Map();
+ for(const row of att){
+  const id=String(row['DERS_KAYIT_ID']||''),student=String(row['OGRENCI_ID']||'');
+  if(!ids.has(id))orphanAttendance++;
+  if(!attendance.has(id))attendance.set(id,new Set());
+  const seen=attendance.get(id);
+  if(!student||seen.has(student))duplicateAttendance++;
+  seen.add(student);
+ }
+ const roster=new Map();
+ for(const s of aydaRead_('OGRENCILER')){
+  const key=String(s['GRUP_ID']||'');
+  if(!roster.has(key))roster.set(key,new Set());
+  roster.get(key).add(String(s['OGRENCI_ID']||''));
+ }
+ for(const lesson of lessons){
+  const date=aydaDate_(lesson['Tarih']),gid=String(lesson['Grup ID']||'');
+  if(lesson['Durum']!=='İşlendi'||date<AYDA_TRACKING_START)continue;
+  const expected=roster.get(gid),actual=attendance.get(String(lesson['Kayıt ID']||''));
+  if(expected&&expected.size&&(!actual||expected.size!==actual.size||[...expected].some(id=>!actual.has(id))))incompleteAttendance++;
+ }
+ for(const row of aydaRead_('DERS_ODEVLERI'))if(!ids.has(String(row['DERS_KAYIT_ID']||'')))orphanHomework++;
+ for(const [count,label] of [[duplicateLessons,'Mükerrer ders kaydı'],[orphanLessons,'Grubu bulunmayan ders'],[orphanAttendance,'Derse bağlı olmayan yoklama'],[duplicateAttendance,'Mükerrer öğrenci yoklaması'],[incompleteAttendance,'Eksik öğrenci yoklaması'],[orphanHomework,'Derse bağlı olmayan ödev']])if(count)issues.push(label+': '+count);
+ return {ok:issues.length===0,issues,counts,checkedAt:Utilities.formatDate(new Date(),AYDA_TZ,'yyyy-MM-dd HH:mm')};
+}
+
 function doGet(e){
   const p=e&&e.parameter||{},cb=String(p.callback||'');
   if(!/^ayda_cb_[A-Za-z0-9_]{1,64}$/.test(cb))return ContentService.createTextOutput('Invalid callback').setMimeType(ContentService.MimeType.TEXT);
@@ -986,6 +1032,9 @@ function doGet(e){
     else if(action==='studentRoster')out={ok:true,data:{students:aydaStudentRoster_(user)}};
     else if(action==='trackingSummary')out={ok:true,data:aydaTrackingSummary_(user)};
     else if(action==='reminders')out={ok:true,data:aydaReminders_(user)};
+    else if(action==='integrityStatus')out={ok:true,data:aydaIntegrityStatus_(user)};
+    else if(action==='backupStatus')out={ok:true,data:aydaBackupStatus_(user)};
+    else if(action==='backupSetup')out={ok:true,data:aydaBackupSetup_(user)};
     else if(action==='studentNotes')out={ok:true,data:aydaStudentNotes_(user,{studentId:p.studentId})};
     else if(action==='saveStudentNote')out={ok:true,data:aydaSaveStudentNote_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='saveAttendance')out={ok:true,data:aydaSaveAttendance_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
