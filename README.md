@@ -1,3 +1,15 @@
+## V4.4 — Kayıt bütünlüğü ve yedekleme (19.10.2026)
+
+- **Mevcut veri korunur:** Hiçbir mevcut satır silinmez; kontroller salt-okunurdur. Başlangıç tarihi 19 Ekim 2026 olarak kalır.
+- **Ders kaydı onayı:** Ders, yoklama ve verilen ödev alt tabloları yazılıp `SpreadsheetApp.flush()` tamamlandıktan sonra kayıt kimliği ve yoklama ilişki kimlikleri yeniden okunarak doğrulanır.
+- **Çok adımlı grup oluşturma:** Bir program satırında hata oluşursa oluşturma esnasındaki grup ve program satırları geri alınır. Geri alma da başarısızsa sessiz başarı yerine yönetici uyarısı oluşur.
+- **Ders ilerlemesi:** Ders kaydı başarıyla tutulmuşsa sonradan yaşanan grup özet güncellemesi hatası, dersi yanlışlıkla başarısız göstermez; uyarı olarak döner.
+- **Veri bütünlüğü:** Yalnızca yöneticiye açık `integrityStatus`, tablo varlığı, mükerrer ders kimlikleri, boşa düşen yoklama ve ödev bağlantıları, eksik yoklamalar gibi durumları sayısal olarak kontrol eder; kişisel öğrenci verisi döndürmez.
+- **Tam Drive yedeği:** `backupSetup` önce ayrı bir Drive dosyasında bütün çalışma kitabının kopyasını oluşturur, **tüm sekmelerin satır sayılarını** doğrular, sonra günlük tetikleyici kurar. Sağlam son yedeği otomatik silmez. `backupStatus` son yedek ve hata durumunu gösterir.
+- **Testler:** `.github/workflows/data-integrity.yml`, canlı öğrenci verilerine erişmeden Node.js ile ders/yoklama, mükerrer kayıt engeli, hata sonrası geri alma, aylık süre/erteleme hesaplamalarını çalıştırır.
+- **Yayın ayrımı:** GitHub Pages frontend otomatik yayımlanır. Google Apps Script kodu **Google'da ayrıca yeni web uygulaması sürümü olarak dağıtılmadan** `backupSetup` / `integrityStatus` çalışmaz; böyle bir durumda yönetici ekranı başarı iddia etmez. Sonrasında yönetici panelindeki **Günlük yedeklemeyi kur** işlemi bir kez çalıştırılmalıdır.
+- **Sınır:** Tek Google hesabı, kota, kullanıcı kaynaklı silme, aynı anda Sheets üzerinde el ile yapılan düzenleme veya Google hizmeti arızaları nedeniyle sıfır veri kaybı mutlak garanti edilemez; bağımsız yedekler bu riski azaltır.
+
 ## V4.3 — Sade kontrol ve doğru kayıtlar (19.10.2026)
 
 - **Başlangıç:** Yeni sistemin eksik kayıt kontrolleri 19 Ekim 2026'dan başlar; geriye dönük eksik taraması genişletilmez. Mevcut Google tablolarına veri müdahalesi yapılmaz.
