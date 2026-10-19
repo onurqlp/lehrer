@@ -67,8 +67,9 @@
  }
  async function load(){
   if(!data?.user)return;const id=++request;alerts=null;render();refresh.disabled=true;
-  try{const out=await jsonp('reminders');if(id===request){alerts=out;render();}}
-  catch(e){if(id===request){alerts=null;render();}}
+  window.dispatchEvent(new CustomEvent('ayda:reminders-result',{detail:{state:'pending'}}));
+  try{const out=await jsonp('reminders');if(id===request){alerts=out;render();window.dispatchEvent(new CustomEvent('ayda:reminders-result',{detail:{state:'success',data:out}}));}}
+  catch(e){if(id===request){alerts=null;render();window.dispatchEvent(new CustomEvent('ayda:reminders-result',{detail:{state:'error'}}));}}
   finally{if(id===request)refresh.disabled=false;}
  }
  function saveDraft(){
@@ -91,6 +92,7 @@
   form.addEventListener('input',saveDraft);form.addEventListener('change',saveDraft);
  }
  refresh.addEventListener('click',load);
+ window.addEventListener('ayda:teacher-monitor-refresh',()=>{if(data?.user?.role==='teacher')load();});
  window.addEventListener('ayda:login',()=>{restoreDraft();load();});
  window.addEventListener('ayda:saved',()=>{try{sessionStorage.removeItem(draftKey);}catch{}const badge=$('aydaDraftStatus');if(badge)badge.textContent='';load();});
  window.addEventListener('ayda:logout',()=>{request++;alerts=null;try{sessionStorage.removeItem(draftKey);}catch{}root.classList.add('hidden');});
