@@ -21,8 +21,9 @@ jobs:
           node --check tests/data-integrity.test.mjs
           node --check assets/app.js
           node --check assets/owner.js
+          node --check assets/owner-data-control.js
           node --check assets/teacher-daily.js
           cp apps-script/Code.gs /tmp/ayda-apps-script-check.js
           node --check /tmp/ayda-apps-script-check.js
       - name: Run isolated data regression tests
-        run: node --test tests/data-integrity.test.mjs
+        run: node --test tests/*.test.mjs
