@@ -12,8 +12,8 @@ function apiCandidates(){
  const id=configured.match(/\/s\/([A-Za-z0-9_-]+)\/exec(?:$|\?)/)?.[1];
  if(!id)return [configured].filter(Boolean);
  const root='https://script.google.com/';
- const paths=['a/macros/aydadil.com/s/','a/aydadil.com/macros/s/','macros/s/'];
- return [...new Set([workingApiUrl,...paths.map(p=>root+p+id+'/exec'),configured].filter(Boolean))];
+ const paths=['macros/s/','a/macros/aydadil.com/s/','a/aydadil.com/macros/s/'];
+ return [...new Set([workingApiUrl,configured,...paths.map(p=>root+p+id+'/exec')].filter(Boolean))];
 }
 function apiTransportError(detail){
  const err=new Error(detail);err.transport=true;return err;
