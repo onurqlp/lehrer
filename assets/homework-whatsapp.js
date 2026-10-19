@@ -13,7 +13,7 @@
  const card=el('section','ayda-share-followup');card.id='aydaShareFollowup';card.hidden=true;
  const status=el('div','ayda-share-status','3 · WhatsApp sınıf duyurusu');
  const title=el('h3','','Son adım: Sınıf grubuna yaz');
- const intro=el('p','ayda-share-help','Ödevin kaydedildi. Üstteki yeşil WhatsApp düğmesine bas, sınıf grubunu seçip mesajı gönder. Sonra buradan “Gruba gönderdim” diyerek tamamla.');
+ const intro=el('p','ayda-share-help','WhatsApp mesajını açtınız. Sınıf grubunu seçip mesajı gönderin. Ardından aşağıdaki onay düğmesiyle işlemi tamamlayın.');
  const preview=el('div','ayda-share-preview'),confirm=el('button','ayda-share-confirm','✓ Gruba gönderdim'),note=el('p','ayda-share-hint');
  confirm.type='button';confirm.disabled=true;note.setAttribute('role','status');
  card.append(status,title,intro,preview,confirm,note);
@@ -29,7 +29,7 @@
  function fromApi(row){return {...row,group:row.group||currentGroups().get(row.groupId)?.name||row.groupId};}
  function drawCard(item,scroll=false){
   current=isHomework(item)?item:null;
-  card.hidden=!current||!teacher();
+  card.hidden=!current||!teacher()||!opened.has(current.id);
   if(!current)return;
   status.textContent='3 · WhatsApp sınıf duyurusu · Paylaşım bekliyor';
   preview.replaceChildren();
@@ -37,16 +37,13 @@
   confirm.disabled=!opened.has(current.id);
   note.textContent=opened.has(current.id)?
    'WhatsApp’ta grup mesajını gönderdikten sonra “Gruba gönderdim”e basın.':'Ödev henüz paylaşıldı olarak işaretlenmedi.';
-  if(scroll)card.scrollIntoView({behavior:'smooth',block:'center'});
+  if(scroll&&!card.hidden)card.scrollIntoView({behavior:'smooth',block:'center'});
  }
  function share(item){
   const text=formatText(item);
   window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener,noreferrer');
   opened.add(item.id);
-  if(current?.id===item.id){
-   confirm.disabled=false;
-   note.textContent='Sınıf grubunu seçip mesajı gönderin; sonra “Gruba gönderdim”i onaylayın.';
-  }
+  drawCard(item,true);
   paintPending();
  }
  async function acknowledge(item,button,resultText){
@@ -81,9 +78,9 @@
    const row=el('div','ayda-share-pending-item'),head=el('div','ayda-share-pending-head');
    head.append(el('strong','',task.group+' · '+formattedDate(task.date)),el('p','',task.text));
    const controls=el('div','ayda-share-pending-controls'),send=el('button','ayda-share-open','WhatsApp’ta gruba yaz →');
-   send.type='button';send.addEventListener('click',()=>{current=task;drawCard(task,false);share(task);});
+   send.type='button';send.addEventListener('click',()=>share(task));
    const done=el('button','ayda-share-confirm','✓ Gruba gönderdim'),message=el('small','ayda-share-hint');
-   done.type='button';done.disabled=!opened.has(task.id);
+   done.type='button';done.hidden=!opened.has(task.id);
    done.addEventListener('click',()=>acknowledge(task,done,message));
    controls.append(send,done);row.append(head,controls,message);list.append(row);
   }
@@ -110,12 +107,13 @@
   const item={...e.detail,group:e.detail?.groupName};
   if(!isHomework(item))return;
   pending=[item,...pending.filter(t=>t.id!==item.id)];
-  drawCard(item,true);paintPending();
+  drawCard(item,false);paintPending();
  });
  window.addEventListener('ayda:homework-share-opened',e=>{
-  if(!current||current.id!==e.detail?.id)return;
-  opened.add(current.id);confirm.disabled=false;
-  note.textContent='WhatsApp’ta sınıf grubunu seçip gönderdikten sonra “Gruba gönderdim”e basın.';
+  const item=(current?.id===e.detail?.id?current:pending.find(t=>t.id===e.detail?.id));
+  if(!item)return;
+  opened.add(item.id);
+  drawCard(item,true);
   paintPending();
  });
  window.addEventListener('ayda:login',refresh);
