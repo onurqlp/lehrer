@@ -147,6 +147,7 @@ function aydaSave_(user,p){
         homeworkSheet.sheet.getRange(homeworkSheet.sheet.getLastRow()+1,1,1,homeworkSheet.header.length)
           .setValues([homeworkSheet.header.map(k=>Object.prototype.hasOwnProperty.call(entry,k)?entry[k]:'')]);
       }
+      SpreadsheetApp.flush(); // Alt tablolar tamamlanmadan kayda onay verme.
     }catch(writeErr){
       let rollbackIssue=false;
       for(const m of marks.slice().reverse()){
