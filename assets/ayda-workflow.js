@@ -25,6 +25,7 @@
    if(old){$('note').value=old.note&&old.note.length>=3?old.note:'Önceden kaydedilmiş ders';$('completed').value=old.completed||0;}
    if($('attendancePreview'))$('attendancePreview').open=true;
   }
+  window.AYDA_TEACHER_VIEWS?.open?.('daily',{preserveScroll:true});
   $('daily').scrollIntoView({behavior:'smooth',block:'start'});
   if(!forAttendance)$('note').focus({preventScroll:true});
  }
