@@ -937,13 +937,14 @@ function aydaBackupNow_(){
   SpreadsheetApp.flush();
   const source=aydaDb_(),required=['GRUPLAR','KULLANICILAR','HAFTALIK_PROGRAM','DERS_KAYITLARI','OGRENCILER','YOKLAMA','ODEV_TAKIBI','ODEV_GOREVLERI','ODEV_GOREV_GECMISI','DERS_ODEVLERI'];
   const counts={};
-  for(const name of required){const sheet=source.getSheetByName(name);if(!sheet)throw Error('Yedekleme öncesi eksik tablo: '+name);counts[name]=sheet.getLastRow();}
+  for(const name of required)if(!source.getSheetByName(name))throw Error('Yedekleme öncesi eksik tablo: '+name);
+  for(const sheet of source.getSheets())counts[sheet.getName()]=sheet.getLastRow();
   const now=new Date(),stamp=Utilities.formatDate(now,AYDA_TZ,'yyyy-MM-dd_HH-mm-ss');
   const copy=DriveApp.getFileById(AYDA_DB_ID).makeCopy('AYDA-KAYIT-TAM-YEDEK-'+stamp,folder);
   const replica=SpreadsheetApp.openById(copy.getId());
-  for(const name of required){const sheet=replica.getSheetByName(name);if(!sheet||sheet.getLastRow()!==counts[name])throw Error('Yedek kontrolü başarısız: '+name);}
+  for(const name of Object.keys(counts)){const sheet=replica.getSheetByName(name);if(!sheet||sheet.getLastRow()!==counts[name])throw Error('Yedek kontrolü başarısız: '+name);}
   props.setProperties({AYDA_LAST_BACKUP_ID:copy.getId(),AYDA_LAST_BACKUP_AT:Utilities.formatDate(now,AYDA_TZ,"yyyy-MM-dd'T'HH:mm:ss"),AYDA_LAST_BACKUP_ERROR:''});
-  return {ok:true,at:props.getProperty('AYDA_LAST_BACKUP_AT'),fileId:copy.getId(),sheets:required.length,verified:true};
+  return {ok:true,at:props.getProperty('AYDA_LAST_BACKUP_AT'),fileId:copy.getId(),sheets:Object.keys(counts).length,verified:true};
  }catch(error){
   props.setProperty('AYDA_LAST_BACKUP_ERROR',String(error.message||error).slice(0,350));
   throw error;
