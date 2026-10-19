@@ -56,3 +56,25 @@ body.ayda-teacher[data-ayda-teacher-view="home"] #app>#aydaTeacherDashboard[data
 @media(max-width:768px){.ayda-monitor{margin:13px 0 23px}.ayda-monitor-head{align-items:flex-start}.ayda-monitor-head h2{font-size:22px}.ayda-monitor-head p{font-size:12px}.ayda-monitor-refresh{padding:9px 10px;font-size:11px}.ayda-monitor-summary{gap:8px;margin:12px 0}.ayda-monitor-metric{padding:14px 13px;border-radius:12px}.ayda-monitor-metric strong{font-size:27px}.ayda-monitor-metric span{font-size:11px}.ayda-monitor-grid{gap:12px}.ayda-monitor-card,.ayda-monitor-upcoming{padding:16px}.ayda-monitor-alert-item{flex-direction:column;align-items:stretch}.ayda-monitor-alert-item .ayda-monitor-item-button{align-self:flex-start}.ayda-monitor-upcoming-list{grid-template-columns:1fr;gap:7px}.ayda-monitor-next-item{padding:8px}.ayda-monitor-footer{font-size:10px}}
 @media(min-width:769px) and (max-width:1150px){.ayda-monitor-upcoming-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 body.ayda-teacher[data-ayda-teacher-view="home"] #app>.section>.primary-link{display:none!important}
+/* V4.2: eksik kayıtlar ana sayfada en üstte, diğer metriklerden önce. */
+body.ayda-teacher .ayda-monitor-priority{margin:13px 0 15px;border-color:#dbc79e;border-left:4px solid #c59b51;background:#fff;box-shadow:0 5px 23px rgba(32,48,74,.07)}
+body.ayda-teacher .ayda-monitor-priority h3{font-size:clamp(18px,2vw,22px);color:#172e49}
+body.ayda-teacher .ayda-monitor-priority .ayda-monitor-alert-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch}
+body.ayda-teacher .ayda-monitor-priority .ayda-monitor-alert-item{background:#fdfaf6;border-color:#e6dccb;padding:14px 15px;min-height:80px}
+body.ayda-teacher .ayda-monitor-priority .ayda-monitor-alert-copy>strong{font-size:13px;color:#6c450f}
+body.ayda-teacher .ayda-monitor-priority .ayda-monitor-alert-copy>span{font-size:12px;color:#40576c;font-weight:650}
+body.ayda-teacher .ayda-monitor-priority .ayda-monitor-age{font-size:11px;color:#9c6927}
+body.ayda-teacher .ayda-monitor-priority .ayda-monitor-subaction{margin-top:5px;padding:12px 0 1px}
+body.ayda-teacher .ayda-monitor-priority .ayda-monitor-empty,body.ayda-teacher .ayda-monitor-priority .ayda-monitor-ok{grid-column:1/-1}
+body.ayda-teacher .ayda-monitor-grid{grid-template-columns:minmax(0,1fr)}
+body.ayda-teacher .ayda-monitor-month .ayda-monitor-month-numbers{grid-template-columns:repeat(4,minmax(0,1fr))}
+body.ayda-teacher .ayda-monitor-month .ayda-monitor-group-list{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:22px}
+@media(max-width:900px){body.ayda-teacher .ayda-monitor-priority .ayda-monitor-alert-list{grid-template-columns:1fr}body.ayda-teacher .ayda-monitor-month .ayda-monitor-month-numbers{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:768px){
+ body.ayda-teacher .ayda-monitor-priority{margin:12px 0;padding:16px;border-left-width:3px}
+ body.ayda-teacher .ayda-monitor-priority .ayda-monitor-alert-item{display:flex;flex-direction:row;align-items:center;gap:8px;min-height:85px;padding:11px}
+ body.ayda-teacher .ayda-monitor-priority .ayda-monitor-alert-item .ayda-monitor-item-button{white-space:normal;text-align:center;max-width:104px;min-width:93px;align-self:center}
+ body.ayda-teacher .ayda-monitor-priority .ayda-monitor-alert-copy>span{font-size:11px}
+ body.ayda-teacher .ayda-monitor-month .ayda-monitor-group-list{grid-template-columns:1fr}
+}
+@media(max-width:360px){body.ayda-teacher .ayda-monitor-priority .ayda-monitor-alert-item{flex-direction:column;align-items:stretch}body.ayda-teacher .ayda-monitor-priority .ayda-monitor-alert-item .ayda-monitor-item-button{max-width:none;align-self:stretch}}
