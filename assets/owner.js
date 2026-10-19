@@ -88,20 +88,28 @@
    $('ownerKey').value='';
    if(!$('ownerTeacherMonth').value)$('ownerTeacherMonth').value=today().slice(0,7);
    if(!$('ownerLessonMonth').value)$('ownerLessonMonth').value=today().slice(0,7);
-   await loadTracking();
+   // Genel bakış hazır olur olmaz göster; akademik ayrıntılar paralel yüklenir.
+   renderAll();
    activate(['messages','alerts','attendance','students','groups','lessons','teachers','schedule','accounts'].includes(location.hash.slice(1))?location.hash.slice(1):(sessionStorage.getItem('aydaOwnerTab')||'overview'));
+   await loadTracking();
    window.dispatchEvent(new Event('ayda:owner-ready'));
 
   }catch(e){token='';$('ownerLogin').hidden=false;$('ownerApp').hidden=true;$('ownerLogout').hidden=true;$('ownerLoginError').textContent=e.message;}
   finally{setLoading(false);}
  }
  async function loadTracking(){
-  try{const result=await api('trackingSummary',token);if(result?.scope!=='all')throw Error('Google Apps Script takip sürümü güncel değil.');tracking=result;errorMessage('');}
-  catch(e){tracking=null;errorMessage('Öğrenci yoklama/ödev verisi yüklenemedi: '+e.message+' · Diğer akademik bilgiler gösteriliyor.');}
-  const extra=await Promise.allSettled([api('reminders',token),api('contactDirectory',token),api('lessonHomework',token)]);
-  reminders=extra[0].status==='fulfilled'?extra[0].value:null;
-  contactDirectory=extra[1].status==='fulfilled'?extra[1].value:null;
-  lessonHomework=extra[2].status==='fulfilled'?extra[2].value:null;
+  // Birbirinden bağımsız salt-okunur istekleri art arda değil, aynı anda yükle.
+  const results=await Promise.allSettled([
+   api('trackingSummary',token),api('reminders',token),
+   api('contactDirectory',token),api('lessonHomework',token)
+  ]);
+  const t=results[0];
+  tracking=t.status==='fulfilled'&&t.value?.scope==='all'?t.value:null;
+  reminders=results[1].status==='fulfilled'?results[1].value:null;
+  contactDirectory=results[2].status==='fulfilled'?results[2].value:null;
+  lessonHomework=results[3].status==='fulfilled'?results[3].value:null;
+  if(!tracking)errorMessage('Öğrenci takip verileri henüz yüklenemedi. Diğer bilgiler kullanılabilir.');
+  else errorMessage('');
   renderAll();
  }
  async function refresh(){
