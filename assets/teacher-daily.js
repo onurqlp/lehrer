@@ -194,6 +194,7 @@
   metric(monthNumbers,'Kalan planlı ders',result.remaining??'—');
   metric(monthNumbers,'Özel ders kaydı',result.privateCompleted??'—');
   monthInfo.textContent='Bu sayılar '+monthInput.value+' ayındaki kayıtlı haftalık programa göredir. Tatiller, değişen öğretmenler ve program dışı dersler nedeniyle gerçekleşen takvim farklı olabilir.'+(result.fallback?' · Mevcut ekran verilerinden hesaplandı.':'');
+  window.dispatchEvent(new CustomEvent('ayda:month-result',{detail:{state:'success',data:{...result,month:monthInput.value}}}));
  }
  async function loadMonth(){
   if(!tr())return;monthInput.value=monthInput.value||monthOf();
@@ -281,6 +282,7 @@
   finally{submit.disabled=false;}
  });
  monthInput.addEventListener('change',loadMonth);
+ window.addEventListener('ayda:teacher-monitor-refresh',()=>{if(tr()){monthInput.value=monthOf();loadMonth();}});
  feedback.addEventListener('toggle',()=>{if(feedback.open)loadFeedback();});
  function openFeedbackWhenLinked(){
   if(location.hash==='#aydaTeacherFeedback'&&tr()){
