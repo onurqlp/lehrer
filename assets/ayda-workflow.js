@@ -10,7 +10,7 @@
  const refresh=el('button','ayda-inline-btn','↻ Yenile');refresh.type='button';title.append(refresh);root.append(title);
  const metrics=el('div','ayda-auto-metrics'),items=el('div','ayda-auto-items');root.append(metrics,items);
  const anchor=$('todayLessons');if(anchor)anchor.parentElement.insertBefore(root,anchor);
- const draftKey='ayda-lesson-draft-v1',form=$('reportForm'),fieldIds=['lessonType','lessonDate','groupId','actual','status','completed','note'];
+ const draftKey='ayda-lesson-draft-v1',form=$('reportForm'),fieldIds=['lessonType','lessonDate','groupId','privateStudent','actual','status','completed','note'];
  let alerts=null,request=0;
  function group(id){return (typeof data!=='undefined'&&data?.groups||[]).find(g=>g.id===id);}
  function button(text,handler){const b=el('button','ayda-inline-btn',text);b.type='button';b.addEventListener('click',handler);return b;}
