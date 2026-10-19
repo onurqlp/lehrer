@@ -8,7 +8,7 @@ const teacher=()=>typeof data!=='undefined'&&data?.user?.role==='teacher';
 const dateTR=s=>String(s||'').replace(/^(\d{4})-(\d\d)-(\d\d)$/,'$3.$2.$1');
 const box=el('section','ayda-monitor');box.id='aydaTeacherDashboard';box.dataset.aydaPage='home';box.setAttribute('aria-label','Öğretmen günlük izleme paneli');
 const top=el('div','ayda-monitor-head'),intro=el('div');
-intro.append(el('span','ayda-monitor-eyebrow','GÜNLÜK KONTROL'),el('h2','','Günlük akademik durum'),el('p','','Eksik kayıtlar, bu ayın dersleri ve yaklaşan programın.'));
+intro.append(el('span','ayda-monitor-eyebrow','GÜNLÜK KONTROL'),el('h2','','Günlük akademik durum'),el('p','','Eksik kayıtlar, ders durumun ve yaklaşan program.'));
 const refresh=el('button','ayda-monitor-refresh','↻ Yenile');refresh.type='button';top.append(intro,refresh);box.append(top);
 const state=el('p','ayda-monitor-status','Kontrol ediliyor…');state.setAttribute('role','status');state.setAttribute('aria-live','polite');box.append(state);
 const numbers=el('div','ayda-monitor-summary');box.append(numbers);
@@ -38,6 +38,7 @@ function reportFallback(){
  const now=Date.now(),base=new Date(today+'T12:00:00Z'),results=[],seen=new Set();
  for(let back=0;back<=30;back++){
   const date=new Date(base.getTime()-back*86400000).toISOString().slice(0,10);
+  if(date<'2026-10-19')continue;
   const weekday=week[new Date(date+'T12:00:00Z').getUTCDay()];
   for(const slot of data.schedule||[]){
    const g=groups.get(String(slot.groupId)),end=String(slot.end||'').trim();
@@ -107,7 +108,7 @@ function render(){
  if(month){
   const [y,m]=String(month.month||data.today.slice(0,7)).split('-');
   monthTag.textContent=new Intl.DateTimeFormat('tr-TR',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(Number(y),Number(m)-1,1)));
-  monthNumbers.append(metric('Kalan planlı',month.remaining??'—'),metric('Özel ders',month.privateCompleted??'—'),metric('İptal / erteleme',month.cancelled??'—'),metric('İşlenen toplam saat',month.hours===undefined?'—':Number(month.hours).toLocaleString('tr-TR',{maximumFractionDigits:2}),month.hours===undefined?'Saat bilgisi bekleniyor':''));
+  monthNumbers.append(metric('Kalan planlı',month.remaining??'—'),metric('Özel ders',month.privateCompleted??'—'),metric('İptal',month.cancelled??'—'),metric('Ertelenen',month.postponed??'—'),metric('İşlenen toplam saat',month.hours===undefined?'—':Number(month.hours).toLocaleString('tr-TR',{maximumFractionDigits:2}),month.hours===undefined?'Saat bilgisi bekleniyor':''));
   const list=Array.isArray(month.byGroup)?month.byGroup:[];
   for(const g of list.slice(0,5)){
    const line=el('div','ayda-monitor-group'),label=el('div','ayda-monitor-group-label');
