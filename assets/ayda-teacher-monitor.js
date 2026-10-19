@@ -114,7 +114,7 @@ window.addEventListener('ayda:month-result',ev=>{
 });
 window.addEventListener('ayda:login',()=>{
  if(!teacher())return;
- if(userId!==String(data.user.id)){alerts=null;month=null;alertsStatus='pending';monthStatus='pending';userId=String(data.user.id);}
+ /* Preserve fallback monthly figures already received during login. */ userId=String(data.user.id);
  render();
 });
 window.addEventListener('ayda:saved',()=>{if(teacher()){alertsStatus='pending';render();}});
