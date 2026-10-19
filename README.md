@@ -1,3 +1,14 @@
+## V4.3 — Sade kontrol ve doğru kayıtlar (19.10.2026)
+
+- **Başlangıç:** Yeni sistemin eksik kayıt kontrolleri 19 Ekim 2026'dan başlar; geriye dönük eksik taraması genişletilmez. Mevcut Google tablolarına veri müdahalesi yapılmaz.
+- **Öğretmen:** Ders raporu, yoklama, aylık plan, geçmiş, grup ve öğrenci ekranları korunur. Eksik kayıtlar öğretmen ana ekranında kısa ve işlem yapılabilir şekilde görünür.
+- **Yönetici:** Öncelikli 6 gösterge, en fazla 3 doğrudan eksik kayıt önizlemesi ve aylık plan/gerçekleşen ders özeti; detaylar ayrı bölümlerdedir.
+- **Kayıt doğrulama:** Eksik yoklama için tek bir öğrenci satırının varlığı yeterli sayılmaz. Tam öğrenci listesi kontrol edilir; kısmi kayıt varsa yalnızca eksik öğrenciler tamamlanır.
+- **Ders süresi:** 00:30 ile 06:00 arasında 30 dakikalık adımlar desteklenir; 90 dakika artık 2 saate yuvarlanmaz.
+- **Ders durumu:** İptal ile ertelenen ayrı sayılır. Ertelenen grup dersi kalan plan içinde tutulur. Dersin yapılmadığı tarihte İptal/Ertelendi durumunu raporlamak gerekir; tatiller kendiliğinden anlaşılmaz.
+- **Önemli dağıtım bağımlılığı:** `apps-script/Code.gs` V4.3 kaynak güncellemesi GitHub'a eklenir; **Google Apps Script'in mevcut üretim dağıtımına ayrıca yayınlanmalıdır**. GitHub Pages yayını Google servis kodunu otomatik dağıtmaz. Bu yapılana kadar 30 dakikalık süre ile kayıt girişinde erken ve açık uyarı gösterilir. Diğer normal ders kayıtları eski API ile geriye uyumludur.
+- Bu sürümde yeni Google Sheet sekmesi veya otomatik veri silme/yedekleme işlemi yoktur.
+
 # AYDA Akademik Takip
 
 **Öğretmen / girişli yönetici paneli:** https://lehrer.aydadil.com/  
