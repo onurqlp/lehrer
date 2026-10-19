@@ -185,11 +185,16 @@ body.ayda-internal .ayda-homework-field textarea:focus-visible{outline-color:#ad
 body.ayda-internal .ayda-homework-hint{
  display:block;font-size:12px;line-height:1.5;color:#715e3d;padding:5px 0 0
 }
+body.ayda-internal .daily .actions{
+ display:flex;flex-direction:column;align-items:stretch;gap:10px;min-width:0
+}
 body.ayda-internal .daily #saveBtn{
- min-height:52px;min-width:220px;font-size:14px;font-weight:850;border-radius:11px
+ min-height:52px;min-width:0;font-size:14px;font-weight:850;border-radius:11px;width:100%;
+ background:#193b60;color:#fff!important;border:1px solid #193b60;white-space:normal;line-height:1.4
 }
 body.ayda-internal .daily .ayda-whatsapp-share{
- min-height:52px;color:#14633e!important;background:#e9f8ee;border:1px solid #9bc9aa;border-radius:11px;font-weight:800
+ min-height:52px;color:#14633e!important;background:#e9f8ee;border:1px solid #9bc9aa;border-radius:11px;
+ font-weight:800;width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.4
 }
 body.ayda-internal .daily .ayda-whatsapp-share:hover{background:#d9f3e3}
 body.ayda-internal .ayda-lesson-homework-detail,
@@ -205,7 +210,7 @@ body.ayda-internal .ayda-lesson-homework-detail p,
 body.ayda-internal .ayda-group-homework-detail p{font-size:13px;line-height:1.65;margin:9px 0;white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:430px){
  body.ayda-internal .ayda-homework-field{padding:12px}
- body.ayda-internal .daily .actions button{flex:1 1 100%;min-width:0;width:100%}
+ body.ayda-internal .daily .actions button{flex:none;min-width:0;width:100%}
 }
 
 /* WhatsApp classroom announcement: lesson report is not done until teacher confirms group communication. */
