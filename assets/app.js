@@ -215,7 +215,7 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  const homeworkVerified=oldAttendance||payload.type!=='group'||payload.status!=='İşlendi'||(saved.homeworkSaved===true&&/^DO-[A-Za-z0-9-]{8,80}$/.test(saved.homeworkId||''));
  if(payload.type==='group'&&payload.status==='İşlendi'&&(!trackingVerified||!homeworkVerified))throw Error('Kayıt onayı eksik. Apps Script sürümünü kontrol edin, aynı raporu tekrar göndermeden önce yöneticiyle görüşün.');
  const confirmation=oldAttendance?'Eksik yoklama tamamlandı.':(payload.type==='group'&&payload.status==='İşlendi'?'Ders ve yoklama kaydedildi. Son adım: Ödevi WhatsApp grubuna yazın.':'Ders kaydı tamamlandı.');
- message('formMessage',confirmation,'success');
+ message('formMessage',confirmation+(saved.progressWarning?' '+saved.progressWarning:''),'success');
  lastSharedHomework=!oldAttendance&&payload.type==='group'&&payload.status==='İşlendi'?{
    id:saved.homeworkId,lessonId:saved.id,groupId:payload.groupId,
    groupName:data?.groups?.find(g=>g.id===payload.groupId)?.name||payload.groupId,
