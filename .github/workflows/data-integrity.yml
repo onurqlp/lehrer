@@ -1,7 +1,7 @@
 name: AYDA Data Integrity Tests
 on:
   push:
-    branches: [main, ayda-v4-4-data-integrity-20261019]
+    branches: [main, ayda-v4-4-data-integrity-20261019, ayda-v4-5-fast-manager-switch-20261019]
   pull_request:
     branches: [main]
   workflow_dispatch:
