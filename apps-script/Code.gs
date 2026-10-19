@@ -148,6 +148,13 @@ function aydaSave_(user,p){
           .setValues([homeworkSheet.header.map(k=>Object.prototype.hasOwnProperty.call(entry,k)?entry[k]:'')]);
       }
       SpreadsheetApp.flush(); // Alt tablolar tamamlanmadan kayda onay verme.
+      const persisted=s.getRange(s.getLastRow(),1,1,h.length).getDisplayValues()[0];
+      if(persisted[h.indexOf('Kayıt ID')]!==record['Kayıt ID'])throw Error('Ders kaydı doğrulanamadı.');
+      if(rows){
+       const rowCount=rows.attendance.length,idColumn=yoklama.header.indexOf('DERS_KAYIT_ID');
+       const written=yoklama.sheet.getRange(yoklama.sheet.getLastRow()-rowCount+1,1,rowCount,yoklama.header.length).getDisplayValues();
+       if(idColumn<0||written.some(row=>row[idColumn]!==record['Kayıt ID']))throw Error('Yoklama kayıtları doğrulanamadı.');
+      }
     }catch(writeErr){
       let rollbackIssue=false;
       for(const m of marks.slice().reverse()){
