@@ -1,3 +1,14 @@
+## V4.5 — Hız ve Yönetici Geçişi (19.10.2026)
+
+- Yönetici hesabıyla **bir kez giriş** yaptıktan sonra aynı tarayıcı sekmesinde Öğretmen Paneli ↔ Yönetim Paneli arası yeni parola istemeden geçilir. Aynı oturum anahtarı kullanılır; yeni öğretmen anahtarı oluşturulmaz.
+- Yönetim panelindeki **Öğretmen hesabını incele** seçeneği, öğretmenlerin ayrıntı kartlarını yönetici yetkisiyle filtreler; öğretmen adına kayıt yapmaz.
+- Öğretmen ana sayfasında Yönetim kısayolu yalnızca yönetici girişiyle görüntülenir.
+- Yönetim sayfası genel bakışı hemen çizer, yoklama/hatırlatma/iletişim/ödev özetlerini paralel alır.
+- API bağlantısında ayarlı çalışan Google adresi ilk denenir; diğer adresler sadece fallback'tir.
+- Süre seçimleri 30 dakikalık adımlarda korunur; eski tam saat listesi yeni doğru seçeneklerin üzerine yazılmaz.
+- ÖNEMLİ: Bu değişiklik Google Apps Script dağıtımını otomatik yayınlamaz. V4.4 veritabanı yedekleme ve bütünlük API'si Google tarafında ayrıca etkinleştirilmelidir.
+- Herhangi bir kayıt temizliği, var olan Drive tablosu silme ya da öğretmen hesabı kimliğini devralma yapılmadı.
+
 ## V4.4 — Kayıt bütünlüğü ve yedekleme (19.10.2026)
 
 - **Mevcut veri korunur:** Hiçbir mevcut satır silinmez; kontroller salt-okunurdur. Başlangıç tarihi 19 Ekim 2026 olarak kalır.
