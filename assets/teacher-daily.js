@@ -46,7 +46,8 @@
   if(!a||!b)return;
   const minutes=(+b[1]*60+(+b[2]))-(+a[1]*60+(+a[2]));
   if(minutes<=0||minutes>360)return;
-  const value='0'+Math.max(1,Math.min(6,Math.round(minutes/60)))+':00';
+  const value=String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');
+   if(minutes%30!==0)return;
   if([...actualInput.options].some(opt=>opt.value===value))actualInput.value=value;
  }
  for(const id of ['lessonDate','groupId','lessonType'])$(id)?.addEventListener('change',suggestDuration);
@@ -174,18 +175,20 @@
   const groups=data.groups||[],members=new Map(groups.filter(g=>g.status==='Aktif').map(g=>[g.id,g]));
   const sch=(data.schedule||[]).filter(s=>members.has(s.groupId));
   const year=Number(month.slice(0,4)),mon=Number(month.slice(5,7))-1,days=new Date(Date.UTC(year,mon+1,0)).getUTCDate();
-  const week=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'],set=new Set();
+  const week=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'],set=new Set(),byPlan=new Map();
   for(let day=1;day<=days;day++){
    const d=new Date(Date.UTC(year,mon,day)),date=d.toISOString().slice(0,10);
    for(const item of sch){const g=members.get(item.groupId);
     if(item.day!==week[d.getUTCDay()]||(g.start&&date<g.start)||(g.end&&date>g.end))continue;
-    set.add(item.groupId+'|'+date+'|'+item.start);
+    const key=item.groupId+'|'+date+'|'+item.start;
+     if(!set.has(key)){set.add(key);byPlan.set(item.groupId,(byPlan.get(item.groupId)||0)+1);}
    }
   }
   const lessons=(data.history||[]).filter(x=>x.date?.startsWith(month));
-  const completed=lessons.filter(x=>x.status==='İşlendi').length,cancelled=lessons.filter(x=>x.status!=='İşlendi').length;
+  const completed=lessons.filter(x=>x.status==='İşlendi').length,cancelled=lessons.filter(x=>x.status==='İptal').length;
+   const postponed=lessons.filter(x=>x.status==='Ertelendi').length;
   const privateCompleted=(data.privateHistory||[]).filter(x=>x.date?.startsWith(month)&&x.status==='İşlendi').length;
-  return {planned:set.size,completed,privateCompleted,cancelled,remaining:Math.max(0,set.size-completed-cancelled),fallback:true};
+  return {planned:set.size,completed,privateCompleted,cancelled,postponed,remaining:Math.max(0,set.size-completed-cancelled),byGroup:[...members.values()].map(g=>({id:g.id,name:g.name,planned:byPlan.get(g.id)||0,done:lessons.filter(x=>x.groupId===g.id&&x.status==='İşlendi').length})),fallback:true};
  }
  function paintMonth(result){
   if(!tr())return;monthWrap.classList.remove('hidden');monthNumbers.replaceChildren();
@@ -193,13 +196,15 @@
   metric(monthNumbers,'İşlediğim grup dersi',result.completed??'—');
   metric(monthNumbers,'Kalan planlı ders',result.remaining??'—');
   metric(monthNumbers,'Özel ders kaydı',result.privateCompleted??'—');
-  monthInfo.textContent='Bu sayılar '+monthInput.value+' ayındaki kayıtlı haftalık programa göredir. Tatiller, değişen öğretmenler ve program dışı dersler nedeniyle gerçekleşen takvim farklı olabilir.'+(result.fallback?' · Mevcut ekran verilerinden hesaplandı.':'');
+   metric(monthNumbers,'İptal',result.cancelled??'—');
+   metric(monthNumbers,'Ertelenen',result.postponed??'—');
+  monthInfo.textContent='Planlanan dersler mevcut haftalık programa göredir. İptal düşülür; ertelenen ders kalan plan içinde tutulur. Tatil ve program değişiklikleri ders durumu olarak kaydedilmelidir.'+(result.fallback?' · Mevcut ekran verilerinden hesaplandı.':'');
   window.dispatchEvent(new CustomEvent('ayda:month-result',{detail:{state:'success',data:{...result,month:monthInput.value}}}));
  }
  async function loadMonth(){
   if(!tr())return;monthInput.value=monthInput.value||monthOf();
   const month=monthInput.value,local=monthFallback(month);paintMonth(local);
-  try{const fresh=await jsonp('teacherMonthly',{month});if(fresh?.month===month&&monthInput.value===month){lastMonth=fresh;paintMonth(fresh);}}
+  try{const fresh=await jsonp('teacherMonthly',{month});if(fresh?.month===month&&monthInput.value===month){const normalized={...fresh,cancelled:local.cancelled,postponed:local.postponed,remaining:Math.max(0,Number(fresh.planned||0)-Number(fresh.completed||0)-local.cancelled)};lastMonth=normalized;paintMonth(normalized);}}
   catch{ /* Older Apps Script: local snapshot remains usable. */ }
  }
  function makeActionContent(item){
