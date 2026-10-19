@@ -44,7 +44,7 @@
  const candidates=()=>{
   const m=API.match(/\/s\/([A-Za-z0-9_-]+)\/exec(?:$|\?)/);
   if(!m)return [API];
-  return [...new Set(['https://script.google.com/a/macros/aydadil.com/s/'+m[1]+'/exec','https://script.google.com/a/aydadil.com/macros/s/'+m[1]+'/exec','https://script.google.com/macros/s/'+m[1]+'/exec'])];
+  return [...new Set([API,'https://script.google.com/macros/s/'+m[1]+'/exec','https://script.google.com/a/macros/aydadil.com/s/'+m[1]+'/exec','https://script.google.com/a/aydadil.com/macros/s/'+m[1]+'/exec'])];
  };
  function apiRequest(url,action,key,params={}){
   return new Promise((resolve,reject)=>{
