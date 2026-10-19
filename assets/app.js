@@ -127,7 +127,7 @@ function renderHistory(){clear('history');const filter=$('historyFilter').value;
   const button=$el('button','ayda-inline-btn','Düzeltmeyi kaydet');button.type='button';
   const feedback=$el('small','ayda-note-state');
   button.addEventListener('click',async()=>{const note=area.value.trim(),actual=duration.value;if(note.length<3){feedback.textContent='En az 3 karakter yazın.';return;}if(!/^(?:00:30|0[1-5]:(?:00|30)|06:00)$/.test(actual)){feedback.textContent='30 dakikalık aralıklarla süre seçin.';return;}button.disabled=true;feedback.textContent='Kaydediliyor…';
-   try{const result=await jsonp('updateReport',{payload:utf8Base64Url(JSON.stringify({id:r.id,note,actual}))});if(!result.saved)throw Error('Kayıt onayı alınamadı.');
+   try{await aydaVerifyDurationBackend(actual);const result=await jsonp('updateReport',{payload:utf8Base64Url(JSON.stringify({id:r.id,note,actual}))});if(!result.saved)throw Error('Kayıt onayı alınamadı.');
     feedback.textContent='Düzeltme kaydedildi.';data=await jsonp('overview');render();
    }catch(err){feedback.textContent='Düzeltme doğrulanamadı; tekrar denemeden önce kontrol edin. '+err.message;}
    finally{button.disabled=false;}
@@ -140,6 +140,12 @@ $('historyFilter').addEventListener('change',renderHistory);
 $('loginForm').addEventListener('submit',e=>{e.preventDefault();login($('key').value);});
 $('logout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');authKey='';data=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');$('logout').classList.add('hidden');$('key').value='';$('roleChip').textContent='Öğretmen ve Yönetici';document.body.classList.remove('ayda-is-admin');history.replaceState(null,'',location.pathname);lastSharedHomework=null;shareBackendChecked=false;$('sendHomeworkToGroup').hidden=true;$('aydaShareHint').hidden=true;window.dispatchEvent(new Event('ayda:logout'));});
 let lastSharedHomework=null,shareBackendChecked=false;
+async function aydaVerifyDurationBackend(actual){
+ if(!String(actual||'').endsWith(':30'))return;
+ const ping=await jsonp('ping');
+ const match=/^2026-10-19\.(\d+)$/.exec(String(ping?.version||''));
+ if(!match||Number(match[1])<8)throw Error('30 dakikalık aralıklarla ders süresi kaydetmek için Google Apps Script 2026-10-19.8 sürümünün yayımlanması gerekiyor. Kayıt yapılmadı.');
+}
 async function aydaVerifyShareBackend(){
  if(shareBackendChecked)return;
  const ping=await jsonp('ping');
@@ -201,7 +207,8 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  if(payload.type==='group'&&payload.status==='İşlendi'&&!tracking)throw Error('Yoklama tamamlanmadan ders raporu gönderilemez. Öğrencileri işaretleyin.');
  if(payload.type==='group'&&payload.status==='İşlendi'&&!oldAttendance&&(payload.homeworkText.length<3||payload.homeworkText.length>1000))
    throw Error('Verilen ödevi yazın (en az 3 karakter).');
- if(payload.type==='group'&&payload.status==='İşlendi'&&!oldAttendance)await aydaVerifyShareBackend();
+ await aydaVerifyDurationBackend(payload.actual);
+  if(payload.type==='group'&&payload.status==='İşlendi'&&!oldAttendance)await aydaVerifyShareBackend();
  const saved=oldAttendance?await jsonp('saveAttendance',{payload:utf8Base64Url(JSON.stringify({groupId:payload.groupId,date:payload.date,...tracking}))}):await jsonp('save',{payload:utf8Base64Url(JSON.stringify(payload))});
  if(!saved?.saved)throw Error('Sunucu kayıt işlemini doğrulamadı.');
  const trackingVerified=!!tracking&&saved.trackingSaved===true&&saved.attendanceCount===tracking.attendance.length;
