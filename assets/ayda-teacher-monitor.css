@@ -1,0 +1,57 @@
+/* AYDA Teacher Monitor V4 — role-specific responsive dashboard */
+body.ayda-teacher #app>#aydaTeacherDashboard{display:none!important}
+body.ayda-teacher[data-ayda-teacher-view="home"] #app>#aydaTeacherDashboard[data-ayda-active="true"]{display:block!important}
+.ayda-monitor{margin:16px 0 24px;color:#172f49}
+.ayda-monitor-head,.ayda-monitor-section-title,.ayda-monitor-upcoming-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ayda-monitor-eyebrow{display:block;font-weight:850;font-size:10px;letter-spacing:.13em;color:#a47b40;margin-bottom:5px}
+.ayda-monitor-head h2{margin:0;font-size:clamp(21px,2vw,27px);letter-spacing:-.03em;color:#112b47}
+.ayda-monitor-head p{color:#65778b;font-size:13px;margin:5px 0 0}
+.ayda-monitor-refresh{background:white;border:1px solid #d6e1eb;border-radius:10px;padding:10px 13px;min-height:41px;cursor:pointer;color:#193956;font-size:12px;font-weight:750;white-space:nowrap}
+.ayda-monitor-refresh:disabled{opacity:.65;cursor:default}
+.ayda-monitor-status{font-size:11px;color:#8494a4;margin:10px 0 12px}
+.ayda-monitor-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin-bottom:14px}
+.ayda-monitor-metric{min-width:0;display:flex;flex-direction:column;gap:4px;border:1px solid #dde6ef;background:#fff;border-radius:15px;padding:18px 16px;box-shadow:0 5px 20px #122c4709}
+.ayda-monitor-metric strong{font-size:clamp(22px,2.6vw,32px);line-height:1.15;color:#112e4d;font-weight:850}
+.ayda-monitor-metric span{font-size:12px;font-weight:750;color:#3b536d}
+.ayda-monitor-metric small{color:#899aaa;font-size:10px;line-height:1.3}
+.ayda-monitor-metric.is-featured{background:#fffaf1;border-color:#e9d2a8}
+.ayda-monitor-metric.is-featured strong{color:#966116}
+.ayda-monitor-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:stretch;gap:14px}
+.ayda-monitor-card,.ayda-monitor-upcoming{background:#fff;border:1px solid #e0e7ef;border-radius:17px;box-shadow:0 6px 25px #122c4709;min-width:0;padding:20px}
+.ayda-monitor-card{display:flex;flex-direction:column}
+.ayda-monitor-section-title h3,.ayda-monitor-upcoming h3{font-size:17px;font-weight:850;letter-spacing:-.02em;margin:0;color:#142f4e}
+.ayda-monitor-tag{font-size:10px;font-weight:800;background:#eef3f8;color:#526a83;border-radius:30px;padding:5px 9px;white-space:nowrap}
+.ayda-monitor-tag.is-warning{background:#fff1df;color:#93520f}
+.ayda-monitor-tag.is-clear{background:#edf6f2;color:#207558}
+.ayda-monitor-caption{margin:10px 0;font-size:11px;color:#798a9c;line-height:1.5}
+.ayda-monitor-alert-list{display:grid;gap:8px;margin:9px 0 10px}
+.ayda-monitor-alert-item{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid #efdfc6;background:#fffbf5;border-radius:12px;padding:13px}
+.ayda-monitor-alert-copy{display:flex;flex-direction:column;min-width:0;gap:4px}
+.ayda-monitor-alert-copy strong{font-size:12px;color:#77460b}
+.ayda-monitor-alert-copy span{font-size:11px;color:#7e705e;overflow-wrap:anywhere}
+.ayda-monitor-item-button{font-size:11px;font-weight:760;color:#80530e;border:1px solid #e6cb9f;border-radius:9px;background:white;padding:9px 12px;min-height:40px;white-space:nowrap;cursor:pointer}
+.ayda-monitor-subaction{margin-top:auto;align-self:flex-start;color:#26567a;border:0;background:transparent;padding:12px 0 0;font-size:12px;font-weight:850;min-height:37px;cursor:pointer}
+.ayda-monitor-empty,.ayda-monitor-ok{font-size:12px;line-height:1.55;padding:15px;margin:8px 0 11px;color:#64778a;border:1px dashed #e1e9f1;background:#f7f9fc;border-radius:12px}
+.ayda-monitor-ok{color:#237052;background:#f2f9f5;border-color:#d9eadd}
+.ayda-monitor-month-numbers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:13px 0}
+.ayda-monitor-month-numbers .ayda-monitor-metric{background:#f7f9fc;border-radius:11px;padding:11px 12px;box-shadow:none}
+.ayda-monitor-month-numbers .ayda-monitor-metric strong{font-size:21px}
+.ayda-monitor-month-numbers .ayda-monitor-metric span{font-size:10px}
+.ayda-monitor-group-list{display:grid;gap:11px;margin:8px 0 17px}
+.ayda-monitor-group-label{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:#52677f;margin-bottom:5px}
+.ayda-monitor-group-label strong{color:#163754;white-space:nowrap}
+.ayda-monitor-progress{height:6px;background:#e8eef5;border-radius:30px;overflow:hidden}
+.ayda-monitor-progress>span{display:block;background:#2b5b80;height:100%;border-radius:30px;max-width:100%}
+.ayda-monitor-upcoming{margin-top:14px}
+.ayda-monitor-upcoming-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.ayda-monitor-next-item{min-width:0;border:1px solid #e1eaf2;background:#f7f9fc;border-radius:12px;padding:11px;display:flex;align-items:center;gap:10px}
+.ayda-monitor-next-date{width:41px;min-width:41px;height:47px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#e8f0f8;color:#163c5d;border-radius:9px}
+.ayda-monitor-next-date strong{font-size:18px;line-height:1}
+.ayda-monitor-next-date span{font-size:10px;margin-top:3px}
+.ayda-monitor-next-info{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ayda-monitor-next-info strong{font-size:12px;color:#203e5e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ayda-monitor-next-info span{font-size:10px;color:#798a9c}
+.ayda-monitor-footer{font-size:11px;color:#8798a8;line-height:1.5;margin:12px 3px 4px}
+@media(max-width:1100px){.ayda-monitor-grid{grid-template-columns:1fr}.ayda-monitor-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:768px){.ayda-monitor{margin:13px 0 23px}.ayda-monitor-head{align-items:flex-start}.ayda-monitor-head h2{font-size:22px}.ayda-monitor-head p{font-size:12px}.ayda-monitor-refresh{padding:9px 10px;font-size:11px}.ayda-monitor-summary{gap:8px;margin:12px 0}.ayda-monitor-metric{padding:14px 13px;border-radius:12px}.ayda-monitor-metric strong{font-size:27px}.ayda-monitor-metric span{font-size:11px}.ayda-monitor-grid{gap:12px}.ayda-monitor-card,.ayda-monitor-upcoming{padding:16px}.ayda-monitor-alert-item{flex-direction:column;align-items:stretch}.ayda-monitor-alert-item .ayda-monitor-item-button{align-self:flex-start}.ayda-monitor-upcoming-list{grid-template-columns:1fr;gap:7px}.ayda-monitor-next-item{padding:8px}.ayda-monitor-footer{font-size:10px}}
+@media(min-width:769px) and (max-width:1150px){.ayda-monitor-upcoming-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
