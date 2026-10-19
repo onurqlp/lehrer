@@ -963,9 +963,9 @@ function aydaBackupStatus_(user){
  const props=PropertiesService.getScriptProperties();
  const id=props.getProperty('AYDA_LAST_BACKUP_ID')||'';
  const installed=ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='aydaDailyBackupTrigger');
- let exists=false;
- if(id){try{exists=!!DriveApp.getFileById(id).getId();}catch(_){}}
- return {installed,exists,at:props.getProperty('AYDA_LAST_BACKUP_AT')||'',error:props.getProperty('AYDA_LAST_BACKUP_ERROR')||''};
+ let exists=false,url='';
+ if(id){try{const file=DriveApp.getFileById(id);exists=!!file.getId();url=file.getUrl();}catch(_){}}
+ return {installed,exists,url,at:props.getProperty('AYDA_LAST_BACKUP_AT')||'',error:props.getProperty('AYDA_LAST_BACKUP_ERROR')||''};
 }
 
 /** Salt-okunur, yöneticiye özel veri bütünlüğü sayacı; kişisel kayıt içermez. */
