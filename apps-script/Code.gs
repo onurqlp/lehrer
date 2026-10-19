@@ -86,7 +86,27 @@ function aydaAdminCreateGroup_(user,p){
  if(!days.length||days.some(d=>!dayNames.includes(d))||new Set(days).size!==days.length)throw Error('En az bir ders günü seçin.');
  const time=String(p.time||'').trim(),end=String(p.end||'').trim();if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(end)||end<=time)throw Error('Başlangıç ve bitiş saatlerini kontrol edin.');
  const lock=LockService.getScriptLock();lock.waitLock(20000);
- try{const id=aydaNextId_('GRUPLAR','ID','G');aydaAppendNamed_('GRUPLAR',{'ID':id,'Grup':name,'Seviye':level,'Öğretmen ID':teacherId,'Başlangıç':start,'Planlanan Bitiş':'','Öğrenci':students,'Son Tamamlanan Ünite':completed,'Toplam Ünite':total,'Durum':'Aktif','WhatsApp':''});for(const day of days)aydaAppendNamed_('HAFTALIK_PROGRAM',{'Grup ID':id,'Gün':day,'Başlangıç':time,'Bitiş':end,'Durum':'Aktif'});return {id,name};}finally{lock.releaseLock();}
+ try{
+  const groupSheet=aydaSheet_('GRUPLAR'),planSheet=aydaSheet_('HAFTALIK_PROGRAM');
+  const gh=groupSheet.getRange(1,1,1,groupSheet.getLastColumn()).getDisplayValues()[0].map(String);
+  const ph=planSheet.getRange(1,1,1,planSheet.getLastColumn()).getDisplayValues()[0].map(String);
+  for(const key of ['ID','Grup','Öğretmen ID','Durum'])if(!gh.includes(key))throw Error('Grup sütunu eksik: '+key);
+  for(const key of ['Grup ID','Gün','Başlangıç','Bitiş','Durum'])if(!ph.includes(key))throw Error('Program sütunu eksik: '+key);
+  const beforeGroup=groupSheet.getLastRow(),beforePlan=planSheet.getLastRow(),id=aydaNextId_('GRUPLAR','ID','G');
+  try{
+   aydaAppendNamed_('GRUPLAR',{'ID':id,'Grup':name,'Seviye':level,'Öğretmen ID':teacherId,'Başlangıç':start,'Planlanan Bitiş':'','Öğrenci':students,'Son Tamamlanan Ünite':completed,'Toplam Ünite':total,'Durum':'Aktif','WhatsApp':''});
+   for(const day of days)aydaAppendNamed_('HAFTALIK_PROGRAM',{'Grup ID':id,'Gün':day,'Başlangıç':time,'Bitiş':end,'Durum':'Aktif'});
+   SpreadsheetApp.flush();
+   if(groupSheet.getLastRow()!==beforeGroup+1||planSheet.getLastRow()!==beforePlan+days.length)throw Error('Grup/program satır sayıları tutarsız.');
+   return {id,name};
+  }catch(e){
+   let rollbackFailed=false;
+   for(const item of [{sheet:planSheet,before:beforePlan},{sheet:groupSheet,before:beforeGroup}]){
+    try{const count=item.sheet.getLastRow()-item.before;if(count>0)item.sheet.deleteRows(item.before+1,count);}catch(err){rollbackFailed=true;Logger.log('AYDA grup rollback: '+err.message);}
+   }
+   throw Error(rollbackFailed?'Grup kaydı yarım kaldı; yönetici kontrolü gerekiyor.':'Grup kaydı geri alındı: '+e.message);
+  }
+ }finally{lock.releaseLock();}
 }
 function aydaAdminSetGroup_(user,p){
  if(user.role!=='admin')throw Error('Yönetici yetkisi gerekir.');
