@@ -107,3 +107,8 @@ body.ayda-internal #ownerApp,body.ayda-internal #app{min-width:0}
 @media (min-width:769px){.ayda-ux-dock,.ayda-ux-sheet,.ayda-ux-shade{display:none!important}}
 @media (prefers-reduced-motion:reduce){body.ayda-internal :is(button,.primary-link,.outline,.text-button),.ayda-ux-sheet,.ayda-ux-shade{transition:none!important}}
 @media print{.ayda-ux-dock,.ayda-ux-sheet,.ayda-ux-shade,#aydaTeacherRail{display:none!important}body.ayda-manager #ownerApp{display:block!important}body.ayda-teacher #app.wrap{padding:0!important}}
+
+/* Brand contrast: retain AYDA navy hero and readable white copy at every breakpoint. */
+body.ayda-teacher #app .hero{background:linear-gradient(115deg,#0b1b31,#194364);color:#fff;border-color:#183c5e}
+body.ayda-teacher #app .hero h1{color:#fff}
+body.ayda-teacher #app .hero #dateLine{color:#e0ecf7}
