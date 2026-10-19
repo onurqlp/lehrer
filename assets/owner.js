@@ -121,14 +121,12 @@
   const present=att.reduce((n,g)=>n+g.present,0),absent=att.reduce((n,g)=>n+g.absent,0);
   const month=today().slice(0,7),totalHours=hist.filter(r=>r.date?.startsWith(month)&&r.status==='İşlendi').reduce((n,r)=>n+hours(r.actual),0);
   const root=$('ownerKpis');root.replaceChildren(
-   kpi('Aktif grup',gs.length,'Tüm gruplar: '+(overview.groups||[]).length),
-   kpi('Kayıtlı öğrenci',tracking?ts.length:'—','Aktif grup öğrenci listesi'),
-   kpi('Aktif öğretmen',(overview.teachers||[]).filter(t=>t.status==='Aktif').length,'Toplam: '+(overview.teachers||[]).length),
    kpi('Bugünkü planlı ders',(overview.todayLessons||[]).length,'Bugün: '+fmt(today())),
-   kpi('Bu ay ders saati',hoursText(totalHours),'İşlenen grup + özel ders'),
-   kpi('Katılım oranı',tracking?round(present,present+absent):'—','Kayıtlı yoklamalar'),
-   kpi('Eksik ödev',tracking?att.reduce((n,g)=>n+g.homeworkMissing,0):'—','Kontrol edilen kayıtlar','warn'),
-   kpi('Öncelikli öğrenci',tracking?(tracking.alerts||[]).length:'—','Takip uyarıları','danger')
+   kpi('Eksik akademik kayıt',reminders?.total??'—','Ders raporu ve yoklama',reminders?.total?'warn':undefined),
+   kpi('Aktif grup',gs.length,'Tüm gruplar: '+(overview.groups||[]).length),
+   kpi('Aktif öğretmen',(overview.teachers||[]).filter(t=>t.status==='Aktif').length),
+   kpi('Kayıtlı öğrenci',tracking?ts.length:'—','Aktif öğrenci listesi'),
+   kpi('Bu ay işlenen saat',hoursText(totalHours),'Grup ve özel ders')
   );
   $('ownerAlertBadge').textContent=(tracking||reminders)?'('+((tracking?.alerts||[]).length+(reminders?.total||0))+')':'';
   $('ownerUpdated').textContent='Güncellendi: '+new Date().toLocaleString('tr-TR');
@@ -137,15 +135,23 @@
   const root=$('ownerHighlights');root.replaceChildren();
   const alerts=tracking?.alerts||[],near=activeGroups().filter(g=>unit(g)-unitsDone(g)<=3&&unit(g)>unitsDone(g));
   const coming=activeGroups().filter(g=>g.start&&g.start>=today()&&difference(g.start,today())<=7);
-  if(reminders?.total){const r=add(root,'article','note-card warn');add(r,'strong','',reminders.total+' eksik akademik kayıt');add(r,'p','','Rapor: '+reminders.reports+' · Yoklama: '+reminders.attendance+' · 12 saat eşiği');r.append(quick('Eksiklere git →',()=>activate('alerts')));}
-  for(const a of alerts.slice(0,5)){
+  if(reminders?.total){
+   for(const item of (reminders.items||[]).slice(0,3)){
+    const r=add(root,'article','note-card warn');
+    add(r,'strong','',(item.type==='attendance'?'Eksik yoklama':'Eksik ders raporu')+' · '+(item.group||'Grup'));
+    add(r,'p','','Tarih: '+fmt(item.date)+' · '+tName(item.teacherId));
+    r.append(quick('Eksikleri incele →',()=>activate('alerts')));
+   }
+   if(reminders.total>3){const extra=add(root,'article','note-card');add(extra,'p','','Diğer '+(reminders.total-3)+' eksik kayıt');extra.append(quick('Tümünü gör →',()=>activate('alerts')));}
+  }else if(!reminders){const r=add(root,'article','note-card');add(r,'strong','','Eksik kayıt kontrolü yapılamadı');r.append(quick('Kontrol ekranına git →',()=>activate('alerts')));}
+  for(const a of alerts.slice(0,2)){
    const c=add(root,'article','note-card danger');add(c,'strong','',a.name+' · '+a.group);
    const p=[];if(a.consecutiveAbsent)p.push('Üst üste '+(a.absenceStreak||3)+' mazeretsiz devamsızlık');if(a.recentHomeworkMissing)p.push('Son 4 kontrol edilen ödevde '+a.recentHomeworkMissing+' eksik');
    add(c,'p','',p.join(' · '));
    c.append(quick('Öğrenciye git →',()=>{activate('students');$('ownerStudentSearch').value=a.name;renderStudents();}));
   }
-  for(const g of near.slice(0,3)){const c=add(root,'article','note-card warn');add(c,'strong','',g.name+' · Bitişe yakın');add(c,'p','','Kalan '+(unit(g)-unitsDone(g))+' ünite · '+tName(g.teacherId));}
-  for(const g of coming.slice(0,2)){const c=add(root,'article','note-card');add(c,'strong','',g.name+' · Yeni grup');add(c,'p','','Başlangıç: '+fmt(g.start));}
+  for(const g of near.slice(0,2)){const c=add(root,'article','note-card warn');add(c,'strong','',g.name+' · Bitişe yakın');add(c,'p','','Kalan '+(unit(g)-unitsDone(g))+' ünite · '+tName(g.teacherId));}
+  for(const g of coming.slice(0,1)){const c=add(root,'article','note-card');add(c,'strong','',g.name+' · Yeni grup');add(c,'p','','Başlangıç: '+fmt(g.start));}
   if(!root.children.length)showEmpty('ownerHighlights',tracking?'Öncelikli takip gerektiren kayıt yok.':'Öğrenci takip verileri yüklenince uyarılar burada görünür.');
  }
  function quick(label,onClick){const b=node('button','owner-link',label);b.type='button';b.addEventListener('click',onClick);return b;}
@@ -352,7 +358,20 @@
   const past=(overview?.history||[]).filter(r=>r.date>=since&&r.date<=today());
   const done=past.filter(r=>r.status==='İşlendi').length;
   const privateDone=(overview?.privateHistory||[]).filter(r=>r.date>=since&&r.date<=today()&&r.status==='İşlendi').length;
-  for(const [label,value] of [['Son 7 günde grup dersi',done],['Son 7 günde özel ders',privateDone],['Bekleyen akademik kayıt',reminders?.total??'—'],['Öncelikli öğrenci',tracking?.alerts?.length??'—']]){
+  const month=today().slice(0,7),year=Number(month.slice(0,4)),mon=Number(month.slice(5,7)),totalDays=new Date(Date.UTC(year,mon,0)).getUTCDate();
+  const weekdays=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+  const byId=new Map(activeGroups().map(g=>[g.id,g])),planned=new Set();
+  for(const entry of overview?.schedule||[]){
+   const group=byId.get(entry.groupId);if(!group)continue;
+   for(let day=1;day<=totalDays;day++){
+    const date=month+'-'+String(day).padStart(2,'0');
+    if(group.start&&date<group.start||group.end&&date>group.end)continue;
+    if(entry.day!==weekdays[new Date(Date.UTC(year,mon-1,day)).getUTCDay()])continue;
+    planned.add(entry.groupId+'|'+date+'|'+entry.start);
+   }
+  }
+  const completedThisMonth=(overview?.history||[]).filter(r=>r.date?.startsWith(month)&&r.status==='İşlendi').length;
+  for(const [label,value] of [['Bu ay planlanan grup dersi',planned.size],['Bu ay işlenen grup dersi',completedThisMonth],['Bekleyen akademik kayıt',reminders?.total??'—'],['Öncelikli öğrenci',tracking?.alerts?.length??'—']]){
    const box=add(root,'div','note-card');add(box,'strong','',value);add(box,'p','',label);
   }
  }
