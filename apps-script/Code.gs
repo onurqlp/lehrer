@@ -926,6 +926,47 @@ function aydaHealthCheck(){
   return result;
 }
 
+/** Ayrı Google Drive dosyasında, silinmeden saklanan tam veritabanı kopyası. */
+function aydaBackupNow_(){
+ const lock=LockService.getScriptLock();lock.waitLock(20000);
+ const props=PropertiesService.getScriptProperties();
+ try{
+  const folderId=props.getProperty('AYDA_BACKUP_FOLDER_ID');
+  let folder=folderId?DriveApp.getFolderById(folderId):null;
+  if(!folder){folder=DriveApp.createFolder('AYDA - Akademik Takip Otomatik Yedekler');props.setProperty('AYDA_BACKUP_FOLDER_ID',folder.getId());}
+  SpreadsheetApp.flush();
+  const source=aydaDb_(),required=['GRUPLAR','KULLANICILAR','HAFTALIK_PROGRAM','DERS_KAYITLARI','OGRENCILER','YOKLAMA','ODEV_TAKIBI','ODEV_GOREVLERI','ODEV_GOREV_GECMISI','DERS_ODEVLERI'];
+  const counts={};
+  for(const name of required){const sheet=source.getSheetByName(name);if(!sheet)throw Error('Yedekleme öncesi eksik tablo: '+name);counts[name]=sheet.getLastRow();}
+  const now=new Date(),stamp=Utilities.formatDate(now,AYDA_TZ,'yyyy-MM-dd_HH-mm-ss');
+  const copy=DriveApp.getFileById(AYDA_DB_ID).makeCopy('AYDA-KAYIT-TAM-YEDEK-'+stamp,folder);
+  const replica=SpreadsheetApp.openById(copy.getId());
+  for(const name of required){const sheet=replica.getSheetByName(name);if(!sheet||sheet.getLastRow()!==counts[name])throw Error('Yedek kontrolü başarısız: '+name);}
+  props.setProperties({AYDA_LAST_BACKUP_ID:copy.getId(),AYDA_LAST_BACKUP_AT:Utilities.formatDate(now,AYDA_TZ,"yyyy-MM-dd'T'HH:mm:ss"),AYDA_LAST_BACKUP_ERROR:''});
+  return {ok:true,at:props.getProperty('AYDA_LAST_BACKUP_AT'),fileId:copy.getId(),sheets:required.length,verified:true};
+ }catch(error){
+  props.setProperty('AYDA_LAST_BACKUP_ERROR',String(error.message||error).slice(0,350));
+  throw error;
+ }finally{lock.releaseLock();}
+}
+function aydaDailyBackupTrigger(){return aydaBackupNow_();}
+function aydaBackupSetup_(user){
+ if(user.role!=='admin')throw Error('Yalnızca yönetici yedeklemeyi kurabilir.');
+ const first=aydaBackupNow_();
+ const triggers=ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()==='aydaDailyBackupTrigger');
+ if(!triggers.length)ScriptApp.newTrigger('aydaDailyBackupTrigger').timeBased().atHour(3).everyDays(1).inTimezone(AYDA_TZ).create();
+ return {...first,daily:true};
+}
+function aydaBackupStatus_(user){
+ if(user.role!=='admin')throw Error('Yönetici yetkisi gerekli.');
+ const props=PropertiesService.getScriptProperties();
+ const id=props.getProperty('AYDA_LAST_BACKUP_ID')||'';
+ const installed=ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='aydaDailyBackupTrigger');
+ let exists=false;
+ if(id){try{exists=!!DriveApp.getFileById(id).getId();}catch(_){}}
+ return {installed,exists,at:props.getProperty('AYDA_LAST_BACKUP_AT')||'',error:props.getProperty('AYDA_LAST_BACKUP_ERROR')||''};
+}
+
 function doGet(e){
   const p=e&&e.parameter||{},cb=String(p.callback||'');
   if(!/^ayda_cb_[A-Za-z0-9_]{1,64}$/.test(cb))return ContentService.createTextOutput('Invalid callback').setMimeType(ContentService.MimeType.TEXT);
