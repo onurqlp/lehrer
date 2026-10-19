@@ -162,11 +162,14 @@ function aydaSave_(user,p){
       }
       throw Error(rollbackIssue?'Kayıt tamamlanamadı ve geri alma kısmen başarısız oldu; yöneticinin tabloyu kontrol etmesi gerekir.':'Kayıt tamamlanamadı; hiçbir değişiklik uygulanmadı. '+writeErr.message);
     }
+    let progressWarning='';
     if(status==='İşlendi'){
-      const gs=aydaSheet_('GRUPLAR'),gv=gs.getDataRange().getDisplayValues(),gh=gv[0],idc=gh.indexOf('ID'),uc=gh.indexOf('Son Tamamlanan Ünite');
-      if(idc>=0&&uc>=0){const ix=gv.findIndex((r,i)=>i>0&&r[idc]===groupId);if(ix>0){const cell=gs.getRange(ix+1,uc+1);if(completed>(Number(cell.getValue())||0))cell.setValue(completed);}}
+      try{
+       const gs=aydaSheet_('GRUPLAR'),gv=gs.getDataRange().getDisplayValues(),gh=gv[0],idc=gh.indexOf('ID'),uc=gh.indexOf('Son Tamamlanan Ünite');
+       if(idc>=0&&uc>=0){const ix=gv.findIndex((r,i)=>i>0&&r[idc]===groupId);if(ix>0){const cell=gs.getRange(ix+1,uc+1);if(completed>(Number(cell.getValue())||0))cell.setValue(completed);}}
+      }catch(e){progressWarning='Ders kaydedildi; grup ilerleme özeti güncellenemedi.';Logger.log('AYDA grup ilerleme: '+e.message);}
     }
-    return {saved:true,id:record['Kayıt ID'],trackingSaved:hasTracking,attendanceCount:entries?entries.length:0,homeworkSaved:!!homeworkSheet,homeworkId};
+    return {saved:true,id:record['Kayıt ID'],trackingSaved:hasTracking,attendanceCount:entries?entries.length:0,homeworkSaved:!!homeworkSheet,homeworkId,progressWarning};
   }finally{lock.releaseLock();}
 }
 function aydaAdminKeyOlustur(){
