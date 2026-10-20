@@ -6,9 +6,9 @@ test('both primary pages retain well-formed head and original menu landmarks',()
  const teacher=file('index.html'),owner=file('yonetici.html');
  for(const html of [teacher,owner]){
   assert.equal((html.match(/<head>/g)||[]).length,1);
-  assert.equal((html.match(/<\\/head>/g)||[]).length,1);
-  assert.match(html,/test-readonly\\.js/);
-  assert.match(html,/ayda-speed\\.js/);
+  assert.equal((html.match(/<\/head>/g)||[]).length,1);
+  assert.match(html,/test-readonly\.js/);
+  assert.match(html,/ayda-speed\.js/);
  }
  assert.match(teacher,/id="loginForm"/);
  assert.match(teacher,/id="reportForm"/);
