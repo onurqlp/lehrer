@@ -22,6 +22,7 @@
   list.replaceChildren();
   const valid=statusAvailable()&&!!group;
   byId('attendanceInputs').hidden=!valid;
+  const quickAdd=byId('attendanceQuickAdd');if(quickAdd)quickAdd.hidden=!valid||!liveRoster;
   const badge=attendanceBox.querySelector('.attendance-preview-tag');if(badge)badge.textContent=liveRoster?'CANLI':'ÖNİZLEME';
   const saveButton=byId('saveBtn');if(saveButton&&!saveButton.disabled)saveButton.textContent=valid?'Yoklama + ödev + dersi kaydet':'Ders durumunu kaydet';
   if(!valid){const banner=attendanceBox.querySelector('.attendance-caution');if(banner)banner.textContent=liveRoster?'Canlı kayıt hazır. İşlenen bir grup dersini seçerek yoklama alın.':'ÖNİZLEME: Apps Script güncellenene kadar yoklama/ödev kaydedilmez.';empty.textContent=byId('lessonType').value==='private'?'Öğrenci yoklaması grup dersleri için tasarlandı.':!group?'Önce bir grup seçin.':'İptal veya ertelenen derslerde yoklama alınmaz.';empty.hidden=false;counter.textContent='';demoBtn.hidden=true;return;}
@@ -70,6 +71,32 @@
    const missing=homeworkEnabled?students.filter(x=>stateFor(x.id).homework==='missing').length:0;
    counter.textContent=present+' geldi · '+absent+' gelmedi'+(pending?' · '+pending+' işaretlenmedi':'')+(excused?' ('+excused+' mazeretli)':'')+(homeworkEnabled?' · '+missing+' ödev eksik':'');
   }else counter.textContent='';
+ }
+ const quickAddButton=byId('attendanceQuickSave'),quickAddName=byId('attendanceQuickName'),quickAddStatus=byId('attendanceQuickStatus');
+ if(quickAddButton&&quickAddName&&quickAddStatus){
+  quickAddButton.addEventListener('click',async()=>{
+   const group=pickGroup(),name=quickAddName.value.trim().replace(/\s+/g,' ');
+   if(!group||!statusAvailable()||!liveRoster||rosterLoading){quickAddStatus.textContent='Önce açık ders ve canlı öğrenci listesi seçin.';return;}
+   if(name.length<2||name.length>120){quickAddStatus.textContent='Öğrenci adı 2–120 karakter olmalı.';quickAddName.focus();return;}
+   if((roster.get(String(group.id))||[]).some(r=>normalize(r.name)===normalize(name))){
+    quickAddStatus.textContent='Bu isim zaten sınıfta kayıtlı. Yoklamadaki ismi kontrol edin.';return;
+   }
+   quickAddButton.disabled=true;quickAddName.disabled=true;quickAddStatus.textContent='Google kaydı yapılıyor…';
+   try{
+    const input=JSON.stringify({groupId:String(group.id),name});
+    const bytes=new TextEncoder().encode(input);let raw='';for(const byte of bytes)raw+=String.fromCharCode(byte);
+    const payload=btoa(raw).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    const result=await jsonp('teacherAddStudent',{payload});
+    if(!result?.id||result.groupId!==String(group.id))throw Error('Google öğrenci kimliğini doğrulamadı.');
+    await syncRoster(true);
+    if(!(roster.get(String(group.id))||[]).some(s=>s.id===result.id))throw Error('Kayıt oluşturuldu ancak listede henüz görünmüyor. Listeyi yenileyin; tekrar eklemeyin.');
+    quickAddName.value='';
+    quickAddStatus.textContent=result.created?'Öğrenci eklendi. Şimdi yoklama ve ödev durumunu işaretleyebilirsiniz.':'Öğrenci zaten kayıtlıydı; liste yenilendi.';
+    attendanceBox.open=true;
+   }catch(e){quickAddStatus.textContent='Eklenemedi: '+(e?.message||String(e));}
+   finally{quickAddButton.disabled=false;quickAddName.disabled=false;}
+  });
+  quickAddName.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();quickAddButton.click();}});
  }
  byId('attendanceDemoButton').addEventListener('click',()=>{demo=!demo;rows.clear();renderRoster();});
  const allButton=byId('attendanceMarkAll');
@@ -144,10 +171,13 @@
    renderRoster();
   });
  }
- async function syncRoster(){
+ async function syncRoster(preserveMarked=false){
   const signed=typeof data!=='undefined'&&data&&data.user;
   if(!signed)return;
-  liveRoster=false;rosterLoading=true;rosterError='';roster=new Map();rows.clear();demo=false;
+  const savedMarks=preserveMarked?new Map(rows):null;
+  liveRoster=false;rosterLoading=true;rosterError='';roster=new Map();
+  if(!preserveMarked)rows.clear();
+  demo=false;
   const review=byId('attendanceReviewed');if(review)review.checked=false;
   renderRoster();
   try{
@@ -160,6 +190,7 @@
     roster.get(id).push({id:studentId,name});
    }
    liveRoster=true;
+   if(savedMarks)rows=savedMarks;
   }catch(err){rosterError=String(err.message||err);}
   rosterLoading=false;renderRoster();
  }
