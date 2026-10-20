@@ -3,7 +3,7 @@
 const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.stringify({key,expires:Date.now()+8*3600000}));}catch(_){}},read(){try{const x=JSON.parse(localStorage.getItem('aydaAdminSession')||'null');if(x?.key&&x.expires>Date.now())return x.key;localStorage.removeItem('aydaAdminSession');}catch(_){}return '';},clear(){try{localStorage.removeItem('aydaAdminSession')}catch(_){}}};
 
 (()=>{
- const viewerSession={save(key){try{localStorage.setItem('aydaViewerSession',JSON.stringify({key,expires:Date.now()+8*3600000}));}catch(_){}},read(){try{const x=JSON.parse(localStorage.getItem('aydaViewerSession')||'null');if(x?.key&&x.expires>Date.now())return x.key;localStorage.removeItem('aydaViewerSession');}catch(_){}return '';},clear(){try{localStorage.removeItem('aydaViewerSession')}catch(_){}}};
+ const viewerSession={save(key){try{localStorage.setItem('aydaViewerSession',JSON.stringify({key,expires:Date.now()+180*86400000}));}catch(_){}},read(){try{const x=JSON.parse(localStorage.getItem('aydaViewerSession')||'null');if(x?.key&&x.expires>Date.now())return x.key;localStorage.removeItem('aydaViewerSession');}catch(_){}return '';},clear(){try{localStorage.removeItem('aydaViewerSession')}catch(_){}}};
  const $=id=>document.getElementById(id);
  const isMonitor=()=>['admin','viewer'].includes(overview?.user?.role);
  const isAdmin=()=>overview?.user?.role==='admin';
@@ -94,6 +94,9 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    if(isAdmin()){sessionStorage.setItem('aydaKey',token);aydaSession.save(token);}
    else viewerSession.save(token);
    document.body.classList.toggle('ayda-viewer-mode',!isAdmin());
+   const note=$('ownerLoginHint');if(note)note.textContent=isAdmin()?'Admin oturumu açık.':'İzleme cihazı tanındı. Bundan sonra aynı tarayıcıdan otomatik giriş yapılır.';
+   if(!isAdmin()){const ownerHeaderLink=document.getElementById('aydaOwnerMainLink');if(ownerHeaderLink)ownerHeaderLink.hidden=true;}
+   window.dispatchEvent(new CustomEvent('ayda:owner-role',{detail:{role:overview.user.role}}));
    $('ownerLogin').hidden=true;$('ownerApp').hidden=false;$('ownerLogout').hidden=false;
    const skip=$('ownerSkip');if(skip){skip.href='#ownerApp';skip.textContent='Ana içeriğe geç';}
    $('ownerKey').value='';
@@ -105,7 +108,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    await loadTracking();
    window.dispatchEvent(new Event('ayda:owner-ready'));
 
-  }catch(e){token='';$('ownerLogin').hidden=false;$('ownerApp').hidden=true;$('ownerLogout').hidden=true;$('ownerLoginError').textContent=e.message;}
+  }catch(e){if(viewerSession.read()===provided)viewerSession.clear();if(aydaSession.read()===provided)aydaSession.clear();token='';overview=null;document.body.classList.remove('ayda-viewer-mode');$('ownerLogin').hidden=false;$('ownerApp').hidden=true;$('ownerLogout').hidden=true;$('ownerLoginError').textContent=e.message;}
   finally{setLoading(false);}
  }
  async function loadTracking(){
@@ -582,5 +585,13 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   const csv='\ufeff'+exportRows.map(r=>r.map(esc).join(';')).join('\r\n');
   const u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=u;a.download='AYDA-ogretmen-saatleri-'+$('ownerTeacherMonth').value+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
  });
- const previous=sessionStorage.getItem('aydaKey')||aydaSession.read()||viewerSession.read();if(previous)login(previous);
+ // Bir kere paylaşılan özel bağlantı cihazı eşleştirir; anahtar adres çubuğunda kalmaz.
+ const linkToken=/^#izleme=(IZ-[A-Z0-9]+)$/i.exec(location.hash)?.[1]||'';
+ if(linkToken){
+  history.replaceState(null,'',location.pathname+location.search+'#overview');
+  login(linkToken);
+ }else{
+  const previous=sessionStorage.getItem('aydaKey')||aydaSession.read()||viewerSession.read();
+  if(previous)login(previous);
+ }
 })();
