@@ -29,7 +29,9 @@ function jsonpRequest(api,action,params){
   const cb='ayda_cb_'+Date.now()+'_'+(++requestNo),url=new URL(api),script=document.createElement('script');
   let settled=false;
   const finish=(err,result)=>{if(settled)return;settled=true;clearTimeout(timer);delete window[cb];script.remove();err?reject(err):resolve(result);};
-  const timer=setTimeout(()=>finish(apiTransportError('Apps Script yanıtı zaman aşımına uğradı.')),12000);
+  const timeoutMs=action==='save'?60000:action==='overview'?40000:
+    ['saveAttendance','removeTeacher','teacherAddStudent','updateReport'].includes(action)?45000:24000;
+  const timer=setTimeout(()=>finish(apiTransportError('Apps Script yanıtı '+Math.round(timeoutMs/1000)+' saniyede zaman aşımına uğradı.')),timeoutMs);
   window[cb]=r=>{if(!r||!r.ok)finish(Error((r&&r.error)||'Sunucudan geçersiz yanıt geldi.'));else finish(null,r.data);};
   url.searchParams.set('callback',cb);url.searchParams.set('action',action);url.searchParams.set('key',authKey);
   for(const [k,v] of Object.entries(params))url.searchParams.set(k,v);
@@ -50,6 +52,7 @@ async function jsonp(action,params={}){
   }catch(err){
    last=err;
    if(!err.transport)throw err;
+   if(/zaman aşımı/.test(err.message||''))break;
   }
  }
  if(readOnly&&candidates.length>1)throw Error('Google Apps Script iki adresten de yanıt vermedi. Dağıtımın erişimi “Herkes”, çalıştıranı “Ben” olmalı. '+(last?.message||''));
@@ -275,6 +278,16 @@ $('aydaCreateLesson')?.addEventListener('click',()=>{
  if($('daily')?.classList.contains('ayda-lesson-saved'))$('aydaNewLesson')?.click();
 });
 window.addEventListener('ayda:logout',()=>aydaSetLessonSaved(false));
+
+function aydaPrivateLessonMatch(report,payload,teacherId){
+ if(!report||!payload||!teacherId)return false;
+ const norm=value=>String(value||'').normalize('NFC').trim().replace(/\s+/g,' ').toLocaleLowerCase('tr-TR');
+ return String(report.teacherId||'')===String(teacherId)&&String(report.date||'')===String(payload.date||'')&&norm(report.student)===norm(payload.student);
+}
+function aydaFindPrivateLesson(overview,payload,teacherId){
+ return (Array.isArray(overview?.privateHistory)?overview.privateHistory:[]).find(row=>aydaPrivateLessonMatch(row,payload,teacherId))||null;
+}
+let aydaUncertainPrivateSave=null;
 $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$('saveBtn');b.disabled=true;b.textContent='Kaydediliyor...';clear('formMessage');try{
  const payload={type:$('lessonType').value,student:$('privateStudent').value,groupId:$('groupId').value,date:$('lessonDate').value,unit:Number($('completed').value),completed:Number($('completed').value),actual:$('actual').value,status:$('status').value,topic:'',note:$('note').value.trim(),homeworkText:$('note').value.trim()};
  if(payload.type==='private'){payload.groupId='';payload.unit=0;payload.completed=0;}
