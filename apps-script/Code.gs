@@ -1093,6 +1093,38 @@ function aydaIntegrityStatus_(user){
  return {ok:issues.length===0,issues,counts,checkedAt:Utilities.formatDate(new Date(),AYDA_TZ,'yyyy-MM-dd HH:mm')};
 }
 
+
+/** AYDA öğrenci bilgi formu: mevcut çalışma kitabında ayrı sekme. */
+function aydaFormSubmit_(input){
+  const field=(v,max)=>String(v==null?'':v).trim().slice(0,max).replace(/^[=+@\-\t\r]/,'\u200bfunction doGet(e){');
+  if(input.website)throw Error('İstek reddedildi.');
+  const email=field(input.email,160),first=field(input.firstName,90),last=field(input.lastName,90),
+        date=field(input.birthDate,10),phone=field(input.phone,22),
+        city=field(input.city,100),job=field(input.occupation,120);
+  const levels=Array.isArray(input.levels)?input.levels.filter(x=>['A1','A2','B1','B2','Diğer'].includes(x)):[];
+  const extra=field(input.otherLevel,100);
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!first||!last||!aydaValidateDate_(date)
+    ||date>aydaToday_()||phone.replace(/\D/g,'').length<10||!city||!job||!levels.length
+    ||(levels.includes('Diğer')&&!extra))throw Error('Lütfen tüm zorunlu alanları kontrol edin.');
+  const lock=LockService.getScriptLock();lock.waitLock(20000);
+  try{
+    const db=aydaDb_();let sheet=db.getSheetByName('BILGI_FORMU_YANITLARI');
+    if(!sheet){sheet=db.insertSheet('BILGI_FORMU_YANITLARI');sheet.appendRow(['Kayıt ID','Kayıt Zamanı','E-posta','Ad','Soyad','Doğum Tarihi','Telefon','Seviyeler','Diğer Seviye','Şehir','Meslek','Durum']);sheet.setFrozenRows(1);}
+    const id=Utilities.getUuid();
+    sheet.appendRow([id,new Date(),email,first,last,date,phone,levels.join(', '),extra,city,job,'Yeni']);
+    SpreadsheetApp.flush();
+    return {saved:true,id:id};
+  }finally{lock.releaseLock();}
+}
+function aydaFormSummary_(user){
+ if(user.role!=='admin')throw Error('Yönetici yetkisi gerekli.');
+ const sh=aydaDb_().getSheetByName('BILGI_FORMU_YANITLARI');
+ if(!sh||sh.getLastRow()<2)return {count:0,newCount:0,rows:[]};
+ const rows=sh.getDataRange().getDisplayValues();rows.shift();
+ return {count:rows.length,newCount:rows.filter(r=>r[11]==='Yeni').length,
+ rows:rows.slice(-300).reverse().map(r=>({id:r[0],date:r[1],email:r[2],name:r[3]+' '+r[4],birthDate:r[5],phone:r[6],levels:r[7],other:r[8],city:r[9],occupation:r[10],status:r[11]}))};
+}
+
 function doGet(e){
   const p=e&&e.parameter||{},cb=String(p.callback||'');
   if(!/^ayda_cb_[A-Za-z0-9_]{1,64}$/.test(cb))return ContentService.createTextOutput('Invalid callback').setMimeType(ContentService.MimeType.TEXT);
@@ -1101,9 +1133,11 @@ function doGet(e){
     const action=String(p.action||'overview');
     if(action==='ping'){out={ok:true,data:{status:'ok',version:'2026-10-19.8'}};}
     else if(action==='publicDashboard'){out={ok:true,data:aydaPublicDashboard_()};}
+    else if(action==='submitInfoForm'){const raw=Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8');if(raw.length>5000)throw Error('Form boyutu geçersiz.');out={ok:true,data:aydaFormSubmit_(JSON.parse(raw))};}
     else if(action==='publicTrackingDashboard'){out={ok:false,error:'Öğrenci bilgileri anonim erişime kapalı.'};}
     else {const user=aydaAuth_(p.key);
-    if(action==='overview')out={ok:true,data:aydaOverview_(user)};
+    if(action==='infoFormSummary')out={ok:true,data:aydaFormSummary_(user)};
+    else if(action==='overview')out={ok:true,data:aydaOverview_(user)};
     else if(action==='createTeacher')out={ok:true,data:aydaAdminCreateTeacher_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='createGroup')out={ok:true,data:aydaAdminCreateGroup_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='updateGroup')out={ok:true,data:aydaAdminSetGroup_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
