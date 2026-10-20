@@ -32,3 +32,11 @@ body.ayda-is-admin.ayda-admin-health-page #aydaAdminHealth .ayda-shared-health-l
 .ayda-health-admin-tools strong{margin-right:8px;color:#29435a;font-size:13px}
 .ayda-health-admin-tools button{border:1px solid #bcd9e6;border-radius:9px;background:#e9f6fa;color:#155a74;padding:9px 12px;cursor:pointer;font-size:13px;font-weight:700}
 @media(max-width:650px){#aydaAdminHealthFrame{height:75vh;min-height:490px}.ayda-health-admin-tools button{flex:1 1 40%}}
+
+/* Yönetici kategorilerinde öğretmen çalışma ana ekranı hiçbir zaman altta tekrar görünmesin. */
+body.ayda-is-admin #app>.section,
+body.ayda-is-admin #app>.grid,
+body.ayda-is-admin #app>.historylist,
+body.ayda-is-admin #app>#teacherTracking {display:none!important}
+body.ayda-is-admin #adminArea>.section[data-admin-tab]:not([hidden]){display:flex}
+body.ayda-is-admin #adminArea>.grid[data-admin-tab]:not([hidden]){display:grid}
