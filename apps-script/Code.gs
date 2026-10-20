@@ -3,7 +3,7 @@ const AYDA_DB_ID = '1FDLlugevKNHLP83M1uZGjjf4MNz0NV91KkxdZ6yJheg';
 const AYDA_TZ = 'Europe/Istanbul';
 // Sıfırdan başlayan sistem için eski dersleri eksik kayda dahil etme.
 const AYDA_TRACKING_START = '2026-10-20';
-const AYDA_API_VERSION = '2026-10-20.2';
+const AYDA_API_VERSION = '2026-10-20.3';
 
 function aydaDb_(){ return SpreadsheetApp.openById(AYDA_DB_ID); }
 function aydaSheet_(name){ const s=aydaDb_().getSheetByName(name); if(!s) throw Error('Tablo bulunamadı: '+name); return s; }
@@ -1059,7 +1059,7 @@ function aydaIntegrityStatus_(user){
   counts[name]=Math.max(0,sheet.getLastRow()-1);
  }
  if(issues.length)return {ok:false,issues,counts,checkedAt:Utilities.formatDate(new Date(),AYDA_TZ,'yyyy-MM-dd HH:mm')};
- const groups=aydaRead_('GRUPLAR'),lessons=aydaRead_('DERS_KAYITLARI'),att=aydaRead_('YOKLAMA');
+ const groups=aydaRead_('GRUPLAR'),lessons=aydaRead_('DERS_KAYITLARI').filter(r=>aydaDate_(r['Tarih'])>=AYDA_TRACKING_START),att=aydaRead_('YOKLAMA').filter(r=>aydaDate_(r['TARIH'])>=AYDA_TRACKING_START);
  const names=new Set(groups.map(g=>String(g['ID']))),ids=new Set(),keys=new Set();
  let duplicateLessons=0,orphanLessons=0,orphanAttendance=0,duplicateAttendance=0,incompleteAttendance=0,orphanHomework=0;
  for(const lesson of lessons){
@@ -1089,7 +1089,7 @@ function aydaIntegrityStatus_(user){
   const expected=roster.get(gid),actual=attendance.get(String(lesson['Kayıt ID']||''));
   if(expected&&expected.size&&(!actual||expected.size!==actual.size||[...expected].some(id=>!actual.has(id))))incompleteAttendance++;
  }
- for(const row of aydaRead_('DERS_ODEVLERI'))if(!ids.has(String(row['DERS_KAYIT_ID']||'')))orphanHomework++;
+ for(const row of aydaRead_('DERS_ODEVLERI').filter(r=>aydaDate_(r['TARIH'])>=AYDA_TRACKING_START))if(!ids.has(String(row['DERS_KAYIT_ID']||'')))orphanHomework++;
  for(const [count,label] of [[duplicateLessons,'Mükerrer ders kaydı'],[orphanLessons,'Grubu bulunmayan ders'],[orphanAttendance,'Derse bağlı olmayan yoklama'],[duplicateAttendance,'Mükerrer öğrenci yoklaması'],[incompleteAttendance,'Eksik öğrenci yoklaması'],[orphanHomework,'Derse bağlı olmayan ödev']])if(count)issues.push(label+': '+count);
  return {ok:issues.length===0,issues,counts,checkedAt:Utilities.formatDate(new Date(),AYDA_TZ,'yyyy-MM-dd HH:mm')};
 }
