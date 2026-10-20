@@ -12,7 +12,7 @@
  };
  const node=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=String(value);return e;};
  const add=(parent,tag,cls,value)=>{const e=node(tag,cls,value);parent.append(e);return e;};
- const showEmpty=(id,label)=>$(id).replaceChildren(node('div','owner-empty',label));
+ const showEmpty=(id,label)=>{const root=$(id);if(root)root.replaceChildren(node('div','owner-empty',label));};
  const formats={danger:'Öncelikli',watch:'Takip edilmeli',regular:'Düzenli',untracked:'Henüz veri yok'};
  const days=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
  let token='',overview=null,tracking=null,reminders=null,contactDirectory=null,lessonHomework=null,activeApi='',loading=false,requestIndex=0,lessonLimit=40,tab='overview',exportRows=[];
@@ -66,7 +66,7 @@
   for(const address of (readOnly?[...new Set([activeApi,...candidates()].filter(Boolean))]:[activeApi||candidates()[0]])){try{const data=await apiRequest(address,action,key,params);activeApi=address;return data;}catch(e){err=e;if(!e.transport)throw e;}}
   throw err||Error('Google Apps Script bağlantısı kurulamadı.');
  }
- const errorMessage=message=>{$('ownerError').textContent=message||'';};
+ const errorMessage=message=>{const target=$('ownerError');if(target)target.textContent=message||'';};
  const setLoading=value=>{loading=value;$('ownerLoginButton').disabled=value;$('ownerRefresh').disabled=value;};
  function activate(next){
   const name=['overview','students','attendance','groups','health','lessons','teachers','schedule','alerts','messages','accounts'].includes(next)?next:'overview';
@@ -129,7 +129,7 @@
   const ts=tracking?.students||[],gs=activeGroups(),hist=lessons(),att=tracking?.groups||[];
   const present=att.reduce((n,g)=>n+g.present,0),absent=att.reduce((n,g)=>n+g.absent,0);
   const month=today().slice(0,7),totalHours=hist.filter(r=>r.date?.startsWith(month)&&r.status==='İşlendi').reduce((n,r)=>n+hours(r.actual),0);
-  const root=$('ownerKpis');root.replaceChildren(
+  const root=$('ownerKpis');if(!root)return;root.replaceChildren(
    kpi('Bugünkü planlı ders',(overview.todayLessons||[]).length,'Bugün: '+fmt(today())),
    kpi('Eksik akademik kayıt',reminders?.total??'—','Ders raporu ve yoklama',reminders?.total?'warn':undefined),
    kpi('Aktif grup',gs.length,'Tüm gruplar: '+(overview.groups||[]).length),
@@ -141,7 +141,7 @@
   if($('ownerUpdated'))$('ownerUpdated').textContent='Güncellendi: '+new Date().toLocaleString('tr-TR');
  }
  function renderHighlights(){
-  const root=$('ownerHighlights');root.replaceChildren();
+  const root=$('ownerHighlights');if(!root)return;root.replaceChildren();
   const alerts=tracking?.alerts||[],near=activeGroups().filter(g=>unit(g)-unitsDone(g)<=3&&unit(g)>unitsDone(g));
   const coming=activeGroups().filter(g=>g.start&&g.start>=today()&&difference(g.start,today())<=7);
   if(reminders?.total){
@@ -183,11 +183,11 @@
   return el;
  }
  function renderOverview(){
-  const todayRows=(overview.todayLessons||[]),todayRoot=$('ownerToday');todayRoot.replaceChildren();
+  const todayRows=(overview.todayLessons||[]),todayRoot=$('ownerToday');if(!todayRoot)return;todayRoot.replaceChildren();
   for(const r of todayRows){const c=add(todayRoot,'div','owner-schedule-card');add(c,'strong','',r.group||gName(r.groupId));add(c,'small','',r.start+' – '+r.end+' · '+tName((overview.groups||[]).find(g=>g.id===r.groupId)?.teacherId));}
   if(!todayRows.length)showEmpty('ownerToday','Bugün planlı ders yok.');
-  const r=$('ownerRecent');r.replaceChildren();for(const x of lessons().slice(0,5))r.append(lessonRow(x,true));if(!r.children.length)showEmpty('ownerRecent','Henüz ders kaydı yok.');
-  const preview=$('ownerGroupPreview');preview.replaceChildren();for(const g of activeGroups().slice(0,6))preview.append(groupCard(g));
+  const r=$('ownerRecent');if(!r)return;r.replaceChildren();for(const x of lessons().slice(0,5))r.append(lessonRow(x,true));if(!r.children.length)showEmpty('ownerRecent','Henüz ders kaydı yok.');
+  const preview=$('ownerGroupPreview');if(!preview)return;preview.replaceChildren();for(const g of activeGroups().slice(0,6))preview.append(groupCard(g));
   if(!preview.children.length)showEmpty('ownerGroupPreview','Aktif grup bulunamadı.');
  }
  function groupCard(g){
@@ -270,7 +270,7 @@
   if(!values.length)showEmpty('ownerStudentList',tracking?'Kriterlere uygun öğrenci yok.':'Öğrenci verileri yüklenemedi.');
  }
  function table(rootId,headers,rows){
-  const root=$(rootId);root.replaceChildren();if(!rows.length){showEmpty(rootId,'Henüz kayıt yok.');return;}
+  const root=$(rootId);if(!root)return;root.replaceChildren();if(!rows.length){showEmpty(rootId,'Henüz kayıt yok.');return;}
   const tbl=add(root,'table'),thead=add(tbl,'thead'),h=add(thead,'tr');
   for(const title of headers)add(h,'th','',title);
   const tbody=add(tbl,'tbody');for(const row of rows){const tr=add(tbody,'tr');for(const col of row)add(tr,'td','',col);}
