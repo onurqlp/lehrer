@@ -1105,8 +1105,16 @@ function aydaSetTeacherAccountStatus_(user,p){
   if(idCol<0||statusCol<0||roleCol<0)throw Error('KULLANICILAR sütunları eksik.');
   const at=values.findIndex((r,i)=>i>0&&r[idCol]===id&&r[roleCol]==='Öğretmen');
   if(at<1)throw Error('Öğretmen hesabı bulunamadı.');
-  sh.getRange(at+1,statusCol+1).setValue(active?'Aktif':'Pasif');
-  SpreadsheetApp.flush();
+  const teacherCol=headers.indexOf('Öğretmen ID'),teacherId=teacherCol>=0?values[at][teacherCol]:'';
+  const teachers=aydaSheet_('OGRETMENLER'),trows=teachers.getDataRange().getDisplayValues(),th=trows[0]||[];
+  const tc=th.indexOf('Öğretmen ID'),ts=th.indexOf('Durum');
+  if(teacherId&&(tc<0||ts<0))throw Error('Öğretmen tablosu sütunları eksik.');
+  const tindex=teacherId?trows.findIndex((r,i)=>i>0&&r[tc]===teacherId):-1;
+  if(teacherId&&tindex<1)throw Error('Öğretmen kaydı eşleşmiyor.');
+  const next=active?'Aktif':'Pasif',previous=values[at][statusCol];
+  sh.getRange(at+1,statusCol+1).setValue(next);
+  try{if(tindex>0)teachers.getRange(tindex+1,ts+1).setValue(next);SpreadsheetApp.flush();}
+  catch(e){sh.getRange(at+1,statusCol+1).setValue(previous);throw e;}
   return {accountId:id,status:active?'Aktif':'Pasif'};
  }finally{lock.releaseLock();}
 }
