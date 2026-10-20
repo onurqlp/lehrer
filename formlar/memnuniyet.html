@@ -5,9 +5,37 @@
 <label>Kurs öğretmeni hakkında görüşleriniz (isteğe bağlı)</label><textarea name="courseTeacherNote" maxlength="1200"></textarea><label>Konuşma dersi öğretmeni hakkında görüşleriniz (isteğe bağlı)</label><textarea name="speakingTeacherNote" maxlength="1200"></textarea><label>En memnun kaldığınız şey (isteğe bağlı)</label><textarea name="best" maxlength="1200"></textarea><label>Geliştirilmesini istediğiniz konu (isteğe bağlı)</label><textarea name="improve" maxlength="1200"></textarea><label>İletmek istediğiniz diğer görüşler (isteğe bağlı)</label><textarea name="additional" maxlength="1200"></textarea>
 <p class="ayda-anon-note">Anketiniz isimsiz kaydedilir. Son not bölümüne isteğe bağlı olarak adınızı yazabilirsiniz.</p><div id="status" class="notice" hidden role="status" aria-live="polite"></div><button id="send" type="submit">Değerlendirmeyi gönder →</button></form><div class="ayda-page-footer">© AYDA Dil Akademisi · Eğitim Kalite Değerlendirmesi</div></main><script>
 let serial=0,options={groups:[],teachers:[]};
-function api(action,payload){return new Promise((resolve,reject)=>{const cb='ayda_cb_'+Date.now()+'_'+(++serial),script=document.createElement('script');let finished=false;const timer=setTimeout(()=>finish(Error('Sunucu yanıt vermedi.')),18000);function finish(err,data){if(finished)return;finished=true;clearTimeout(timer);delete window[cb];script.remove();err?reject(err):resolve(data)}window[cb]=r=>r&&r.ok?finish(null,r.data):finish(Error(r?.error||'İşlem başarısız.'));script.onerror=()=>finish(Error('Bağlantı hatası.'));let url=window.AYDA_API_URL+'?action='+action+'&callback='+cb;if(payload){const bytes=new TextEncoder().encode(JSON.stringify(payload));let binary='';for(const b of bytes)binary+=String.fromCharCode(b);url+='&payload='+btoa(binary).split('+').join('-').split('/').join('_').replace(/=+$/,'')}script.src=url;document.head.appendChild(script)})}
+function rawSurveyApi(action,payload){return new Promise((resolve,reject)=>{const cb='ayda_cb_'+Date.now()+'_'+(++serial),script=document.createElement('script');let finished=false;const timer=setTimeout(()=>finish(Error('Sunucu 50 saniyede yanıt vermedi.')),50000);function finish(err,data){if(finished)return;finished=true;clearTimeout(timer);delete window[cb];script.remove();err?reject(err):resolve(data)}window[cb]=r=>r&&r.ok?finish(null,r.data):finish(Error(r?.error||'İşlem başarısız.'));script.onerror=()=>finish(Error('Bağlantı hatası.'));let url=window.AYDA_API_URL+'?action='+action+'&callback='+cb;if(payload){const bytes=new TextEncoder().encode(JSON.stringify(payload));let binary='';for(const b of bytes)binary+=String.fromCharCode(b);url+='&payload='+btoa(binary).split('+').join('-').split('/').join('_').replace(/=+$/,'')}script.src=url;document.head.appendChild(script)})}
+async function api(action,payload){
+ const ticket=window.AYDA_ACTIVITY?.start(action);
+ try{
+  const data=await rawSurveyApi(action,payload);
+  window.AYDA_ACTIVITY?.finish(ticket,true);
+  return data;
+ }catch(error){
+  window.AYDA_ACTIVITY?.finish(ticket,false);
+  throw error;
+ }
+}
 const fill=(id,rows,label)=>{const select=document.getElementById(id);select.replaceChildren(new Option(label,''));for(const row of rows)select.add(new Option(row.name,row.id))};
-api('surveyOptions').then(r=>{options=r;fill('groups',r.groups,'Grup seçiniz');syncTeacher()}).catch(e=>{document.getElementById('status').hidden=false;document.getElementById('status').textContent='Grup ve öğretmen listesi alınamadı: '+e.message});
+async function reloadSurveyOptions(){
+ const select=document.getElementById('groups'),previous=select.value;
+ select.disabled=true;
+ try{
+  const result=await api('surveyOptions');
+  options=result;fill('groups',result.groups||[],'Grup seçiniz');
+  if((result.groups||[]).some(r=>r.id===previous))select.value=previous;
+  syncTeacher();
+  const notice=document.getElementById('status');
+  if(notice.textContent.startsWith('Grup ve öğretmen listesi')){notice.hidden=true;notice.textContent='';}
+ }catch(error){
+  const notice=document.getElementById('status');notice.hidden=false;
+  notice.textContent='Grup ve öğretmen listesi alınamadı: '+error.message;
+  throw error;
+ }finally{select.disabled=false;}
+}
+window.AYDA_ACTIVITY?.bindRefresh(reloadSurveyOptions);
+reloadSurveyOptions().catch(()=>{});
 function syncTeacher(){const g=options.groups.find(x=>x.id===document.getElementById('groups').value);const t=options.teachers.find(x=>x.id===g?.teacherId);document.getElementById('teacherId').value=t?.id||'';document.getElementById('teacherDisplay').value=t?.name||'Grubunuzun eğitmeni bulunamadı';}document.getElementById('groups').addEventListener('change',syncTeacher);
-document.getElementById('survey').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;const data=Object.fromEntries(new FormData(form)),btn=document.getElementById('send'),status=document.getElementById('status');if(!data.teacherId){status.hidden=false;status.textContent='Seçilen gruba atanmış kurs eğitmeni bulunamadı. Lütfen AYDA yönetimiyle iletişime geçin.';return;}btn.disabled=true;status.hidden=false;status.textContent='Anket kaydediliyor…';try{const r=await api('submitSurvey',data);if(!r.saved)throw Error('Kayıt onayı alınamadı.');form.innerHTML='<h2>Değerlendirmeniz alındı.</h2><p>Görüşleriniz için teşekkür ederiz.</p>'}catch(err){status.textContent='Kayıt yapılamadı: '+err.message;btn.disabled=false}});
+document.getElementById('survey').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;const data=Object.fromEntries(new FormData(form)),btn=document.getElementById('send'),status=document.getElementById('status');if(!data.teacherId){status.hidden=false;status.textContent='Seçilen gruba atanmış kurs eğitmeni bulunamadı. Lütfen AYDA yönetimiyle iletişime geçin.';return;}btn.disabled=true;status.hidden=false;status.textContent='Anket kaydediliyor…';try{const r=await api('submitSurvey',data);if(!r.saved)throw Error('Kayıt onayı alınamadı.');form.innerHTML='<h2>Değerlendirmeniz alındı.</h2><p>Görüşleriniz için teşekkür ederiz.</p>'}catch(err){const uncertain=/50 saniyede|Bağlantı hatası/i.test(String(err.message||''));status.textContent=uncertain?'Yanıt alınamadı; değerlendirmeniz kaydedilmiş olabilir. İkinci kez göndermeden önce AYDA ile iletişime geçin. ('+err.message+')':'Kayıt yapılamadı: '+err.message;btn.disabled=uncertain}});
 </script></body></html>
