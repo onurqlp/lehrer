@@ -131,6 +131,9 @@
    const file=csvInput.files&&csvInput.files[0];
    if(!file){csvMessage.textContent='Dosya seçilmedi.';renderRoster();return;}
    if(file.size>2*1024*1024){csvMessage.textContent='Dosya 2 MB sınırını geçiyor.';renderRoster();return;}
+   const job=window.AYDA_ACTIVITY?.start('csvPreview','CSV dosyası okunuyor');
+   csvInput.disabled=true;let csvOk=true;
+   csvMessage.textContent='Dosya okunuyor ve gruplarla karşılaştırılıyor… Lütfen bekleyin.';
    try{
     const records=csvRows(await file.text()),headers=(records.shift()||[]).map(normalize);
     const nameIndex=headers.findIndex(h=>['ad soyad','adı soyadı','isim soyisim'].includes(h));
@@ -167,7 +170,8 @@
      if(unmatched.size>20)list.append(make('li','','Diğer '+(unmatched.size-20)+' grup gösterilmiyor.'));
      details.append(summary,list);csvResults.append(details);
     }
-   }catch(error){roster=new Map();csvMessage.textContent='CSV okunamadı: '+error.message;}
+   }catch(error){csvOk=false;roster=new Map();csvMessage.textContent='CSV okunamadı: '+error.message;}
+   finally{csvInput.disabled=false;window.AYDA_ACTIVITY?.finish(job,csvOk);}
    renderRoster();
   });
  }
