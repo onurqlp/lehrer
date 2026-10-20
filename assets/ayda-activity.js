@@ -47,7 +47,7 @@
    title.textContent=current.label+(all.length>1?' · '+all.length+' işlem':'')+'…';
    meta.textContent=writes.length?'Lütfen bekleyin; işlemi yeniden göndermeyin.':'Lütfen bekleyin; veriler Google’dan alınıyor.';
   }else{
-   title.textContent=lastError?'Bağlantı kontrolü gerekli':lastSaved?'İşlem tamamlandı':'Veriler kontrol edildi';
+   title.textContent=lastError?'Bağlantı kontrolü gerekli':lastSaved>lastChecked?'İşlem tamamlandı':'Veriler kontrol edildi';
    meta.textContent=lastError?lastError:lastChecked?'Son kontrol: '+clock(new Date(lastChecked)):lastSaved?'Son kayıt yanıtı: '+clock(new Date(lastSaved)):'';
   }
   button.hidden=!refreshHandler;button.disabled=all.length>0||refreshing;
