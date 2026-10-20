@@ -33,8 +33,14 @@ body.ayda-workspace-embedded #app>#daily,
 body.ayda-workspace-embedded #app>#history,
 body.ayda-workspace-embedded #app>#adminOperationalTitle,
 body.ayda-workspace-embedded #app>.card:not(#adminArea){display:none!important}
-body.ayda-workspace-embedded #adminArea{display:block!important;max-width:none!important;margin:0!important}
+body.ayda-workspace-embedded.ayda-is-admin #adminArea{display:block!important;max-width:none!important;margin:0!important}
+body.ayda-workspace-embedded:not(.ayda-is-admin) #adminArea{display:none!important}
+body.ayda-workspace-embedded #aydaAdminHealth{display:none!important}
 body.ayda-workspace-embedded #adminArea>.adminQuick{display:none!important}
 body.ayda-workspace-embedded #ownerApp{max-width:none!important;padding:10px 14px!important;margin:0!important}
 body.ayda-workspace-embedded #ownerApp>.owner-heading{display:none!important}
 body.ayda-workspace-embedded .owner-controls>a[href*="index.html"]{display:none!important}
+
+body.ayda-workspace-embedded .owner-shell{max-width:none!important;width:100%!important}
+body.ayda-workspace-embedded #ownerNav{top:0!important}
+body.ayda-workspace-embedded #adminNav{top:0!important}
