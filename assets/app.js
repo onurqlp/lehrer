@@ -136,7 +136,7 @@ async function aydaRemoveTeacherAccount(account){
  try{
   const result=await jsonp('removeTeacher',{payload:utf8Base64Url(JSON.stringify({accountId:account.id}))});
   if(!result?.removed||!result?.historyPreserved)throw Error('Kaldırma işlemi doğrulanmadı.');
-  data=recoveredOverview||await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
+  data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
   alert('Öğretmen erişimi kaldırıldı. Eski ders kayıtları korundu.');
  }catch(error){alert('Öğretmen kaldırılamadı: '+error.message);}
 }
@@ -373,7 +373,7 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  $('note').value='';
  window.AYDA_ATTENDANCE?.resetAfterSave?.();
  try{
-  data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
+  data=recoveredOverview||await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
   if(data.user.role==='admin')loadTrackingSummary();
  }catch(refreshError){
   message('formMessage',confirmation+' Liste güncellenemedi; sayfayı yenileyin.','success');
