@@ -453,7 +453,7 @@
     warn(g.name+' · Önceki dönem grubu hâlâ aktif','Kurs tamamlandıysa geçmişe taşıyın; kayıtları silmeyin.',[action('Grubu tamamlandı yap →','status',g.id)]);
   }
   // Sadece bir gruba bağlı öğrenci kayıtları; isim alanındaki CRM notlarını uyarıya çıkar.
-  const issueWords=/\b(?:ödendi|ödenmedi|taksit|borç|bakiye|ödeme|peşin|hesap|öğrenci|toplamı|danışmanlık|abisi|oğlu|kızı|müs\d*|eltden|elt|cncler|multimanus\w*|im[aâ]m|ark|ağustos|agustos|ank|elazığ|yeni)\b/iu;
+  const issueWords=/(?:^|\s)(?:ödendi|ödenmedi|taksit(?:ler)?|borç|bakiye|ödeme|peşin|hesap|öğrenci|toplamı|danışmanlık|abisi|oğlu|kızı|eltden|elt|cncler|multimanustan|imam|ark|ağustos|agustos|ank|elazığ|yeni|hanım|bey|müsdavdan|yaseminden)(?=\s|$)/iu;
   const nameIssue=name=>{
    const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
    if(parts.length<2)return 'Ad ve soyad birlikte yazılmalı.';
