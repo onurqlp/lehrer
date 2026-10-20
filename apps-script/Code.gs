@@ -1096,7 +1096,7 @@ function aydaIntegrityStatus_(user){
 
 /** AYDA öğrenci bilgi formu: mevcut çalışma kitabında ayrı sekme. */
 function aydaFormSubmit_(input){
-  const field=(v,max)=>String(v==null?'':v).trim().slice(0,max).replace(/^[=+@\-\t\r]/,'\u200bfunction doGet(e){');
+  const field=(v,max)=>String(v==null?'':v).trim().slice(0,max).replace(/^[=+@-]/,' ');
   if(input.website)throw Error('İstek reddedildi.');
   const email=field(input.email,160),first=field(input.firstName,90),last=field(input.lastName,90),
         date=field(input.birthDate,10),phone=field(input.phone,22),
