@@ -1,4 +1,7 @@
 'use strict';
+/* AYDA_SESSION_V2 */
+const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.stringify({key,expires:Date.now()+8*3600000}));}catch(_){}},read(){try{const x=JSON.parse(localStorage.getItem('aydaAdminSession')||'null');if(x?.key&&x.expires>Date.now())return x.key;localStorage.removeItem('aydaAdminSession');}catch(_){}return '';},clear(){try{localStorage.removeItem('aydaAdminSession')}catch(_){}}};
+
 const $=id=>document.getElementById(id);let authKey='',data=null,requestNo=0;
 const $el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
 const clear=id=>$(id).replaceChildren();
@@ -54,7 +57,7 @@ async function jsonp(action,params={}){
  throw last||Error('API bağlantısı kurulamadı.');
 }
 function utf8Base64Url(s){const bytes=new TextEncoder().encode(s);let binary='';for(const b of bytes)binary+=String.fromCharCode(b);return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
-async function login(key){authKey=String(key||'');$('loginBtn').disabled=true;clear('loginMessage');try{const result=await jsonp('overview');data=result;sessionStorage.setItem('aydaKey',authKey);$('login').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');render();window.dispatchEvent(new Event('ayda:login'));}catch(e){authKey='';message('loginMessage',e.message);}finally{$('loginBtn').disabled=false;}}
+async function login(key){authKey=String(key||'');$('loginBtn').disabled=true;clear('loginMessage');try{const result=await jsonp('overview');data=result;sessionStorage.setItem('aydaKey',authKey);if(result?.user?.role==='admin')aydaSession.save(authKey);$('login').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');render();window.dispatchEvent(new Event('ayda:login'));}catch(e){authKey='';message('loginMessage',e.message);}finally{$('loginBtn').disabled=false;}}
 function safeWhatsappLink(value){try{const u=new URL(String(value||''));return u.protocol==='https:'&&((u.hostname==='chat.whatsapp.com'&&/^\/[A-Za-z0-9_-]+$/.test(u.pathname))||(u.hostname==='wa.me'&&/^\/[0-9]+$/.test(u.pathname)))?u.href:'';}catch{return '';}}
 function rowcard(title,subtitle,tag){const n=$el('div','card rowcard'),left=$el('div');left.append($el('strong','',title),$el('div','muted',subtitle));n.append(left,$el('span','tag',tag));return n;}
 function aydaAdminDashboardOrder_(admin){
@@ -166,7 +169,7 @@ function renderHistory(){clear('history');const filter=$('historyFilter').value;
 $('groupId').addEventListener('change',()=>{const g=data?.groups.find(x=>x.id===$('groupId').value);if(g)$('completed').value=g.completed||0;});
 $('historyFilter').addEventListener('change',renderHistory);
 $('loginForm').addEventListener('submit',e=>{e.preventDefault();login($('key').value);});
-$('logout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');authKey='';data=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');$('logout').classList.add('hidden');$('key').value='';$('roleChip').textContent='Öğretmen ve Yönetici';document.body.classList.remove('ayda-is-admin');history.replaceState(null,'',location.pathname);lastSharedHomework=null;shareBackendChecked=false;$('sendHomeworkToGroup').hidden=true;$('aydaShareHint').hidden=true;window.dispatchEvent(new Event('ayda:logout'));});
+$('logout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');aydaSession.clear();authKey='';data=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');$('logout').classList.add('hidden');$('key').value='';$('roleChip').textContent='Öğretmen ve Yönetici';document.body.classList.remove('ayda-is-admin');history.replaceState(null,'',location.pathname);lastSharedHomework=null;shareBackendChecked=false;$('sendHomeworkToGroup').hidden=true;$('aydaShareHint').hidden=true;window.dispatchEvent(new Event('ayda:logout'));});
 let lastSharedHomework=null,shareBackendChecked=false;
 async function aydaVerifyDurationBackend(actual){
  if(!String(actual||'').endsWith(':30'))return;
@@ -467,4 +470,4 @@ $('adminStudentForm').addEventListener('submit',async e=>{
 });
 window.addEventListener('ayda:login',()=>{aydaAdminEditOptions();aydaLoadAdminStudents();});
 
-const qs=new URLSearchParams(location.search),fromLink=qs.get('key')||'';if(fromLink){history.replaceState(null,'',location.pathname);login(fromLink);}else{const previous=sessionStorage.getItem('aydaKey');if(previous)login(previous);}
+const qs=new URLSearchParams(location.search),fromLink=qs.get('key')||'';if(fromLink){history.replaceState(null,'',location.pathname);login(fromLink);}else{const previous=sessionStorage.getItem('aydaKey')||aydaSession.read();if(previous)login(previous);}
