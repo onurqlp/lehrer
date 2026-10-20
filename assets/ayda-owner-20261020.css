@@ -17,3 +17,12 @@
 @keyframes aydaEntry{from{opacity:.65;transform:translateY(4px)}to{opacity:1;transform:none}}
 @media(max-width:950px){#ownerNav.owner-tabs{grid-template-columns:1fr}#ownerApp .owner-heading{align-items:flex-start;flex-direction:column}#ownerNav .ayda-nav-items>button{flex:1 1 36%}}
 @media(max-width:520px){#ownerApp .owner-heading{padding:17px}#ownerNav .ayda-nav-section{padding:10px}#ownerNav .ayda-nav-items>button{font-size:12px;padding:9px 8px}#ownerApp .owner-controls{width:100%;display:flex;gap:7px;flex-wrap:wrap}}
+
+/* Sistem Sağlığı: sorun + tek adımda düzeltme */
+#ownerHealthIssues .ayda-health-issue-card{display:flex;flex-direction:column;gap:9px;border-left:4px solid #d39437;background:#fff;border-radius:14px;padding:16px 17px}
+#ownerHealthIssues .ayda-health-issue-card>strong{font-size:14px;color:#213b56;line-height:1.45}
+#ownerHealthIssues .ayda-health-issue-card>p{color:#54687a;font-size:13px;line-height:1.5;margin:0}
+.ayda-health-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.ayda-health-card-actions .owner-link{background:#e9f5f8;color:#095b76;border:1px solid #c1dce6;padding:9px 13px;min-height:38px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;max-width:100%;white-space:normal;text-align:left}
+.ayda-health-card-actions .owner-link:hover,.ayda-health-card-actions .owner-link:focus-visible{background:#116783;color:#fff;border-color:#116783}
+@media(max-width:520px){.ayda-health-card-actions .owner-link{flex:1 1 100%;text-align:center}}
