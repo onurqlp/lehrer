@@ -46,21 +46,47 @@
    }
   }catch(e){
    state.textContent='Google kayıt kontrol servisi henüz hazır değil.';
-   result.append(make('p','','Güncel Apps Script V4.4 yayımlanana kadar bu kontrol çalışmaz. '+String(e.message||e)));
+   result.append(make('p','','Google Apps Script bağlantısı veya izinleri kontrol edilmeli. '+String(e.message||e)));
   }finally{change(false);}
  }
  check.addEventListener('click',showHealth);
  backup.addEventListener('click',async()=>{
-  change(true);state.textContent='Doğrulanmış Drive yedeği oluşturuluyor…';result.replaceChildren();
+  change(true);state.textContent='Google Drive yedeği oluşturuluyor; bu işlem bir dakikadan uzun sürebilir…';result.replaceChildren();
+  const detail=(msg)=>result.append(make('p','',msg));
   try{
+   // İkinci tıklamada tamamlanmış günlük kurulumu gereksiz yere tekrar başlatma.
+   const current=await call('backupStatus').catch(()=>null);
+   if(current?.installed&&current?.exists){
+    state.textContent='Günlük otomatik yedekleme zaten kurulu.';
+    detail('Son yedek: '+(current.at||'Tarihi bilinmiyor'));
+    if(current.error)detail('Son kayıtlı Google uyarısı: '+current.error);
+    return;
+   }
    const response=await call('backupSetup');
-   if(!response?.ok||!response?.verified||!response?.daily)throw Error('Yedekleme doğrulanmadı.');
+   if(!response?.ok||!response?.verified||!response?.daily)throw Error('Google yanıtında doğrulanmış yedek veya günlük tetikleyici bilgisi eksik.');
    state.textContent='Tam yedek doğrulandı; günlük otomatik yedekleme kuruldu.';
-   result.append(make('p','','İlk yedek: '+response.at+' · Kontrol edilen tablo: '+response.sheets));
-   await showHealth();
-  }catch(e){
-   state.textContent='Yedekleme kurulamadı; işlem yapılmadan önce Google sürümünü kontrol edin.';
-   result.append(make('p','',String(e.message||e)));
+   detail('İlk yedek: '+(response.at||'—')+' · Kontrol edilen sekme: '+(response.sheets??'—'));
+  }catch(error){
+   // JSONP zaman aşımında işlem sunucuda sürebilir; tekrar kopya oluşturmadan sorgula.
+   let verification=null,checkError='';
+   try{verification=await call('backupStatus');}catch(e){checkError=String(e?.message||e);}
+   if(verification?.installed&&verification?.exists){
+    state.textContent='Günlük yedekleme etkin. Yedek, Google üzerinden doğrulandı.';
+    detail('Son yedek: '+(verification.at||'—'));
+    if(verification.error)detail('Google uyarısı: '+verification.error);
+   }else{
+    state.textContent='Yedekleme henüz doğrulanamadı.';
+    detail('Google hata ayrıntısı: '+String(error?.message||error));
+    if(verification){
+     detail('Günlük tetikleyici: '+(verification.installed?'Kurulu':'Kurulu değil')+' · Drive yedeği: '+(verification.exists?'Mevcut':'Doğrulanamadı'));
+     if(verification.error)detail('Son Google yedekleme hatası: '+verification.error);
+    }
+    if(checkError)detail('Durum kontrolü hatası: '+checkError);
+    const msg=String(error?.message||error)+' '+checkError+' '+(verification?.error||'');
+    if(/permission|authorization|authorize|access denied|insufficient|yetki|izin/i.test(msg))detail('Google Apps Script düzenleyicisinde aydaBackupYetkilendir işlevini çalıştırıp Drive ve tetikleyici izinlerini onaylayın.');
+    else if(/zaman aşımı|timeout|timed out|yanıt vermedi/i.test(msg))detail('Google işlemi sürüyor olabilir. 1–2 dakika sonra Kayıt bütünlüğünü kontrol et düğmesiyle yedek durumunu yeniden sorgulayın; tekrar kurulum başlatmayın.');
+    else detail('Bu ayrıntıyı paylaşın; hata kaynağına göre Google tarafını düzeltebiliriz.');
+   }
   }finally{change(false);}
  });
  window.addEventListener('ayda:owner-ready',()=>{state.textContent='Kayıt sağlığını incelemek için açıp kontrol et.';result.replaceChildren();});
