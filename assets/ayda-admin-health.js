@@ -1,6 +1,7 @@
 /* AYDA | İki yönetici ekranında aynı Sistem Sağlığı uyarıları. Salt okunur. */
 (()=>{'use strict';
 const root=document.getElementById('aydaAdminHealthIssues');if(!root)return;
+if(new URLSearchParams(location.search).get('aydaEmbed')==='1')return;
 const make=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);return x;};
 const names=/(?:^|\s)(?:ödendi|ödenmedi|taksit(?:ler)?|borç|bakiye|ödeme|peşin|hesap|öğrenci|toplamı|danışmanlık|abisi|oğlu|kızı|eltden|elt|cncler|multimanustan|imam|ark|ağustos|agustos|ank|elazığ|yeni|hanım|bey|müsdavdan|yaseminden)(?=\s|$)/iu;
 function issueName(s){const p=String(s||'').trim().split(/\s+/).filter(Boolean);return p.length<2||/[0-9?!@]/.test(s)||names.test(s)||p.length>4;}
