@@ -9,6 +9,8 @@
   {id:'students',label:'👥 Öğrenciler'},
   {id:'groups',label:'▦ Gruplar'},
   {id:'teachers',label:'◉ Öğretmenler'},
+  {id:'messages',label:'✉ İletişim'},
+  {id:'forms',label:'▤ Formlar'},
   {id:'money',label:'◷ Ders Saatleri'}
  ];
  const sectionMap={
@@ -32,6 +34,8 @@
  for(const child of [...area.children]){
   if(child.id==='adminNav'||child.classList.contains('adminQuick'))continue;
   if(child.id==='aydaAdminHealth'){child.dataset.adminTab='health';continue;}
+  if(child.id==='owner-messages'){child.dataset.adminTab='messages';continue;}
+  if(child.id==='aydaAdminForms'){child.dataset.adminTab='forms';continue;}
   if(child.classList.contains('section')){
    const title=child.querySelector('h2')?.textContent?.trim();
    if(sectionMap[title])section=sectionMap[title];
@@ -51,6 +55,8 @@
   if(tab==='settings'||tab==='ayarlar')return sub==='teachers'?'teachers':sub==='students'?'students':sub==='money'?'money':'groups';
   if(tab==='update')return 'groups';
   if(tab==='accounts')return 'teachers';
+  if(tab==='messages'||tab==='mesajlar')return 'messages';
+  if(tab==='forms'||tab==='formlar')return 'forms';
   if(tab==='saglik'||tab==='sağlık')return 'health';
   return tabs.some(x=>x.id===tab)?tab:'academic';
  }
@@ -68,11 +74,15 @@
    b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected));
   }
   try{sessionStorage.setItem('aydaAdminTab',active)}catch(_){}
+  if(active==='forms')window.dispatchEvent(new Event('ayda:forms-open'));
+  if(active==='messages')window.dispatchEvent(new Event('ayda:messages-open'));
   if(scroll)nav.scrollIntoView({block:'start',behavior:'smooth'});
  }
  function hashTab(){
   const hash=decodeURIComponent(location.hash.slice(1)).toLocaleLowerCase('tr-TR');
   if(['saglik','sağlık','health','sistem-sagligi'].includes(hash))return 'health';
+  if(['formlar','forms'].includes(hash))return 'forms';
+  if(['mesajlar','iletisim','iletişim'].includes(hash))return 'messages';
   if(['grup-islemleri','gruplar','duzenle'].includes(hash))return 'groups';
   if(['ogretmenler','hesaplar'].includes(hash))return 'teachers';
   if(['ogrenciler','öğrenciler'].includes(hash))return 'students';
@@ -94,6 +104,8 @@
   {text:'＋ Yeni grup',tab:'groups',target:'groupCreateForm'},
   {text:'＋ Öğrenci ekle / düzenle',tab:'students',target:'adminStudentForm'},
   {text:'◉ Öğretmen işlemleri',tab:'teachers',target:'teacherGroupsForm'},
+  {text:'✉ Mesajlar',tab:'messages',target:'owner-messages'},
+  {text:'▤ Form Yanıtları',tab:'forms',target:'aydaAdminForms'},
   {text:'✚ Eksikleri düzelt',tab:'health',target:'aydaAdminHealth'}
  ];
  const quick=document.querySelector('#adminArea > .adminQuick');
