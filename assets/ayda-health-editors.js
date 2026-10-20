@@ -68,7 +68,7 @@
    const result=await jsonp(action,{payload:utf8Base64Url(JSON.stringify(payload))});
    if(!result?.saved||result.id!==payload.id)throw Error('Google yanıtı kaydı doğrulamadı. Yeniden göndermeden önce verileri yenileyin.');
    note(resultId,'Kaydedildi. Sistem Sağlığı panelini yenilediğinizde sonuç güncellenecek.',true);
-   try{data=await jsonp('overview');render();setup();}catch(readError){note(resultId,'Google kaydı tamamlandı; ekran yenilenemedi. Sayfayı yenileyin: '+readError.message,true);}
+   try{data=await jsonp('overview');render();setup();window.dispatchEvent(new Event('ayda:admin-data-updated'));if(window.parent!==window)window.parent.postMessage({aydaWorkspace:1,view:'changed'},location.origin);}catch(readError){note(resultId,'Google kaydı tamamlandı; ekran yenilenemedi. Sayfayı yenileyin: '+readError.message,true);}
   }catch(err){note(resultId,'Kaydedilemedi: '+err.message,false);}
   finally{button.disabled=false;}
  }
