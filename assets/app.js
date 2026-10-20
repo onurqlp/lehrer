@@ -29,7 +29,8 @@ function jsonpRequest(api,action,params){
   const cb='ayda_cb_'+Date.now()+'_'+(++requestNo),url=new URL(api),script=document.createElement('script');
   let settled=false;
   const finish=(err,result)=>{if(settled)return;settled=true;clearTimeout(timer);delete window[cb];script.remove();err?reject(err):resolve(result);};
-  const timeoutMs=action==='save'?60000:action==='overview'?40000:
+  const timeoutMs=action==='save'?60000:action==='overview'?45000:
+   ['adminStudents','studentRoster','trackingSummary','teacherMonthly','makeupList'].includes(action)?40000:
     ['saveAttendance','removeTeacher','teacherAddStudent','updateReport'].includes(action)?45000:24000;
   const timer=setTimeout(()=>finish(apiTransportError('Apps Script yanıtı '+Math.round(timeoutMs/1000)+' saniyede zaman aşımına uğradı.')),timeoutMs);
   window[cb]=r=>{if(!r||!r.ok)finish(Error((r&&r.error)||'Sunucudan geçersiz yanıt geldi.'));else finish(null,r.data);};
@@ -44,7 +45,7 @@ async function jsonp(action,params={}){
  const activity=window.AYDA_ACTIVITY?.start(action);
  let activitySuccess=false;
  try{
- const readOnly=['ping','overview','studentRoster','trackingSummary','vaultExport','reminders','studentNotes','teacherMonthly','makeupList','teacherFeedback','feedbackInbox','contactDirectory','homeworkTasks','lessonHomework'].includes(action);
+ const readOnly=['ping','overview','studentRoster','trackingSummary','vaultExport','adminStudents','reminders','studentNotes','teacherMonthly','makeupList','teacherFeedback','feedbackInbox','contactDirectory','homeworkTasks','lessonHomework'].includes(action);
  const candidates=apiCandidates();
  let last;
  for(const address of (readOnly?candidates:candidates.slice(0,1))){
