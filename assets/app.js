@@ -290,7 +290,31 @@ function aydaFindPrivateLesson(overview,payload,teacherId){
 let aydaUncertainPrivateSave=null;
 $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$('saveBtn');b.disabled=true;b.textContent='Kaydediliyor...';clear('formMessage');try{
  const payload={type:$('lessonType').value,student:$('privateStudent').value,groupId:$('groupId').value,date:$('lessonDate').value,unit:Number($('completed').value),completed:Number($('completed').value),actual:$('actual').value,status:$('status').value,topic:'',note:$('note').value.trim(),homeworkText:$('note').value.trim()};
- if(payload.type==='private'){payload.groupId='';payload.unit=0;payload.completed=0;}
+ if(payload.type==='private'){
+  payload.groupId='';payload.unit=0;payload.completed=0;
+  if(!payload.student.trim())throw Error('Özel ders için öğrenci adı gerekli.');
+  const existing=aydaFindPrivateLesson(data,payload,data?.user?.id);
+  if(existing)throw Error('Bu öğrenci ve tarihe ait özel ders zaten kayıtlı (ID: '+existing.id+'). Geçmiş Ders Raporları bölümünden kontrol edin.');
+  if(aydaUncertainPrivateSave&&aydaPrivateLessonMatch(
+   {teacherId:data?.user?.id,date:aydaUncertainPrivateSave.date,student:aydaUncertainPrivateSave.student},
+   payload,data?.user?.id)){
+   // Prior save may have reached Google; verify without sending a second write.
+   message('formMessage','Önceki özel ders Google’da kontrol ediliyor; ikinci kayıt gönderilmiyor…','info');
+   const checked=await jsonp('overview');
+   const found=aydaFindPrivateLesson(checked,payload,data?.user?.id);
+   data=checked;render();
+   window.dispatchEvent(new Event('ayda:admin-data-updated'));
+   if(found){
+    aydaUncertainPrivateSave=null;
+    aydaSetLessonSaved(true);
+    message('formMessage','Özel ders Google’da kayıtlı (ID: '+found.id+'). İkinci kayıt oluşturulmadı.','success');
+    window.dispatchEvent(new Event('ayda:saved'));
+    return;
+   }
+   aydaUncertainPrivateSave=null;
+   throw Error('Özel ders Google’da bulunamadı. Formu gözden geçirip tekrar Kaydet düğmesine basabilirsiniz.');
+  }
+ }
  const tracking=payload.type==='group'?window.AYDA_ATTENDANCE?.collect?.():null;
  if(tracking)Object.assign(payload,tracking);
  const previous=payload.type==='group'?(data?.history||[]).find(r=>r.groupId===payload.groupId&&r.date===payload.date):null;
