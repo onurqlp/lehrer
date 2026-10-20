@@ -40,3 +40,23 @@ body.ayda-viewer-mode #aydaMsgStudentPhoneSave {display:none!important}
 body.ayda-viewer-mode #aydaMsgTeacherPhone,
 body.ayda-viewer-mode #aydaMsgStudentPhone {pointer-events:none;opacity:.8}
 body.ayda-viewer-mode .owner-controls{justify-content:flex-end}
+
+/* Akademik Kontrol · İzleme yalnızca raporlar ve hedefli WhatsApp hatırlatmaları */
+#ownerApp .ayda-settings-link,#ownerApp .ayda-admin-only,#ownerApp #owner-accounts,
+#ownerApp #aydaWorkspaceAdminBtn,#ownerApp .ayda-phone-editor,
+#ownerApp #aydaManagerFeedbackList,#ownerApp #aydaManagerFeedbackStatus,
+#ownerApp .ayda-viewer-feedback-hidden,
+#ownerApp #aydaDataControl button#aydaDailyBackupSetup,
+#ownerApp .owner-extended-summary {display:none!important}
+#ownerNav.owner-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0 18px}
+#ownerNav .ayda-nav-section{padding:10px 12px}
+#ownerNav .ayda-nav-heading{font-size:10px}
+#ownerNav .ayda-nav-items>button{padding:9px 11px;font-size:12px}
+#ownerApp .owner-heading{padding:16px 20px;margin-bottom:12px}
+#ownerApp .owner-heading h1{font-size:clamp(21px,2vw,27px)}
+#ownerApp #ownerKpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+#ownerApp #owner-overview .owner-section-title{padding-bottom:7px;margin-bottom:9px}
+#ownerApp #owner-overview .owner-dual{gap:12px}
+#ownerApp .ayda-message-composers .ayda-message-panel{border-radius:14px}
+@media(max-width:900px){#ownerNav.owner-tabs{grid-template-columns:1fr}#ownerApp #ownerKpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){#ownerApp .owner-heading{padding:15px}#ownerApp #ownerKpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
