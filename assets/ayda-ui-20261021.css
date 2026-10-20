@@ -52,3 +52,7 @@
 }
 @media(max-width:370px){.ayda-owner-entry{font-size:10px;padding:7px}.ayda-header-help{font-size:11px}}
 @media(prefers-reduced-motion:reduce){#ownerApp .ayda-teacher-watch *{scroll-behavior:auto}}
+/* Yönetici geçişi dar telefonda başlığı sıkıştırmaz; ana kartta görünür. */
+.ayda-owner-entry-mobile{display:none;align-items:center;justify-content:center;width:fit-content;max-width:100%;padding:10px 14px;margin-top:13px;border-radius:11px;text-decoration:none;font-weight:800;font-size:13px;background:#126b75;color:#fff!important;border:1px solid #438b9d;min-height:42px}
+.ayda-owner-entry-mobile[hidden]{display:none!important}
+@media(max-width:760px){body.ayda-teacher .ayda-site-header .ayda-owner-entry{display:none!important}body.ayda-teacher .ayda-owner-entry-mobile:not([hidden]){display:inline-flex}}
