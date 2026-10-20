@@ -159,7 +159,7 @@
   if(n!==loadNo)return;
   contacts=directory.status==='fulfilled'?directory.value:null;
   inbox=feedback.status==='fulfilled'?feedback.value:null;
-  if(contacts)fill();else $('aydaMsgContactMeta').textContent='İletişim rehberine erişilemedi. Güncel Apps Script sürümünü yayımlayın.';
+  if(contacts)fill();else $('aydaMsgContactMeta').textContent='İletişim rehberine ulaşılamadı. Bağlantıyı kontrol edip verileri yenileyin.';
   showInbox();
  }
  teachers.addEventListener('change',()=>{fillMissing();messageTeacher();});
