@@ -20,9 +20,11 @@
   currentTracking=tracking.status==='fulfilled'?tracking.value:null;
   window.dispatchEvent(new Event('ayda:owner-ready'));
  }
- window.addEventListener('ayda:login',refresh);
- window.addEventListener('ayda:messages-open',()=>{if(isReady()&&!currentReminders)refresh()});
- window.addEventListener('ayda:admin-data-updated',refresh);
+ // Yalnızca Mesajlar sekmesi açıkken istek yap; Admin ilk yüklenişini hızlandır.
+ const onMessages=()=>window.AYDA_ADMIN_MENU?.active?.()==='messages';
+ window.addEventListener('ayda:login',()=>{if(onMessages())refresh()});
+ window.addEventListener('ayda:messages-open',()=>{if(isReady())refresh()});
+ window.addEventListener('ayda:admin-data-updated',()=>{if(onMessages())refresh()});
  window.addEventListener('ayda:logout',()=>{sequence++;currentReminders=null;currentTracking=null;window.dispatchEvent(new Event('ayda:owner-logout'))});
- if(isReady())refresh();
+ if(isReady()&&onMessages())refresh();
 })();
