@@ -136,7 +136,7 @@ async function aydaRemoveTeacherAccount(account){
  try{
   const result=await jsonp('removeTeacher',{payload:utf8Base64Url(JSON.stringify({accountId:account.id}))});
   if(!result?.removed||!result?.historyPreserved)throw Error('Kaldırma işlemi doğrulanmadı.');
-  data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
+  data=recoveredOverview||await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
   alert('Öğretmen erişimi kaldırıldı. Eski ders kayıtları korundu.');
  }catch(error){alert('Öğretmen kaldırılamadı: '+error.message);}
 }
@@ -327,12 +327,39 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
    throw Error('Verilen ödevi yazın (en az 3 karakter).');
  await aydaVerifyDurationBackend(payload.actual);
   if(payload.type==='group'&&payload.status==='İşlendi'&&!oldAttendance)await aydaVerifyShareBackend();
- const saved=oldAttendance?await jsonp('saveAttendance',{payload:utf8Base64Url(JSON.stringify({groupId:payload.groupId,date:payload.date,...tracking}))}):await jsonp('save',{payload:utf8Base64Url(JSON.stringify(payload))});
+ let saved,recoveredOverview=null;
+ try{
+  saved=oldAttendance
+   ?await jsonp('saveAttendance',{payload:utf8Base64Url(JSON.stringify({groupId:payload.groupId,date:payload.date,...tracking}))})
+   :await jsonp('save',{payload:utf8Base64Url(JSON.stringify(payload))});
+ }catch(writeError){
+  if(payload.type!=='private'||!writeError.unknownCommit)throw writeError;
+  // The save can finish on Google after the browser times out.
+  // Never retry the same write: check privateHistory from a read-only overview.
+  aydaUncertainPrivateSave={student:payload.student,date:payload.date};
+  message('formMessage','Google yanıtı gecikti. Özel ders kaydı yeniden gönderilmeden kontrol ediliyor…','info');
+  try{
+   const checked=await jsonp('overview');
+   const found=aydaFindPrivateLesson(checked,payload,data?.user?.id);
+   if(!found){
+    const e=Error('Google özel ders kaydı henüz doğrulanamadı. Yeniden Kaydet düğmesine basıldığında önce Google’daki kayıtlar kontrol edilecek.');
+    e.unknownCommit=true;throw e;
+   }
+   saved={saved:true,id:found.id,recovered:true};
+   recoveredOverview=checked;
+   aydaUncertainPrivateSave=null;
+  }catch(readError){
+   if(readError.unknownCommit)throw readError;
+   const e=Error('Google’daki özel ders henüz doğrulanamadı ('+readError.message+'). Kaydet düğmesine tekrar basıldığında yalnızca kayıt kontrolü yapılacak.');
+   e.unknownCommit=true;throw e;
+  }
+ }
  if(!saved?.saved)throw Error('Sunucu kayıt işlemini doğrulamadı.');
+ if(payload.type==='private')aydaUncertainPrivateSave=null;
  const trackingVerified=!!tracking&&saved.trackingSaved===true&&saved.attendanceCount===tracking.attendance.length;
  const homeworkVerified=oldAttendance||payload.type!=='group'||payload.status!=='İşlendi'||(saved.homeworkSaved===true&&/^DO-[A-Za-z0-9-]{8,80}$/.test(saved.homeworkId||''));
  if(payload.type==='group'&&payload.status==='İşlendi'&&(!trackingVerified||!homeworkVerified))throw Error('Kayıt onayı eksik. Apps Script sürümünü kontrol edin, aynı raporu tekrar göndermeden önce yöneticiyle görüşün.');
- const confirmation=oldAttendance?'Eksik yoklama tamamlandı.':(payload.type==='group'&&payload.status==='İşlendi'?'Ders ve yoklama kaydedildi. WhatsApp paylaşımı hazır.':'Ders kaydı tamamlandı.');
+ const confirmation=saved.recovered?'Özel dersin Google’a daha önce kaydedildiği doğrulandı. Tekrar kayıt oluşturulmadı.':(oldAttendance?'Eksik yoklama tamamlandı.':(payload.type==='group'&&payload.status==='İşlendi'?'Ders ve yoklama kaydedildi. WhatsApp paylaşımı hazır.':'Ders kaydı tamamlandı.'));
  message('formMessage',confirmation+(saved.progressWarning?' '+saved.progressWarning:''),'success');
  lastSharedHomework=!oldAttendance&&payload.type==='group'&&payload.status==='İşlendi'?{
    id:saved.homeworkId,lessonId:saved.id,groupId:payload.groupId,
@@ -354,7 +381,8 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  window.AYDA_MAKEUP_ATTENDANCE=null;
  window.dispatchEvent(new Event('ayda:saved'));
 }catch(err){
- message('formMessage',err.unknownCommit?'Sunucudan kayıt onayı alınamadı. Yeniden kaydetmeden önce Google Sheets DERS_KAYITLARI sekmesini kontrol edin. ('+err.message+')':err.message);
+ const sheet=$('lessonType').value==='private'?'AYDA_OZEL_DERS_CIZELGESI':'DERS_KAYITLARI';
+ message('formMessage',err.unknownCommit?'Google’dan kesin kayıt onayı alınamadı. '+sheet+' sekmesini kontrol edin. Aynı dersi ikinci kez göndermeyin. ('+err.message+')':err.message);
 }finally{b.disabled=false;aydaSyncSaveLabel();}});
 
 // Academic planning: one unit per scheduled class date; two further class dates for exam preparation.
