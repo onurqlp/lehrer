@@ -60,3 +60,41 @@ body.ayda-viewer-mode .owner-controls{justify-content:flex-end}
 #ownerApp .ayda-message-composers .ayda-message-panel{border-radius:14px}
 @media(max-width:900px){#ownerNav.owner-tabs{grid-template-columns:1fr}#ownerApp #ownerKpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){#ownerApp .owner-heading{padding:15px}#ownerApp #ownerKpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Partner group monitoring 2026-10-20 */
+#ownerApp .ayda-partner-group-summary{display:block!important;margin-top:24px;padding:18px 19px 20px;border:1px solid #dbe7f0;background:#f8fbff;border-radius:17px}
+#ownerApp .ayda-partner-group-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:15px}
+#ownerApp .ayda-partner-group-heading p{margin:5px 0 0;color:#536d83;font-size:12px}
+#ownerApp .ayda-partner-group-heading .text-button{font-size:12px;white-space:normal}
+#ownerApp .ayda-partner-group-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0 0 14px}
+#ownerApp .ayda-partner-group-stat{display:flex;flex-direction:column;gap:4px;justify-content:center;min-width:0;background:#fff;border:1px solid #dce8ef;padding:12px;border-radius:11px}
+#ownerApp .ayda-partner-group-stat strong{font-size:23px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:#16455b;line-height:1.1}
+#ownerApp .ayda-partner-group-stat span{font-size:11px;line-height:1.35;color:#5e7182}
+#ownerApp .ayda-partner-group-card{display:flex;flex-direction:column;gap:9px;padding:16px;min-height:0;border-color:#d9e5ee;box-shadow:0 4px 14px #1437530a}
+#ownerApp .ayda-partner-group-card .owner-group-head{align-items:flex-start}
+#ownerApp .ayda-partner-group-card .owner-group-head h3{line-height:1.35;margin:4px 0 0}
+#ownerApp .ayda-partner-group-card .owner-group-meta{display:grid;gap:4px;font-size:12px;color:#516778;margin:0}
+#ownerApp .ayda-partner-group-card .owner-progress-info{margin-top:2px}
+#ownerApp .ayda-partner-group-card .owner-progress{margin:0}
+#ownerApp .ayda-partner-group-remaining{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#edf8f2;border:1px solid #d5e8de;border-radius:9px;padding:9px 10px;flex-wrap:wrap}
+#ownerApp .ayda-partner-group-remaining strong{color:#166343;font-size:13px}
+#ownerApp .ayda-partner-group-remaining small{font-size:11px;color:#4c7862}
+#ownerApp .ayda-partner-group-flags{display:flex;gap:5px;flex-wrap:wrap}
+#ownerApp .ayda-partner-group-flags:empty{display:none}
+#ownerApp .ayda-partner-group-flags span{font-size:11px;padding:6px 8px;border-radius:7px;font-weight:700;line-height:1.3}
+#ownerApp .ayda-partner-group-warn{background:#fff0d9;color:#8e5912}
+#ownerApp .ayda-partner-group-info{background:#e9f4ff;color:#265b82}
+#ownerApp .ayda-partner-group-end{margin:0!important;font-size:12px;color:#4e697c}
+#ownerApp .ayda-partner-last{display:flex;flex-direction:column;gap:5px;padding:10px 11px;background:#f3f8fc;border:1px solid #e0eaf2;border-radius:10px}
+#ownerApp .ayda-partner-last small{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#667a89;font-weight:750}
+#ownerApp .ayda-partner-last strong{font-size:12px;line-height:1.45;color:#1b3d57}
+#ownerApp .ayda-partner-last span{font-size:11px;color:#567081}
+#ownerApp .ayda-partner-last p{margin:0;font-size:12px;line-height:1.45;color:#4b6374;overflow-wrap:anywhere}
+#ownerApp .ayda-partner-program{font-size:11px;line-height:1.5;margin:0!important;color:#4f6472;overflow-wrap:anywhere}
+#ownerApp .ayda-partner-group-card .owner-group-stats{margin:0;gap:5px}
+#ownerApp .ayda-partner-group-card details{margin-top:2px}
+#ownerApp .ayda-partner-group-card>.owner-link{margin-top:auto;align-self:flex-start}
+#ownerApp #ownerGroupResults{margin:0 0 12px;color:#5c7080;font-size:12px}
+@media(max-width:1100px){#ownerApp .ayda-partner-group-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){#ownerApp .ayda-partner-group-summary{padding:13px}#ownerApp .ayda-partner-group-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){#ownerApp .ayda-partner-group-stat{padding:10px}#ownerApp .ayda-partner-group-stat strong{font-size:19px}#ownerApp .ayda-partner-group-card{padding:13px}#ownerApp .ayda-partner-group-heading .text-button{width:100%;text-align:left}}
