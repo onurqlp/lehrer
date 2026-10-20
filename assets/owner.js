@@ -108,7 +108,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    await loadTracking();
    window.dispatchEvent(new Event('ayda:owner-ready'));
 
-  }catch(e){if(viewerSession.read()===provided)viewerSession.clear();if(aydaSession.read()===provided)aydaSession.clear();token='';overview=null;document.body.classList.remove('ayda-viewer-mode');$('ownerLogin').hidden=false;$('ownerApp').hidden=true;$('ownerLogout').hidden=true;$('ownerLoginError').textContent=e.message;}
+  }catch(e){if(viewerSession.read()===provided)viewerSession.clear();if(aydaSession.read()===provided)aydaSession.clear();token='';overview=null;document.body.classList.remove('ayda-viewer-mode');$('ownerLogin').hidden=embeddedHealth;$('ownerApp').hidden=true;if(embeddedHealth)window.parent.postMessage({aydaHealthEmbed:1,action:'auth-error'},location.origin);$('ownerLogout').hidden=true;$('ownerLoginError').textContent=e.message;}
   finally{setLoading(false);}
  }
  async function loadTracking(){
@@ -553,6 +553,22 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   robust('ownerStudentList',updateGroupSelectors);
   for(const [id,fn] of work)robust(id,fn);
  }
+ // Yönetici içindeki Sistem Sağlığı penceresi ikinci şifre istemez.
+ const embeddedHealth=new URLSearchParams(location.search).get('aydaEmbed')==='1'&&window.parent!==window;
+ if(embeddedHealth){
+  $('ownerLogin').hidden=true;
+  window.addEventListener('message',event=>{
+   if(event.origin!==location.origin||event.source!==window.parent)return;
+   const req=event.data;
+   if(req?.aydaHealthEmbed===1&&req.action==='authorize'&&typeof req.key==='string'&&req.key){
+    if(token===req.key&&isAdmin()){activate('health');window.parent.postMessage({aydaHealthEmbed:1,action:'authenticated'},location.origin);return;}
+    if(!loading)login(req.key);
+   }
+  });
+  window.addEventListener('ayda:owner-ready',()=>{
+   if(isAdmin())window.parent.postMessage({aydaHealthEmbed:1,action:'authenticated'},location.origin);
+  });
+ }
  $('ownerLoginForm').addEventListener('submit',e=>{e.preventDefault();login($('ownerKey').value);});
  $('ownerRefresh').addEventListener('click',refresh);
  $('ownerLogout').addEventListener('click',()=>{if(isAdmin()){sessionStorage.removeItem('aydaKey');aydaSession.clear();}else viewerSession.clear();document.body.classList.remove('ayda-viewer-mode');token='';overview=null;tracking=null;reminders=null;contactDirectory=null;lessonHomework=null;activeApi='';$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';const skip=$('ownerSkip');if(skip){skip.href='#ownerLogin';skip.textContent='Giriş bölümüne geç';}window.dispatchEvent(new Event('ayda:owner-logout'));});
@@ -597,7 +613,9 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
  });
  // Bir kere paylaşılan özel bağlantı cihazı eşleştirir; anahtar adres çubuğunda kalmaz.
  const linkToken=/^#izleme=(IZ-[A-Z0-9]+)$/i.exec(location.hash)?.[1]||'';
- if(linkToken){
+ if(embeddedHealth){
+  window.parent.postMessage({aydaHealthEmbed:1,action:'ready'},location.origin);
+ }else if(linkToken){
   history.replaceState(null,'',location.pathname+location.search+'#overview');
   login(linkToken);
  }else{
