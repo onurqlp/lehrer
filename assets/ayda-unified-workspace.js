@@ -135,6 +135,10 @@
   if(!request||request.aydaWorkspace!==1)return;
   if(request.view==='admin')openAdmin(request.context||{});
   else if(request.view==='tracking')openTracking(request.context||{});
+  else if(request.view==='changed'){
+   if(owner&&isAdmin())document.getElementById('ownerRefresh')?.click();
+   else if(isAdmin())window.dispatchEvent(new Event('ayda:admin-data-updated'));
+  }
   else if(request.view==='close')close();
  });
 })();
