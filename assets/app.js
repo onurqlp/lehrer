@@ -435,6 +435,7 @@ async function aydaLoadAdminStudents(){
   if([...pick.options].some(o=>o.value===selected))pick.value=selected;
   else pick.value='';
   aydaPickStudent();
+  window.dispatchEvent(new Event('ayda:students-loaded'));
  }catch(e){message('adminStudentResult','Öğrenci listesi alınamadı: '+e.message);}
 }
 function aydaPickStudent(){
