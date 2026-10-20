@@ -9,7 +9,8 @@
  const riskLabel={danger:'Öncelikli',watch:'Takip edilmeli',regular:'Düzenli',untracked:'Henüz veri yok'};
  const fmt=date=>/^\d{4}-\d{2}-\d{2}$/.test(String(date||''))?date.slice(8)+'.'+date.slice(5,7)+'.'+date.slice(0,4):(date||'—');
  const today=()=>overview?.today||new Date().toISOString().slice(0,10);
- async function api(action,key){
+ async function api(action,key){return window.AYDA_SPEED?window.AYDA_SPEED.run(action,key,{},()=>apiOriginal(action,key)):apiOriginal(action,key);}
+async function apiOriginal(action,key){
   const id=API.match(/\/s\/([A-Za-z0-9_-]+)\/exec(?:$|\?)/)?.[1];
   const root='https://script.google.com/';
   const sources=id?[root+'a/macros/aydadil.com/s/'+id+'/exec',root+'a/aydadil.com/macros/s/'+id+'/exec',root+'macros/s/'+id+'/exec']:[API];
@@ -52,7 +53,7 @@
    $('managerLogin').hidden=true;$('managerApp').hidden=false;$('managerLogout').hidden=false;$('managerKey').value='';
    if(!$('managerMonth').value)$('managerMonth').value=today().slice(0,7);
    if(!$('managerLessonMonth').value)$('managerLessonMonth').value=today().slice(0,7);
-   await refreshTracking();
+   render();await refreshTracking();
   }catch(error){$('managerLogin').hidden=false;$('managerApp').hidden=true;$('managerLogout').hidden=true;$('managerLoginError').textContent=error.message;authKey='';}
   finally{setBusy(false);}
  }

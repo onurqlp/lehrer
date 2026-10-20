@@ -70,7 +70,8 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    script.src=u.toString();document.head.append(script);
   });
  }
- async function api(action,key,params={}){
+ async function api(action,key,params={}){return window.AYDA_SPEED?window.AYDA_SPEED.run(action,key,params,()=>apiOriginal(action,key,params)):apiOriginal(action,key,params);}
+async function apiOriginal(action,key,params={}){
   const activity=window.AYDA_ACTIVITY?.start(action);
   let activitySuccess=false;
   try{

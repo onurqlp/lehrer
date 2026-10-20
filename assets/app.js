@@ -41,7 +41,8 @@ function jsonpRequest(api,action,params){
   script.src=url.toString();document.head.append(script);
  });
 }
-async function jsonp(action,params={}){
+async function jsonp(action,params={}){return window.AYDA_SPEED?window.AYDA_SPEED.run(action,authKey,params,()=>jsonpOriginal(action,params)):jsonpOriginal(action,params);}
+async function jsonpOriginal(action,params={}){
  const activity=window.AYDA_ACTIVITY?.start(action);
  let activitySuccess=false;
  try{
