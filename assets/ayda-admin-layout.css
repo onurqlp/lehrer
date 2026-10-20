@@ -1,0 +1,18 @@
+/* AYDA Admin: görev bazlı sayfalar; formlar/veri silinmez. */
+body.ayda-is-admin #adminArea>[data-admin-tab][hidden]{display:none!important}
+body.ayda-is-admin #adminArea>.adminQuick{display:flex!important;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:12px}
+body.ayda-is-admin #adminNav{position:sticky;top:0;z-index:18;background:#f5f8fc;border:1px solid #dfebf4;padding:10px;border-radius:14px;margin:12px 0 18px;display:flex;gap:8px;flex-wrap:wrap;overflow:visible}
+body.ayda-is-admin #adminNav button{flex:1 1 125px;min-height:42px;border-radius:10px;padding:9px 12px;font-size:13px}
+body.ayda-is-admin #adminNav button.active{background:#115b78;color:#fff;border-color:#115b78;box-shadow:0 4px 12px #115b7825}
+body.ayda-is-admin #aydaAdminQuickActions{display:flex;gap:8px;flex-wrap:wrap;flex-basis:100%;margin-top:6px}
+body.ayda-is-admin #aydaAdminQuickActions button{border:1px solid #bdd7e3;border-radius:10px;background:#fff;color:#12536d;padding:10px 13px;cursor:pointer;font-weight:750;min-height:40px}
+body.ayda-is-admin #aydaAdminQuickActions button:hover{background:#e4f5fc}
+body.ayda-is-admin #adminArea>.section[data-admin-tab]{margin:16px 0 10px}
+body.ayda-is-admin #adminArea>.section[data-admin-tab] h2{font-size:19px}
+body.ayda-is-admin #adminArea>.card[data-admin-tab],body.ayda-is-admin #adminArea>.grid[data-admin-tab]{margin-bottom:14px}
+body.ayda-is-admin #app>.stats,body.ayda-is-admin #app>.hero,body.ayda-is-admin #adminOperationalTitle,body.ayda-is-admin #app>#todayLessons,body.ayda-is-admin #app>#groups,body.ayda-is-admin #app>#schedule,body.ayda-is-admin #app>#daily,body.ayda-is-admin #app>#history{display:none!important}
+body.ayda-is-admin #adminArea{min-width:0;margin-top:6px}
+body.ayda-is-admin.ayda-admin-overview #aydaAdminHealth .ayda-shared-health-item:nth-of-type(n+5){display:none!important}
+body.ayda-is-admin.ayda-admin-overview #aydaAdminHealth .ayda-shared-health-list{max-height:370px;overflow:hidden}
+body.ayda-is-admin.ayda-admin-health-page #aydaAdminHealth .ayda-shared-health-list{max-height:none;overflow:visible}
+@media(max-width:720px){body.ayda-is-admin #adminNav{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}body.ayda-is-admin #adminNav button{min-width:0;font-size:12px}body.ayda-is-admin #aydaAdminQuickActions button{flex:1 1 44%}}
