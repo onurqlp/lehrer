@@ -5,7 +5,7 @@
 <title>Akademik Kontrol · İzleme | AYDA Dil Akademisi</title>
 <link rel="stylesheet" href="assets/manager.css?v=20261015-owner2">
 <link rel="stylesheet" href="assets/owner.css?v=20261015-owner3"><link rel="stylesheet" href="assets/ayda-workflow.css?v=20261016-2"><link rel="stylesheet" href="./assets/ayda-brand.css?v=20261016-v1c"><link rel="stylesheet" href="./assets/ayda-operations.css?v=20261016-share-v7">
-<link rel="stylesheet" href="./assets/ayda-experience.css?v=20261019-3"><link rel="stylesheet" href="assets/ayda-owner-20261020.css?v=20261020-monitor-v5">
+<link rel="stylesheet" href="./assets/ayda-experience.css?v=20261019-3"><link rel="stylesheet" href="assets/ayda-owner-20261020.css?v=20261020-group-monitor-v1">
 
 <style>
 body.ayda-health-embedded .ayda-site-header,body.ayda-health-embedded .topbar,body.ayda-health-embedded .owner-heading,body.ayda-health-embedded #ownerNav,body.ayda-health-embedded .owner-controls,body.ayda-health-embedded footer{display:none!important}
@@ -52,7 +52,7 @@ body.ayda-health-embedded #ownerHealthIssues{display:grid!important;grid-templat
 <div id="ownerHighlights" class="owner-highlights"></div><div id="ownerInboxPreview" class="ayda-owner-inbox-preview" aria-live="polite"></div><div id="ownerHomeworkPreview" class="ayda-owner-homework-preview"></div><div class="owner-extended-summary" hidden><div class="owner-section-title"><h2>Aylık akademik özet</h2></div><div id="ownerWeekly" class="owner-highlights"></div></div>
 <div class="owner-dual"><div><div class="owner-section-title"><h2>Bugünkü ders programı</h2></div><div id="ownerToday"></div></div>
 <div><div class="owner-section-title"><h2>Son girilen ders raporları</h2><button type="button" class="text-button" data-jump="lessons">Tüm raporlar →</button></div><div id="ownerRecent"></div></div></div>
-<div class="owner-extended-summary" hidden><div id="ownerGroupPreview" class="owner-group-grid"></div></div></section>
+<section class="ayda-partner-group-summary" aria-labelledby="ownerGroupPreviewHeading"><div class="owner-section-title ayda-partner-group-heading"><div><h2 id="ownerGroupPreviewHeading">Grupların güncel durumu</h2><p>Her grubun öğrenci sayısı, işlenen ve kalan üniteleri, son ders kaydı ve ders programı</p></div><button type="button" class="text-button" data-jump="groups">Grup ayrıntılarını aç →</button></div><div id="ownerGroupPreviewStats" class="ayda-partner-group-stats" aria-live="polite"></div><div id="ownerGroupPreview" class="owner-group-grid"></div></section></section>
 <section id="owner-health" class="owner-panel" hidden><div class="owner-section-title"><h2>Sistem Sağlığı ve Eksik Bilgiler</h2><p>Eksik bilgiler, öğrenci adları ve tamamlanması gereken akademik kayıtlar tek yerde.</p></div><div id="ownerHealthOverview" class="owner-mini-kpis"></div><div id="ownerHealthIssues" class="owner-group-grid" aria-live="polite"></div></section><section id="owner-students" class="owner-panel" hidden>
 <div class="owner-section-title"><h2>Tüm öğrenciler</h2><p id="ownerStudentCount">Öğrenci kayıtları</p></div>
 <div class="owner-filters"><label>Öğrenci ara<input id="ownerStudentSearch" placeholder="Ad veya soyad" type="search"></label>
@@ -69,7 +69,7 @@ body.ayda-health-embedded #ownerHealthIssues{display:grid!important;grid-templat
 <div class="owner-filters"><label>Grup<select id="ownerAttendanceFilter"><option value="">Tüm gruplar</option></select></label></div>
 <div class="table-panel" id="ownerAttendanceStudents"></div></section>
 <section id="owner-groups" class="owner-panel" hidden>
-<div class="owner-section-title"><h2>Tüm grupların akademik durumu</h2><p>Ünite ilerlemesi, öğretmen, program, son ders, öğrenci durumu, bitiş öngörüsü</p></div>
+<div class="owner-section-title"><h2>Tüm grupların akademik durumu</h2><p>Aktif, planlanan ve tamamlanan grupların öğrenci sayıları, son dersleri, kalan üniteleri, öğretmenleri ve haftalık programı</p></div><div id="ownerGroupTotals" class="ayda-partner-group-stats" aria-live="polite"></div><p id="ownerGroupResults" class="micro" role="status"></p>
 <div class="owner-filters"><label>Grup / öğretmen ara<input type="search" id="ownerGroupSearch" placeholder="Grup veya öğretmen"></label>
 <label>Seviye<select id="ownerGroupLevel"><option value="">Tüm seviyeler</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
 <label>Durum<select id="ownerGroupStatus"><option value="">Tüm durumlar</option><option value="Aktif">Aktif</option><option value="Pasif">Pasif</option><option value="Tamamlandı">Tamamlandı</option></select></label></div>
@@ -125,5 +125,5 @@ body.ayda-health-embedded #ownerHealthIssues{display:grid!important;grid-templat
 </section></main>
 <footer class="ayda-internal-footer"><strong>AYDA Dil Akademisi</strong> · Yönetici Akademik Kontrol Merkezi<br>Yalnızca kurum içi kullanım.</footer>
 <script src="assets/config.js?v=20261020-new-api-v1"></script><script src="assets/ayda-activity.js?v=20261020-activity-v2"></script>
-<script src="assets/student-notes.js?v=20261016-1"></script><script src="assets/owner.js?v=20261020-activity-v1"></script><script src="assets/owner-data-control.js?v=20261020-monitor-only-v5"></script><script src="assets/owner-messaging.js?v=20261020-audit-v2"></script><script src="assets/owner-homework.js?v=20261016-manage5"></script>
+<script src="assets/student-notes.js?v=20261016-1"></script><script src="assets/owner.js?v=20261020-group-monitor-v1"></script><script src="assets/owner-data-control.js?v=20261020-monitor-only-v5"></script><script src="assets/owner-messaging.js?v=20261020-audit-v2"></script><script src="assets/owner-homework.js?v=20261016-manage5"></script>
 <script defer src="./assets/ayda-experience.js?v=20261019-2"></script></body></html>
