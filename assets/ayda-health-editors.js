@@ -5,8 +5,8 @@
  const host=$('aydaHealthFixCard');if(!host)return;
  const days=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
  const url=new URLSearchParams(location.search);
- const focusType=url.get('aydaFix')||'',focusGroup=url.get('groupId')||'',focusTeacher=url.get('teacherId')||'';
- const focusStudent=url.get('studentId')||'';
+ let focusType=url.get('aydaFix')||'',focusGroup=url.get('groupId')||'',focusTeacher=url.get('teacherId')||'';
+ let focusStudent=url.get('studentId')||'';
  const formatGroup=g=>g.name+' · '+g.id;
  function currentData(){return typeof data!=='undefined'&&data?.user?.role==='admin'?data:null;}
  function options(id,values,label,selected){
@@ -123,6 +123,23 @@
    requestAnimationFrame(()=>{target.scrollIntoView({behavior:'smooth',block:'center'});const el=target.querySelector('select:not([disabled]),input:not([disabled])');if(el)el.focus({preventScroll:true});});
   }
  }
+ window.AYDA_HEALTH_EDITORS={open(context={}){
+  focusType=String(context.fix||'');focusGroup=String(context.groupId||'');
+  focusTeacher=String(context.teacherId||'');focusStudent=String(context.studentId||'');
+  setup();focusContext();
+  if(focusType==='student'&&focusStudent&&typeof aydaLoadAdminStudents==='function')aydaLoadAdminStudents();
+ }};
+ document.addEventListener('click',event=>{
+  const link=event.target.closest('a[href]');if(!link)return;
+  let target;try{target=new URL(link.href,location.href)}catch{return;}
+  if(target.origin!==location.origin||!target.searchParams.has('aydaFix'))return;
+  if(target.pathname.split('/').pop()!=='index.html'&&target.pathname!==location.pathname)return;
+  event.preventDefault();
+  window.AYDA_HEALTH_EDITORS.open({
+   fix:target.searchParams.get('aydaFix'),groupId:target.searchParams.get('groupId'),
+   teacherId:target.searchParams.get('teacherId'),studentId:target.searchParams.get('studentId')
+  });
+ });
  window.addEventListener('ayda:login',()=>{setup();focusContext();});
  window.addEventListener('ayda:students-loaded',()=>{if(focusType==='student'&&focusStudent)focusContext();});
  if(currentData()){setup();focusContext();}
