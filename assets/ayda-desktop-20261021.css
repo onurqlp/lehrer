@@ -1,0 +1,105 @@
+/* AYDA Desktop Renewal | 21.10.2026 | visual-only; preserve app behavior */
+@media(min-width:1024px){
+ body.ayda-internal:not(.ayda-archive){--desk-navy:#102b48;--desk-deep:#0a1b32;--desk-teal:#126b78;--desk-line:#dce6ef;--desk-subtle:#5b7085;background:radial-gradient(1100px 400px at 70% -30px,#eaf3f7,transparent 70%),#f3f6fa;color:#1b3650}
+ body.ayda-internal:not(.ayda-archive) .ayda-site-header{background:linear-gradient(100deg,#0a1a30,#112f4d)!important;box-shadow:0 6px 28px #0e274118;border-bottom-color:#24475f}
+ body.ayda-internal:not(.ayda-archive) :is(button,a,input,textarea,select){transition:border-color .15s ease,background .15s ease,box-shadow .15s ease,transform .15s ease}
+ body.ayda-internal:not(.ayda-archive) :is(button,a):focus-visible{outline:3px solid #e2af58;outline-offset:3px}
+ body.ayda-internal:not(.ayda-archive) :is(.owner-group-card,.owner-lesson,.owner-student-card,.owner-teacher-card,.card,.note-card){border-color:var(--desk-line);box-shadow:0 5px 22px #123a5608}
+ body.ayda-internal:not(.ayda-archive) :is(.card,.owner-group-card,.note-card,.owner-student-card,.owner-teacher-card){border-radius:16px}
+ body.ayda-internal:not(.ayda-archive) :is(.card,.owner-group-card,.owner-student-card,.owner-lesson):hover{border-color:#bdd3df;box-shadow:0 11px 28px #12344e12}
+ body.ayda-internal:not(.ayda-archive) :is(.section,.owner-section-title) h2{letter-spacing:-.035em;color:#163951}
+ body.ayda-internal:not(.ayda-archive) :is(input:not([type=checkbox]):not([type=radio]),select,textarea){border:1px solid #ccdae5;background:#fff;color:#163950;min-height:43px}
+ body.ayda-internal:not(.ayda-archive) :is(input:not([type=checkbox]):not([type=radio]),select,textarea):focus{outline:0;border-color:#258599;box-shadow:0 0 0 3px #27889b21}
+ body.ayda-internal:not(.ayda-archive) :is(.primary,.outline,.owner-link,.text-button){border-radius:10px;font-weight:760}
+ body.ayda-manager .owner-shell{width:min(100%,1700px);max-width:1700px!important;padding:28px 30px 85px}
+ body.ayda-manager #ownerApp:not([hidden]){display:grid!important;grid-template-columns:240px minmax(0,1fr)!important;column-gap:26px;align-items:start}
+ body.ayda-manager #ownerApp>.owner-heading{grid-column:1/-1!important;min-width:0;display:flex!important;align-items:center;justify-content:space-between;gap:18px;padding:23px 29px!important;border:0!important;margin:0 0 18px!important;background:linear-gradient(115deg,#102d4e 10%,#146a7a 100%)!important;border-radius:19px;box-shadow:0 12px 26px #0b4f7319}
+ body.ayda-manager #ownerApp>.owner-heading h1{font-size:clamp(24px,2.3vw,34px)!important;line-height:1.18}
+ body.ayda-manager #ownerApp>.owner-heading p{max-width:760px;line-height:1.6}
+ body.ayda-manager #ownerApp>.owner-heading .owner-controls{display:flex;align-items:center;gap:9px;justify-content:flex-end;max-width:43%}
+ body.ayda-manager #ownerApp>.owner-heading :is(.outline,.ayda-archive-shortcut){color:#fff!important;border:1px solid #ffffff66!important;background:#ffffff19!important;min-height:44px;padding:10px 14px;border-radius:11px;font-size:12px;text-decoration:none;font-weight:800}
+ body.ayda-manager #ownerApp>.owner-heading :is(.outline,.ayda-archive-shortcut):hover{background:#ffffff2e!important}
+ body.ayda-manager #ownerApp>#ownerError{grid-column:1/-1}
+ body.ayda-manager #ownerApp>#ownerKpis{grid-column:1/-1;display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:12px;margin:0 0 24px}
+ body.ayda-manager #ownerApp>#ownerKpis .owner-kpi{padding:17px 16px;min-height:116px;border-top:3px solid #2b879a}
+ body.ayda-manager #ownerApp>#ownerKpis .owner-kpi:nth-child(2){border-top-color:#d5a153}
+ body.ayda-manager #ownerApp>#ownerKpis .owner-kpi:nth-child(3){border-top-color:#348c72}
+ body.ayda-manager #ownerApp>#ownerKpis .owner-kpi:nth-child(4){border-top-color:#8580b5}
+ body.ayda-manager #ownerApp>#ownerKpis .owner-kpi:nth-child(5){border-top-color:#387ab0}
+ body.ayda-manager #ownerApp>#ownerKpis .owner-kpi:nth-child(6){border-top-color:#d68f63}
+ body.ayda-manager #ownerApp>#ownerKpis .owner-kpi strong{font-size:clamp(24px,2.5vw,35px);font-variant-numeric:tabular-nums}
+ body.ayda-manager #ownerApp>#ownerKpis .owner-kpi span{font-size:11px;line-height:1.4}
+ body.ayda-manager #ownerNav{grid-column:1!important;grid-row:4!important;position:sticky!important;top:101px!important;max-height:calc(100dvh - 125px);display:flex!important;flex-direction:column!important;gap:5px!important;padding:54px 11px 17px!important;margin:0!important;border-radius:18px!important;overflow-y:auto!important;overflow-x:hidden!important;background:#fff!important;border:1px solid #dce8f0!important;box-shadow:0 7px 26px #13354e0a}
+ body.ayda-manager #ownerNav:before{content:'YÖNETİM MERKEZİ';color:#78909e;top:19px;left:20px}
+ body.ayda-manager #ownerNav :is(.ayda-nav-section,.ayda-nav-items){display:flex!important;flex-direction:column!important;gap:5px!important;width:100%;padding:0!important;background:transparent!important;border:0!important;min-width:0}
+ body.ayda-manager #ownerNav .ayda-nav-heading{font-size:10px;padding:10px 8px 3px;letter-spacing:.08em}
+ body.ayda-manager #ownerNav button[data-tab],body.ayda-manager #ownerNav .ayda-nav-items>button{width:100%!important;flex:0 0 auto!important;display:flex;align-items:center;justify-content:space-between;min-height:44px;text-align:left;white-space:normal!important;padding:10px 12px!important;margin:0!important;font-size:12px!important;font-weight:760;border:1px solid transparent;border-radius:10px!important;background:transparent!important;color:#476075!important}
+ body.ayda-manager #ownerNav button[data-tab]:hover,body.ayda-manager #ownerNav .ayda-nav-items>button:hover{background:#f2f7fa!important;color:#0e5570!important}
+ body.ayda-manager #ownerNav button[data-tab].active,body.ayda-manager #ownerNav .ayda-nav-items>button.active{background:#e6f2f6!important;color:#0a536d!important;border-color:#cbdfeb!important;box-shadow:inset 3px 0 0 #d4a76a!important}
+ body.ayda-manager #ownerApp>.owner-panel{grid-column:2!important;grid-row:4!important;min-width:0;width:100%;max-width:none;margin:0}
+ body.ayda-manager #ownerApp>.owner-panel[hidden]{display:none!important}
+ body.ayda-manager #ownerApp .owner-panel .owner-section-title{margin-top:0}
+ body.ayda-manager #ownerApp .owner-panel .owner-dual{gap:15px;align-items:start}
+ body.ayda-manager #ownerApp .ayda-teacher-watch{background:#f4f9fc;border:1px solid #dbe9f1}
+ body.ayda-manager #ownerApp .ayda-partner-group-summary{background:#f7fbfe;padding:19px 20px}
+ body.ayda-manager #ownerApp .owner-group-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+ body.ayda-manager #ownerApp .owner-group-grid>*{min-width:0}
+ body.ayda-manager #ownerApp .owner-filters{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+ body.ayda-manager #ownerApp .owner-filters label{min-width:160px;max-width:270px;flex:1}
+ body.ayda-manager #ownerApp .owner-highlights{gap:12px}
+ body.ayda-manager #ownerApp .owner-panel .table-panel{overflow-x:auto;border-radius:14px}
+ body.ayda-manager #ownerApp .owner-panel .owner-section-title h2{font-size:20px!important}
+ body.ayda-manager #ownerApp .owner-panel .owner-section-title p{font-size:12px;color:#697d8f}
+ body.ayda-manager #ownerApp .owner-lesson{overflow-wrap:anywhere}
+ body.ayda-teacher #app.wrap{width:100%;max-width:1620px!important;padding:30px 32px 92px 277px!important}
+ body.ayda-teacher #aydaTeacherRail{left:max(22px,calc((100vw - 1620px)/2 + 22px));width:222px;top:105px;max-height:calc(100dvh - 126px);padding:56px 11px 14px;background:#fff;border-color:#dce8ef;box-shadow:0 8px 28px #122d460c;border-radius:17px}
+ body.ayda-teacher #aydaTeacherRail:before{content:'ÇALIŞMA MENÜSÜ'}
+ body.ayda-teacher #aydaTeacherRail .ayda-rail-link{font-weight:730;padding:11px 13px;border-radius:9px;margin-bottom:2px;line-height:1.45}
+ body.ayda-teacher #aydaTeacherRail .ayda-rail-link.active{background:#e8f4f7!important;color:#0c6279!important;box-shadow:inset 3px 0 0 #d6a45d!important}
+ body.ayda-teacher #app>.hero{background:linear-gradient(115deg,#102d4c,#165b78)!important;border-radius:19px!important;padding:25px 30px!important;border:0!important;color:#fff!important;box-shadow:0 12px 30px #15486a18}
+ body.ayda-teacher #app>.hero h1{color:#fff;font-weight:850;letter-spacing:-.035em}
+ body.ayda-teacher #app>.hero .muted{color:#e0edf7!important}
+ body.ayda-teacher #app .section{margin:22px 0 13px}
+ body.ayda-teacher #app .section h2{font-size:21px;color:#13374e}
+ body.ayda-teacher #app .grid{gap:13px}
+ body.ayda-teacher #app #groups .card{border-top:3px solid #338e8b}
+ body.ayda-teacher #app #groups .card:nth-child(3n+2){border-top-color:#d0a35d}
+ body.ayda-teacher #app #groups .card:nth-child(3n+3){border-top-color:#6492bc}
+ body.ayda-teacher #app :is(.card,form,fieldset){min-width:0}
+ body.ayda-teacher #app :is(.formgrid,.teacher-track-filters){gap:14px}
+ body.ayda-is-admin #app.wrap{padding-left:40px!important;max-width:1590px!important;padding-right:40px!important}
+ body.ayda-is-admin #aydaTeacherRail{display:none!important}
+ body.ayda-is-admin #adminArea>.adminQuick{padding:22px 25px!important;background:linear-gradient(120deg,#ebf6f9,#fff)!important;border:1px solid #cce3ed;border-radius:18px}
+ body.ayda-is-admin #adminArea>.adminQuick strong{font-size:21px}
+ body.ayda-is-admin #adminNav{top:93px!important;z-index:25!important;background:#ffffffed!important;backdrop-filter:blur(14px);border:1px solid #d8e6ef;border-radius:14px;padding:11px 13px!important;gap:8px;box-shadow:0 8px 24px #1234510d}
+ body.ayda-is-admin #adminNav button{flex:1 1 150px!important;font-size:12px;min-height:44px;border-color:#dce8ef}
+ body.ayda-is-admin #adminArea>[data-admin-tab]:not([hidden]){scroll-margin-top:170px;min-width:0}
+ body.ayda-is-admin #adminArea>.card[data-admin-tab]{border-radius:17px;padding:22px}
+ body.ayda-is-admin #adminArea>.grid[data-admin-tab]{grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+ body.ayda-is-admin :is(#aydaAdminHealthIssues,#trackingResults,.ayda-manager-feedback-list){min-width:0}
+ body.ayda-is-admin #adminArea :is(.formgrid,.owner-filters){gap:13px}
+ body.ayda-is-admin .ayda-archive-shortcut{color:#fff;background:#0f657a;border:1px solid #2a8597;padding:10px 14px;display:inline-flex;text-decoration:none;border-radius:10px;min-height:43px;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+ body.ayda-is-admin .ayda-archive-shortcut:hover{background:#0a4c65}
+ body.ayda-internal:not(.ayda-archive) :is(.historylist,.owner-lesson-list,.owner-student-list){min-width:0}
+}
+@media(min-width:1024px) and (max-width:1400px){
+ body.ayda-manager #ownerApp>#ownerKpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ body.ayda-manager #ownerApp .owner-group-grid{grid-template-columns:1fr}
+ body.ayda-teacher #app.wrap{padding-left:250px!important;padding-right:20px!important}
+ body.ayda-teacher #aydaTeacherRail{left:15px;width:214px}
+ body.ayda-is-admin #app.wrap{padding-left:23px!important;padding-right:23px!important}
+}
+@media(min-width:1024px) and (max-width:1160px){
+ body.ayda-manager #ownerApp:not([hidden]){grid-template-columns:207px minmax(0,1fr)!important;column-gap:16px}
+ body.ayda-manager #ownerNav{padding-left:7px!important;padding-right:7px!important}
+ body.ayda-manager .owner-shell{padding-left:17px;padding-right:17px}
+ body.ayda-manager #ownerApp .owner-group-grid{grid-template-columns:1fr}
+}
+@media(min-width:769px) and (max-width:1023px){
+ body.ayda-manager #ownerApp>#ownerKpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ body.ayda-manager #ownerApp .owner-group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.ayda-teacher #app.wrap{max-width:1100px;padding:25px 23px 86px}
+ body.ayda-is-admin #adminNav{top:79px}
+}
+@media(prefers-reduced-motion:reduce){body.ayda-internal:not(.ayda-archive) :is(button,a,input,textarea,select){transition:none!important}}
+@media print{body.ayda-manager #ownerNav,body.ayda-teacher #aydaTeacherRail{display:none!important}body.ayda-manager #ownerApp:not([hidden]){display:block!important}body.ayda-manager #ownerApp>.owner-panel{display:block!important}}
