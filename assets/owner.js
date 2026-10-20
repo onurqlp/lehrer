@@ -492,6 +492,10 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   if(!issues.length){showEmpty('ownerHealthIssues',reminders?'Kontrol edilen alanlarda eksiklik bulunamadı.':'Temel sınıf kontrolleri tamam. Eksik kayıt hizmetinden henüz yanıt alınmadı.');return;}
   function navigate(fix){
    const context={fix:fix.fix,groupId:fix.groupId||'',teacherId:fix.teacherId||'',studentId:fix.studentId||''};
+   if(new URLSearchParams(location.search).get('aydaEmbed')==='1'&&window.parent!==window){
+    window.parent.postMessage({aydaHealthEmbed:1,action:'fix',context},location.origin);
+    return;
+   }
    // Düzenleyici aynı sayfanın üzerinde açılır, iki yönetim paneli arasında gidip gelinmez.
    if(new URLSearchParams(location.search).get('aydaEmbed')==='1'&&window.parent!==window){
     window.parent.postMessage({aydaWorkspace:1,view:'admin',context},location.origin);return;
@@ -508,12 +512,24 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   function runAction(item){
    if(item.fix){navigate(item);return;}
    if(item.tab){
+    if(new URLSearchParams(location.search).get('aydaEmbed')==='1'&&window.parent!==window){
+     window.parent.postMessage({aydaHealthEmbed:1,action:'tab',tab:item.tab,focus:item.focus||''},location.origin);
+     return;
+    }
     activate(item.tab);
     const target=item.focus&&$(item.focus);
     if(target)requestAnimationFrame(()=>{target.scrollIntoView({behavior:'smooth',block:'center'});});
     return;
    }
-   if(item.compose){activate('messages');window.dispatchEvent(new CustomEvent('ayda:compose-teacher',{detail:item.compose}));return;}
+   if(item.compose){
+    if(new URLSearchParams(location.search).get('aydaEmbed')==='1'&&window.parent!==window){
+     window.parent.postMessage({aydaHealthEmbed:1,action:'compose',context:item.compose},location.origin);
+    }else{
+     activate('messages');
+     window.dispatchEvent(new CustomEvent('ayda:compose-teacher',{detail:item.compose}));
+    }
+    return;
+   }
    if(item.refresh)refresh();
   }
   for(const issue of issues){
@@ -521,7 +537,8 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    add(card,'strong','',issue.title);add(card,'p','',issue.detail);
    if(issue.actions.length){
     const buttons=add(card,'div','ayda-health-card-actions');
-    for(const item of issue.actions.filter(x=>x.compose||x.refresh))buttons.append(quick(item.label,()=>runAction(item)));
+    const embedded=new URLSearchParams(location.search).get('aydaEmbed')==='1';
+    for(const item of issue.actions.filter(x=>embedded||x.compose||x.refresh))buttons.append(quick(item.label,()=>runAction(item)));
    }
   }
  }
