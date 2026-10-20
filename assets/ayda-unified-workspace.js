@@ -3,7 +3,7 @@
  const params=new URLSearchParams(location.search);
  const embedded=params.get('aydaEmbed')==='1';
  const owner=document.body.classList.contains('ayda-manager');
- const isAdmin=()=>owner?!!window.AYDA_OWNER_BRIDGE?.ready?.():typeof data!=='undefined'&&data?.user?.role==='admin';
+ const isAdmin=()=>owner?!!window.AYDA_OWNER_BRIDGE?.canManage?.():typeof data!=='undefined'&&data?.user?.role==='admin';
  if(embedded){
   document.body.classList.add('ayda-workspace-embedded');
   // İç panelden diğer yönetici ekranına link verilirse çerçeveyi değiştirmek yerine
@@ -114,6 +114,11 @@
   const btn=document.createElement('button');btn.id='aydaWorkspaceAdminBtn';btn.type='button';btn.className='outline ayda-workspace-entry';btn.textContent='✎ Yönetim İşlemleri';
   btn.addEventListener('click',()=>show('admin',{hash:'ayarlar'}));
   toolbar.prepend(btn);
+  btn.hidden=true;
+  const sync=()=>{btn.hidden=!isAdmin();};
+  window.addEventListener('ayda:owner-role',sync);
+  window.addEventListener('ayda:owner-logout',sync);
+  sync();
  }
  if(!owner&&toolbar){
   const btn=document.createElement('button');btn.id='aydaWorkspaceTrackingBtn';btn.type='button';btn.className='ayda-workspace-entry';btn.textContent='◉ Takip Merkezi';
@@ -128,8 +133,9 @@
   if(url.origin!==location.origin)return;
   const path=url.pathname.split('/').pop();
   if(owner&&path==='index.html'){
-   // Yönetici panelinin tüm ayar bağlantıları artık diğer sayfaya gitmez.
-   event.preventDefault();show('admin',{hash:(url.hash||'#ayarlar').slice(1)});
+   event.preventDefault();
+   if(!isAdmin())return;
+   show('admin',{hash:(url.hash||'#ayarlar').slice(1)});
   }else if(!owner&&path==='yonetici.html'){
    event.preventDefault();show('tracking',{tab:(url.hash||'#overview').slice(1)});
   }
