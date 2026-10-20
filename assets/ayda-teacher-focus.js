@@ -16,7 +16,7 @@
  const back=elem('button','ayda-teacher-back','← Ana sayfaya dön');back.type='button';back.dataset.aydaNav='home';
  intro.append(crumb,heading,description,back);
  const shortcuts=elem('div','ayda-teacher-home-actions');shortcuts.id='aydaTeacherHomeActions';shortcuts.dataset.aydaPage='home';
- const action1=elem('button','ayda-teacher-primary-action','+ Ders kaydı oluştur');action1.type='button';action1.dataset.aydaNav='daily';
+ const action1=elem('button','ayda-teacher-primary-action','+ Ders kaydı oluştur');action1.type='button';action1.dataset.aydaNav='daily';action1.id='aydaPrimaryLessonAction';
  const action2=elem('button','ayda-teacher-secondary-action','Haftalık programım →');action2.type='button';action2.dataset.aydaNav='schedule';
  shortcuts.append(action1,action2);
  const hero=root.querySelector('.hero');if(hero){hero.insertAdjacentElement('afterend',shortcuts);shortcuts.insertAdjacentElement('afterend',intro);}
@@ -79,7 +79,7 @@
  document.addEventListener('click',event=>{
   if(!teacher())return;
   const button=event.target.closest('[data-ayda-nav]');
-  if(button){event.preventDefault();open(button.dataset.aydaNav);return;}
+  if(button){event.preventDefault();if(button.id==='aydaPrimaryLessonAction'&&$('daily')?.classList.contains('ayda-lesson-saved'))$('aydaNewLesson')?.click();open(button.dataset.aydaNav);return;}
   const anchor=event.target.closest('a[href^="#"]');
   if(anchor&&route[anchor.hash.slice(1)]){event.preventDefault();open(anchor.hash.slice(1));}
  });
