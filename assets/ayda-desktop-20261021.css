@@ -103,3 +103,16 @@
 }
 @media(prefers-reduced-motion:reduce){body.ayda-internal:not(.ayda-archive) :is(button,a,input,textarea,select){transition:none!important}}
 @media print{body.ayda-manager #ownerNav,body.ayda-teacher #aydaTeacherRail{display:none!important}body.ayda-manager #ownerApp:not([hidden]){display:block!important}body.ayda-manager #ownerApp>.owner-panel{display:block!important}}
+
+
+/* Scoped archive links for every device, never shown before a validated session. */
+body.ayda-internal .ayda-group-archive-link{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:fit-content;max-width:100%;min-height:40px;margin:8px 9px 5px 0;padding:9px 12px;border:1px solid #bcd8e5;background:#e9f5f8;color:#155d75!important;border-radius:10px;font-size:12px;font-weight:800;text-decoration:none;line-height:1.45;white-space:normal}
+body.ayda-internal .ayda-group-archive-link:hover{background:#d5edf2;border-color:#7ebacb}
+body.ayda-internal .ayda-archive-shortcut{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;margin:8px 0 0;padding:9px 14px;background:#11697d;color:#fff!important;border:1px solid #287f90;border-radius:10px;font-size:12px;font-weight:800;text-decoration:none;line-height:1.4}
+body.ayda-internal .ayda-archive-shortcut:hover{background:#0e546d}
+body.ayda-internal .ayda-archive-shortcut[hidden],body.ayda-internal .ayda-mobile-archive-link[hidden]{display:none!important}
+body.ayda-teacher #aydaTeacherRail .ayda-archive-shortcut{display:flex;width:100%;margin-top:10px;background:#e7f4f7;color:#0e6176!important;border-color:#c7e3eb;text-align:left}
+body.ayda-manager #ownerApp .owner-heading .ayda-archive-shortcut{margin:0}
+body.ayda-internal .ayda-mobile-archive-link{display:flex;align-items:center;text-align:left;min-height:50px;padding:13px;border:1px solid #cbe2e9;border-radius:11px;background:#e5f3f7;color:#135d73!important;font-size:13px;font-weight:800;text-decoration:none}
+@media(max-width:1023px){body.ayda-manager #ownerApp .owner-heading .owner-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}body.ayda-manager #ownerApp .owner-heading .ayda-archive-shortcut{margin:0;background:#16627a;border-color:#ffffff66;color:#fff}}
+@media(min-width:769px){body.ayda-internal .ayda-mobile-archive-link{display:none!important}}
