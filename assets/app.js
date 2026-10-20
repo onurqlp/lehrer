@@ -41,6 +41,9 @@ function jsonpRequest(api,action,params){
  });
 }
 async function jsonp(action,params={}){
+ const activity=window.AYDA_ACTIVITY?.start(action);
+ let activitySuccess=false;
+ try{
  const readOnly=['ping','overview','studentRoster','trackingSummary','vaultExport','reminders','studentNotes','teacherMonthly','makeupList','teacherFeedback','feedbackInbox','contactDirectory','homeworkTasks','lessonHomework'].includes(action);
  const candidates=apiCandidates();
  let last;
@@ -48,6 +51,7 @@ async function jsonp(action,params={}){
   try{
    const response=await jsonpRequest(address,action,params);
    workingApiUrl=address;
+   activitySuccess=true;
    return response;
   }catch(err){
    last=err;
@@ -58,6 +62,7 @@ async function jsonp(action,params={}){
  if(readOnly&&candidates.length>1)throw Error('Google Apps Script iki adresten de yanıt vermedi. Dağıtımın erişimi “Herkes”, çalıştıranı “Ben” olmalı. '+(last?.message||''));
  if(last?.transport&&!readOnly)last.unknownCommit=true;
  throw last||Error('API bağlantısı kurulamadı.');
+ }finally{window.AYDA_ACTIVITY?.finish(activity,activitySuccess);}
 }
 function utf8Base64Url(s){const bytes=new TextEncoder().encode(s);let binary='';for(const b of bytes)binary+=String.fromCharCode(b);return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 async function login(key){authKey=String(key||'');$('loginBtn').disabled=true;clear('loginMessage');try{const result=await jsonp('overview');if(result?.user?.role==='viewer')throw Error('İzleme hesabı yalnızca yonetici.html Akademik Kontrol sayfasında kullanılabilir.');data=result;sessionStorage.setItem('aydaKey',authKey);if(result?.user?.role==='admin')aydaSession.save(authKey);$('login').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');render();window.dispatchEvent(new Event('ayda:login'));}catch(e){authKey='';message('loginMessage',e.message);}finally{$('loginBtn').disabled=false;}}
@@ -277,7 +282,7 @@ $('aydaNewLesson')?.addEventListener('click',()=>{
 $('aydaCreateLesson')?.addEventListener('click',()=>{
  if($('daily')?.classList.contains('ayda-lesson-saved'))$('aydaNewLesson')?.click();
 });
-window.addEventListener('ayda:logout',()=>aydaSetLessonSaved(false));
+window.addEventListener('ayda:logout',()=>{aydaSetLessonSaved(false);window.AYDA_ACTIVITY?.clear();});
 
 function aydaPrivateLessonMatch(report,payload,teacherId){
  if(!report||!payload||!teacherId)return false;
@@ -572,4 +577,24 @@ $('adminStudentForm').addEventListener('submit',async e=>{
 });
 window.addEventListener('ayda:login',()=>{aydaAdminEditOptions();aydaLoadAdminStudents();});
 
+// Ana panel yenilemesi form alanlarını korur; Google'a yeni kayıt göndermez.
+window.AYDA_ACTIVITY?.bindRefresh(async()=>{
+ if(!data?.user)return;
+ const ids=['lessonType','lessonDate','groupId','privateStudent','actual','status','completed','note'];
+ const old=Object.fromEntries(ids.map(id=>[id,$(id)?.value]));
+ const result=await jsonp('overview');
+ if(!result?.user)throw Error('Yönetim verileri okunamadı.');
+ data=result;render();
+ // Reapply without losing an unfinished teacher report.
+ for(const id of ids){
+  const el=$(id);if(!el||old[id]===undefined)continue;
+  if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===old[id]))continue;
+  el.value=old[id];
+ }
+ $('groupId')?.dispatchEvent(new Event('change'));
+ if(old.completed!==undefined)$('completed').value=old.completed;
+ aydaSyncLessonType();
+ window.dispatchEvent(new Event('ayda:admin-data-updated'));
+ await window.AYDA_ATTENDANCE?.refreshRoster?.();
+});
 const qs=new URLSearchParams(location.search),fromLink=qs.get('key')||'';if(fromLink){history.replaceState(null,'',location.pathname);login(fromLink);}else{const previous=sessionStorage.getItem('aydaKey')||aydaSession.read();if(previous)login(previous);}
