@@ -78,7 +78,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
  const errorMessage=message=>{const target=$('ownerError');if(target)target.textContent=message||'';};
  const setLoading=value=>{loading=value;$('ownerLoginButton').disabled=value;$('ownerRefresh').disabled=value;};
  function activate(next){
-  const name=['overview','students','attendance','groups','health','lessons','teachers','schedule','alerts','messages','accounts'].includes(next)&&!(next==='accounts'&&!isAdmin())?next:'overview';
+  const name=['overview','students','attendance','groups','health','lessons','teachers','schedule','alerts','messages'].includes(next)?next:'overview';
   tab=name;
   for(const p of document.querySelectorAll('.owner-panel'))p.hidden=p.id!=='owner-'+name;
   for(const b of $('ownerNav').querySelectorAll('button[data-tab]')){b.classList.toggle('active',b.dataset.tab===name);b.setAttribute('aria-current',b.dataset.tab===name?'page':'false');}
@@ -549,12 +549,12 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
  // Yönetici menüsünü görev odaklı üç gruba ayır; mevcut sekme ve erişim davranışı korunur.
  (function organizeOwnerNav(){
   const nav=$('ownerNav');if(!nav||nav.dataset.organized)return;nav.dataset.organized='true';
-  const sections=[['GÜNLÜK KONTROL',['overview','alerts','health']],['AKADEMİK TAKİP',['students','groups','attendance','lessons','schedule']],['YÖNETİM',['teachers','messages','accounts']]];
+  const sections=[['TAKİP',['overview','health','alerts']],['AKADEMİK',['students','attendance','groups','lessons','schedule','teachers']],['İLETİŞİM',['messages']]];
   const buttons=[...nav.querySelectorAll('button[data-tab]')];nav.replaceChildren();
-  for(const [title,ids] of sections){const area=document.createElement('div');area.className='ayda-nav-section';const h=document.createElement('span');h.className='ayda-nav-heading';h.textContent=title;area.append(h);const menu=document.createElement('div');menu.className='ayda-nav-items';for(const id of ids){const b=buttons.find(x=>x.dataset.tab===id);if(b){if(id==='health')b.textContent='Sistem Sağlığı';if(id==='overview')b.textContent='Ana Ekran';if(id==='alerts')b.textContent='Takip Uyarıları';menu.append(b);}}area.append(menu);nav.append(area);}
+  for(const [title,ids] of sections){const area=document.createElement('div');area.className='ayda-nav-section';const h=document.createElement('span');h.className='ayda-nav-heading';h.textContent=title;area.append(h);const menu=document.createElement('div');menu.className='ayda-nav-items';for(const id of ids){const b=buttons.find(x=>x.dataset.tab===id);if(b){if(id==='health')b.textContent='Sistem Sağlığı';if(id==='overview')b.textContent='Genel Bakış';if(id==='alerts')b.textContent='Eksik Raporlar';if(id==='students')b.textContent='Öğrenciler';if(id==='attendance')b.textContent='Yoklama · Ödev';if(id==='groups')b.textContent='Gruplar';if(id==='lessons')b.textContent='Ders Raporları';if(id==='teachers')b.textContent='Öğretmen Saatleri';if(id==='schedule')b.textContent='Ders Programı';if(id==='messages')b.textContent='Mesajlar';menu.append(b);}}area.append(menu);nav.append(area);}
  })();
  $('ownerNav').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)activate(b.dataset.tab);});
- window.addEventListener('hashchange',()=>{const n=location.hash.slice(1);if(['overview','messages','alerts','attendance','students','groups','health','lessons','teachers','schedule','accounts'].includes(n)&&token)activate(n);});
+ window.addEventListener('hashchange',()=>{const n=location.hash.slice(1);if(['overview','messages','alerts','attendance','students','groups','health','lessons','teachers','schedule'].includes(n)&&token)activate(n);});
  for(const b of document.querySelectorAll('[data-jump]'))b.addEventListener('click',()=>activate(b.dataset.jump));
  for(const id of ['ownerStudentSearch','ownerStudentGroup','ownerStudentStatus','ownerStudentSort'])$(id).addEventListener(id==='ownerStudentSearch'?'input':'change',renderStudents);
  for(const id of ['ownerGroupSearch','ownerGroupLevel','ownerGroupStatus'])$(id).addEventListener(id==='ownerGroupSearch'?'input':'change',renderGroups);
