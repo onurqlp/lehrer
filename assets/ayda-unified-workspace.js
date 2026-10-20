@@ -69,7 +69,18 @@
   previousScroll=window.scrollY;
   modal.hidden=false;document.body.classList.add('ayda-workspace-open');document.body.style.overflow='hidden';
   title.textContent=view==='admin'?'Yönetim İşlemleri · Düzenle':'Akademik Kontrol · İzleme';
-  if(frame.src!==url.href||currentView!==view)frame.src=url.href;
+  let reused=false;
+  if(currentView===view&&frame.src&&frame.src!=='about:blank'){
+   try{
+    const child=frame.contentWindow;
+    if(view==='tracking'&&child?.AYDA_OWNER_BRIDGE?.ready?.()){
+     child.AYDA_OWNER_BRIDGE.openTab(context.tab||'overview');reused=true;
+    }else if(view==='admin'&&context.fix&&child?.AYDA_HEALTH_EDITORS?.open){
+     child.AYDA_HEALTH_EDITORS.open(context);reused=true;
+    }
+   }catch(_){}
+  }
+  if(!reused&&(frame.src!==url.href||currentView!==view))frame.src=url.href;
   currentView=view;closeBtn.focus({preventScroll:true});
  }
  // Alt sayfada aynı UI açılmaz; tüm geçişler tek ana panelin penceresinde kalır.
@@ -126,7 +137,7 @@
  document.addEventListener('keydown',event=>{
   if(!modal||modal.hidden)return;
   if(event.key==='Escape'){event.preventDefault();close();}
-  else if(event.key==='Tab'&&document.activeElement===closeBtn){event.preventDefault();closeBtn.focus();}
+
  });
  // Alt sayfa iframe'i yönetildiğinde parent direkt hedef ekranı açar.
  window.addEventListener('message',event=>{
