@@ -9,7 +9,11 @@
   link.id='aydaOwnerEntry';link.href='./yonetici.html';link.hidden=true;
   link.setAttribute('aria-label','Akademik kontrol ve yönetici paneline geç');
   host.insertBefore(link,host.querySelector('.ayda-header-help'));
-  const sync=()=>{const allowed=typeof data!=='undefined'&&data?.user?.role==='admin'&&!$('app')?.classList.contains('hidden');link.hidden=!allowed;};
+  const mobile=el('a','ayda-owner-entry-mobile','↗ Yönetici panelini aç');
+  mobile.href='./yonetici.html';mobile.hidden=true;
+  mobile.setAttribute('aria-label','Yönetici kontrol ve izleme paneline geç');
+  document.querySelector('#app > .hero')?.append(mobile);
+  const sync=()=>{const allowed=typeof data!=='undefined'&&data?.user?.role==='admin'&&!$('app')?.classList.contains('hidden');link.hidden=!allowed;mobile.hidden=!allowed;};
   for(const event of ['ayda:login','ayda:logout','ayda:admin-data-updated'])window.addEventListener(event,sync);
   sync();return;
  }
