@@ -1095,6 +1095,21 @@ function aydaIntegrityStatus_(user){
 
 
 /** AYDA öğrenci bilgi formu: mevcut çalışma kitabında ayrı sekme. */
+function aydaSetTeacherAccountStatus_(user,p){
+ if(user.role!=='admin')throw Error('Yönetici yetkisi gerekli.');
+ const id=String(p.accountId||'').trim(),active=p.active===true;
+ const lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  const sh=aydaSheet_('KULLANICILAR'),values=sh.getDataRange().getDisplayValues(),headers=values[0];
+  const idCol=headers.indexOf('Kullanıcı ID'),statusCol=headers.indexOf('Durum'),roleCol=headers.indexOf('Rol');
+  if(idCol<0||statusCol<0||roleCol<0)throw Error('KULLANICILAR sütunları eksik.');
+  const at=values.findIndex((r,i)=>i>0&&r[idCol]===id&&r[roleCol]==='Öğretmen');
+  if(at<1)throw Error('Öğretmen hesabı bulunamadı.');
+  sh.getRange(at+1,statusCol+1).setValue(active?'Aktif':'Pasif');
+  SpreadsheetApp.flush();
+  return {accountId:id,status:active?'Aktif':'Pasif'};
+ }finally{lock.releaseLock();}
+}
 function aydaFormSubmit_(input){
   const field=(v,max)=>String(v==null?'':v).trim().slice(0,max).replace(/^[=+@-]/,' ');
   if(input.website)throw Error('İstek reddedildi.');
@@ -1141,6 +1156,7 @@ function doGet(e){
     else if(action==='createTeacher')out={ok:true,data:aydaAdminCreateTeacher_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='createGroup')out={ok:true,data:aydaAdminCreateGroup_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='updateGroup')out={ok:true,data:aydaAdminSetGroup_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
+    else if(action==='setTeacherAccountStatus')out={ok:true,data:aydaSetTeacherAccountStatus_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='rotateKey')out={ok:true,data:aydaRotateKey_(user,p.target)};
     else if(action==='vaultExport')out={ok:true,data:{rows:aydaVaultRows_(user)}};
     else if(action==='adminStudents')out={ok:true,data:{students:aydaAdminStudentList_(user)}};
