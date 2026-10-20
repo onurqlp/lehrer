@@ -256,7 +256,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   const head=add(box,'div','owner-student-head'),identity=add(head,'div');
   add(identity,'h3','',s.name);add(identity,'small','',gName(s.groupId)+' · '+tName(g?.teacherId));
   head.append(pill(formats[status(s)],status(s)));
-  if(status(s)==='danger'&&isAdmin()){
+  if(false&&status(s)==='danger'){
    const state=add(box,'div','owner-student-recent');add(state,'span','','İlgilenme durumu: '+(s.followupStatus||'Yeni'));
    for(const option of ['Takipte','Çözüldü']){
     const b=quick(option,async()=>{b.disabled=true;try{const out=await api('setFollowup',token,{payload:payload64(JSON.stringify({studentId:s.id,status:option}))});if(!out.saved)throw Error('Kayıt onayı alınamadı.');tracking=await api('trackingSummary',token);renderAll();}catch(e){alert('Takip güncellenemedi: '+e.message);}finally{b.disabled=false;}});
@@ -275,8 +275,8 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    for(const x of rows)add(ul,'li','',lastRecord(x,t));
    if(!rows.length)add(ul,'li','','Henüz kayıt yok');
   }
-  window.AYDA_NOTES?.mount(box,s,(action,params)=>api(action,token,params));
-  box.append(quick('Öğrenciye WhatsApp mesajı hazırla',()=>{activate('messages');window.dispatchEvent(new CustomEvent('ayda:compose-student',{detail:{studentId:s.id,groupId:s.groupId}}));}));
+  // İzleme ekranı salt okunurdur; not ve takip düzenlemeleri yalnızca Admin Panelinde yapılır.
+  if(['danger','watch'].includes(status(s)))box.append(quick('Devamsızlık / ödev için WhatsApp hatırlatması',()=>{activate('messages');window.dispatchEvent(new CustomEvent('ayda:compose-student',{detail:{studentId:s.id,groupId:s.groupId}}));}));
   box.append(quick('Öğrenci raporunu yazdır / PDF',()=>printStudent(s)));
   return box;
  }
@@ -528,7 +528,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    add(card,'strong','',issue.title);add(card,'p','',issue.detail);
    if(issue.actions.length){
     const buttons=add(card,'div','ayda-health-card-actions');
-    for(const item of issue.actions.filter(x=>isAdmin()||x.compose||x.refresh))buttons.append(quick(item.label,()=>runAction(item)));
+    for(const item of issue.actions.filter(x=>x.compose||x.refresh))buttons.append(quick(item.label,()=>runAction(item)));
    }
   }
  }
