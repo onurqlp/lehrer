@@ -3,7 +3,7 @@ const AYDA_DB_ID = '1FDLlugevKNHLP83M1uZGjjf4MNz0NV91KkxdZ6yJheg';
 const AYDA_TZ = 'Europe/Istanbul';
 // Sıfırdan başlayan sistem için eski dersleri eksik kayda dahil etme.
 const AYDA_TRACKING_START = '2026-10-20';
-const AYDA_API_VERSION = '2026-10-20.4';
+const AYDA_API_VERSION = '2026-10-20.5';
 
 function aydaDb_(){ return SpreadsheetApp.openById(AYDA_DB_ID); }
 function aydaSheet_(name){ const s=aydaDb_().getSheetByName(name); if(!s) throw Error('Tablo bulunamadı: '+name); return s; }
@@ -234,6 +234,91 @@ function aydaRotateKey_(user,target){
  * Erişim: sadece doğrulanmış öğretmen kendi aktif gruplarını, yönetici aktif grupları görür.
  * Herkese açık publicDashboard yanıtına öğrenci ismi / yoklama eklenmez.
  */
+
+
+/** Yönetici: gruba tek öğretmen atar. Diğer sınıf atamalarını değiştirmez. */
+function aydaAdminSetGroupTeacher_(user,p){
+ if(user.role!=='admin')throw Error('Yalnızca yönetici öğretmen atayabilir.');
+ const id=String(p.id||'').trim(),teacherId=String(p.teacherId||'').trim();
+ if(!id||!teacherId||!aydaTeachers_().some(t=>t.id===teacherId&&t.status==='Aktif'))throw Error('Aktif bir öğretmen ve grup seçin.');
+ const lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  const sh=aydaSheet_('GRUPLAR'),v=sh.getDataRange().getDisplayValues(),h=v[0],ci=h.indexOf('ID'),ti=h.indexOf('Öğretmen ID');
+  if(ci<0||ti<0)throw Error('Grup başlıkları eksik.');
+  const ix=v.findIndex((r,i)=>i>0&&r[ci]===id);if(ix<1)throw Error('Grup bulunamadı.');
+  const old=v[ix][ti];if(old===teacherId)return {saved:true,id,teacherId,unchanged:true};
+  const cell=sh.getRange(ix+1,ti+1);
+  try{cell.setValue(teacherId);SpreadsheetApp.flush();if(cell.getDisplayValue()!==teacherId)throw Error('Google yazmayı doğrulamadı.');}
+  catch(error){try{cell.setValue(old);}catch(rollbackError){Logger.log('AYDA teacher rollback '+rollbackError.message);}throw Error('Öğretmen ataması tamamlanamadı: '+error.message);}
+  return {saved:true,id,teacherId,previousTeacherId:old};
+ }finally{lock.releaseLock();}
+}
+/** Yönetici: var olan gruba ait haftalık gün ve saatleri topluca günceller.
+ * İptal edilen günlerin satırları Pasif yapılır; eski ders/yoklama geçmişi korunur.
+ */
+function aydaAdminUpdateGroupSchedule_(user,p){
+ if(user.role!=='admin')throw Error('Yalnızca yönetici program değiştirebilir.');
+ const id=String(p.id||'').trim(),days=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
+ const entries=Array.isArray(p.entries)?p.entries:[];
+ if(!id||!entries.length||entries.length>7)throw Error('Grup ve en az bir ders günü seçin.');
+ const picked=new Set();
+ for(const item of entries){
+  const day=String(item.day||''),start=String(item.start||''),end=String(item.end||'');
+  if(!days.includes(day)||picked.has(day))throw Error('Tekrarlanan veya tanımsız ders günü.');
+  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(start)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(end)||end<=start)throw Error(day+' başlangıç ve bitiş saatlerini kontrol edin.');
+  picked.add(day);
+ }
+ const lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  if(!aydaRead_('GRUPLAR').some(g=>g['ID']===id&&g['Durum']==='Aktif'))throw Error('Aktif grup bulunamadı.');
+  const sh=aydaSheet_('HAFTALIK_PROGRAM'),all=sh.getDataRange().getValues(),h=all[0].map(v=>String(v).trim());
+  const keys=['Grup ID','Gün','Başlangıç','Bitiş','Durum'],col={};
+  for(const key of keys){col[key]=h.indexOf(key);if(col[key]<0)throw Error('Programda eksik sütun: '+key);}
+  const rows=[],existing=new Set();
+  all.slice(1).forEach((r,i)=>{if(String(r[col['Grup ID']])!==id)return;
+   const day=String(r[col['Gün']]);if(existing.has(day))throw Error('Grubun aynı gün için mükerrer programı var: '+day);
+   existing.add(day);rows.push({row:i+2,old:r.slice(),day});});
+  const chosen=new Map(entries.map(x=>[String(x.day),x]));
+  const changes=rows.map(x=>{const n=x.old.slice(),entry=chosen.get(x.day);
+   if(entry){n[col['Başlangıç']]=entry.start;n[col['Bitiş']]=entry.end;n[col['Durum']]='Aktif';}
+   else n[col['Durum']]='Pasif';
+   return {...x,next:n};
+  });
+  const additions=entries.filter(x=>!existing.has(x.day)).map(x=>{const row=Array(h.length).fill('');
+   row[col['Grup ID']]=id;row[col['Gün']]=x.day;row[col['Başlangıç']]=x.start;row[col['Bitiş']]=x.end;row[col['Durum']]='Aktif';return row;});
+  const before=sh.getLastRow();
+  try{
+   for(const x of changes)sh.getRange(x.row,1,1,h.length).setValues([x.next]);
+   if(additions.length)sh.getRange(before+1,1,additions.length,h.length).setValues(additions);
+   SpreadsheetApp.flush();
+   const current=sh.getDataRange().getDisplayValues().slice(1).filter(r=>r[col['Grup ID']]===id&&r[col['Durum']]==='Aktif');
+   if(current.length!==entries.length||entries.some(e=>!current.some(r=>r[col['Gün']]===e.day&&r[col['Başlangıç']]===e.start&&r[col['Bitiş']]===e.end)))throw Error('Program yazma doğrulaması başarısız.');
+  }catch(error){
+   let failed=false;
+   try{const extra=sh.getLastRow()-before;if(extra>0)sh.deleteRows(before+1,extra);}catch(e){failed=true;Logger.log('Schedule append rollback: '+e.message);}
+   for(const x of changes){try{sh.getRange(x.row,1,1,h.length).setValues([x.old]);}catch(e){failed=true;Logger.log('Schedule row rollback: '+e.message);}}
+   throw Error((failed?'Program kısmen değişmiş olabilir; tabloyu kontrol edin: ':'Program geri alındı: ')+error.message);
+  }
+  return {saved:true,id,days:entries.length,disabledDays:rows.filter(x=>!picked.has(x.day)).length};
+ }finally{lock.releaseLock();}
+}
+/** Yönetici: biten grubu tamamlandı/pasif olarak işaretler; öğrenci ve dersleri silmez. */
+function aydaAdminSetGroupStatus_(user,p){
+ if(user.role!=='admin')throw Error('Yalnızca yönetici grup durumunu değiştirebilir.');
+ const id=String(p.id||'').trim(),status=String(p.status||'');
+ if(!['Aktif','Pasif','Tamamlandı'].includes(status))throw Error('Geçersiz grup durumu.');
+ const lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  const sh=aydaSheet_('GRUPLAR'),v=sh.getDataRange().getDisplayValues(),h=v[0],ci=h.indexOf('ID'),si=h.indexOf('Durum');
+  if(ci<0||si<0)throw Error('Grup başlıkları eksik.');
+  const ix=v.findIndex((r,i)=>i>0&&r[ci]===id);if(ix<1)throw Error('Grup bulunamadı.');
+  const old=v[ix][si];if(old===status)return {saved:true,id,status,unchanged:true};
+  const cell=sh.getRange(ix+1,si+1);
+  try{cell.setValue(status);SpreadsheetApp.flush();if(cell.getDisplayValue()!==status)throw Error('Durum güncellenemedi.');}
+  catch(error){try{cell.setValue(old);}catch(rollback){Logger.log('Group status rollback: '+rollback.message);}throw Error(error.message);}
+  return {saved:true,id,status};
+ }finally{lock.releaseLock();}
+}
 
 /** Yönetici düzenlemeleri: mevcut öğrenci kimlikleri, yoklama ve ödev ilişkileri korunur. */
 function aydaAdminAssignTeacher_(user,p){
@@ -1189,6 +1274,9 @@ function doGet(e){
     else if(action==='createTeacher')out={ok:true,data:aydaAdminCreateTeacher_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='createGroup')out={ok:true,data:aydaAdminCreateGroup_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='updateGroup')out={ok:true,data:aydaAdminSetGroup_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
+    else if(action==='setGroupTeacher')out={ok:true,data:aydaAdminSetGroupTeacher_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
+    else if(action==='updateGroupSchedule')out={ok:true,data:aydaAdminUpdateGroupSchedule_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
+    else if(action==='setGroupStatus')out={ok:true,data:aydaAdminSetGroupStatus_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='setTeacherAccountStatus')out={ok:true,data:aydaSetTeacherAccountStatus_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='rotateKey')out={ok:true,data:aydaRotateKey_(user,p.target)};
     else if(action==='vaultExport')out={ok:true,data:{rows:aydaVaultRows_(user)}};
