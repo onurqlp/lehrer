@@ -24,3 +24,14 @@
 
 .ayda-fix-back-link{display:inline-flex;margin:0 0 12px;color:#126c86;font-weight:800;font-size:13px;text-decoration:none}
 .ayda-fix-back-link:hover{text-decoration:underline}
+
+.ayda-shared-health{margin:14px 0;padding:18px;border-radius:14px;border:1px solid #c8e4e9;background:#f8fcfd}
+.ayda-shared-health-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.ayda-shared-health-head strong{font-size:17px;color:#164c64}
+.ayda-shared-health-head p{margin:5px 0 0}
+.ayda-shared-health-head a{padding:10px 14px;border-radius:9px;background:#126f87;color:white;text-decoration:none;font-weight:700}
+.ayda-shared-health-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:10px;margin-top:15px}
+.ayda-shared-health-item{padding:11px 13px;background:#fff;border:1px solid #dae9ed;border-left:3px solid #e2a654;border-radius:10px;display:flex;flex-direction:column;gap:5px}
+.ayda-shared-health-item strong{font-size:13px;color:#244353;overflow-wrap:anywhere}
+.ayda-shared-health-item small{font-size:12px;color:#627482}
+.ayda-shared-health-item a{font-size:12px;color:#087092;font-weight:800;align-self:flex-start}
