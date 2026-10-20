@@ -33,3 +33,7 @@ body.ayda-admin-health-page #aydaAdminHealthIssues{max-height:none}
 #aydaFormResponses{display:block;width:100%;height:min(790px,83vh);min-height:420px;border:1px solid #d9e5eb;border-radius:12px;background:#fff}
 @media(max-width:780px){#adminArea .adminNav button{min-width:calc(50% - 7px);font-size:12px}#aydaAdminQuickActions button{flex:1 1 46%}.ayda-form-links{grid-template-columns:1fr}#aydaFormResponses{height:75vh;min-height:500px}}
 @media(max-width:450px){#adminArea .adminNav{padding:7px}#adminArea .adminNav button{padding:10px 8px}#adminArea .adminQuick{padding:12px}}
+
+.ayda-health-followup-actions{display:flex;gap:7px;flex-wrap:wrap;border-top:1px solid #e3edf1;padding-top:9px;margin-top:7px}
+.ayda-health-followup-actions button{min-height:35px;padding:7px 11px;font-size:12px;border:1px solid #c2dde7;border-radius:9px;background:#eaf7fa;color:#075c73;font-weight:750;cursor:pointer}
+.ayda-health-followup-actions button:disabled{opacity:.6;cursor:wait}
