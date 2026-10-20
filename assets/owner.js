@@ -69,7 +69,7 @@
  const errorMessage=message=>{$('ownerError').textContent=message||'';};
  const setLoading=value=>{loading=value;$('ownerLoginButton').disabled=value;$('ownerRefresh').disabled=value;};
  function activate(next){
-  const name=['overview','students','attendance','groups','lessons','teachers','schedule','alerts','messages','accounts'].includes(next)?next:'overview';
+  const name=['overview','students','attendance','groups','health','lessons','teachers','schedule','alerts','messages','accounts'].includes(next)?next:'overview';
   tab=name;
   for(const p of document.querySelectorAll('.owner-panel'))p.hidden=p.id!=='owner-'+name;
   for(const b of $('ownerNav').querySelectorAll('button[data-tab]')){b.classList.toggle('active',b.dataset.tab===name);b.setAttribute('aria-current',b.dataset.tab===name?'page':'false');}
@@ -90,7 +90,7 @@
    if(!$('ownerLessonMonth').value)$('ownerLessonMonth').value=today().slice(0,7);
    // Genel bakış hazır olur olmaz göster; akademik ayrıntılar paralel yüklenir.
    renderAll();
-   activate(['messages','alerts','attendance','students','groups','lessons','teachers','schedule','accounts'].includes(location.hash.slice(1))?location.hash.slice(1):(sessionStorage.getItem('aydaOwnerTab')||'overview'));
+   activate(['messages','alerts','attendance','students','groups','health','lessons','teachers','schedule','accounts'].includes(location.hash.slice(1))?location.hash.slice(1):(sessionStorage.getItem('aydaOwnerTab')||'overview'));
    await loadTracking();
    window.dispatchEvent(new Event('ayda:owner-ready'));
 
@@ -312,6 +312,7 @@
   for(const t of rows){
    const box=add(root,'article','owner-teacher-card');const hd=add(box,'div','owner-group-head');add(hd,'h3','',t.teacher.name);hd.append(pill(t.teacher.status||'—',t.teacher.status==='Aktif'?'regular':'watch'));
    const gs=(overview.groups||[]).filter(g=>g.teacherId===t.teacher.id);
+   add(box,'p','','Ders alanı: '+(gs.length?'Normal kurs / grup':'Özel ders / henüz grup atanmamış') );
    add(box,'p','','Grupları: '+(gs.map(g=>g.name+' ('+g.level+')').join(', ')||'Atanmış grup yok'));
    add(box,'p','','Bu ay: '+t.done+' ders · '+hoursText(t.hours)+' saat · '+t.canceled+' iptal · '+t.postponed+' erteleme');
    add(box,'p','','Öğretmen ID: '+t.teacher.id+' · Kullanıcı ID: '+(t.teacher.userId||'—'));
@@ -400,11 +401,31 @@
   }));
   table('ownerVaultTable',['Hesap','Adı','Rol','Oluşturulma'],vault.map(v=>[v.accountId,v.name,v.role,v.created]));
  }
+ function renderHealth(){
+  const root=$('ownerHealthIssues'),summary=$('ownerHealthOverview');if(!root||!summary)return;
+  root.replaceChildren();summary.replaceChildren();
+  const groups=overview.groups||[],teachers=overview.teachers||[],schedule=overview.schedule||[],issues=[];
+  const validTeachers=new Set(teachers.map(t=>t.id));
+  const validGroups=new Set(groups.map(g=>g.id));
+  const warn=(title,detail)=>issues.push({title,detail});
+  for(const g of groups){
+   if(g.status!=='Aktif')continue;
+   if(!g.teacherId||!validTeachers.has(g.teacherId))warn(g.name+' · Öğretmen atanmadı','Öğretmen ID: '+(g.teacherId||'boş'));
+   if(!schedule.some(r=>r.groupId===g.id&&r.status==='Aktif'))warn(g.name+' · Haftalık program yok','Bu sınıfın aktif ders günü ve saati bulunamadı.');
+   if(!Number(g.students))warn(g.name+' · Öğrenci sayısı sıfır','Sınıf öğrenci sayısı ile kayıtlı öğrenci listesini kontrol edin.');
+  }
+  for(const t of teachers.filter(t=>t.status==='Aktif'&&!groups.some(g=>g.teacherId===t.id)))warn(t.name+' · Sınıf eşleşmesi yok','Özel ders öğretmeniyse bu durum normal olabilir.');
+  for(const r of schedule)if(r.status==='Aktif'&&!validGroups.has(r.groupId))warn('Program · Tanımsız sınıf','Grup ID: '+r.groupId);
+  for(const row of reminders?.items||[])warn((row.type==='attendance'?'Eksik yoklama':'Eksik ders raporu')+' · '+(row.group||'Sınıf'),fmt(row.date)+' · '+tName(row.teacherId));
+  summary.append(kpi('Aktif sınıf',groups.filter(g=>g.status==='Aktif').length),kpi('Aktif öğretmen',teachers.filter(t=>t.status==='Aktif').length),kpi('Kontrol gerektiren',issues.length),kpi('Eksik kayıt',reminders?.items?.length??'—'));
+  if(!issues.length){showEmpty('ownerHealthIssues',reminders?'Kontrol edilen alanlarda eksiklik bulunamadı.':'Temel sınıf kontrolleri tamam. Eksik kayıt hizmetinden henüz yanıt alınmadı.');return;}
+  for(const issue of issues){const card=add(root,'article','note-card warn');add(card,'strong','',issue.title);add(card,'p','',issue.detail);}
+ }
  function renderAll(){
   if(!overview)return;
   const work=[
    ['ownerKpis',renderKpis],['ownerHighlights',renderHighlights],['ownerToday',renderOverview],['ownerWeekly',renderWeekly],
-   ['ownerGroupList',renderGroups],['ownerStudentList',renderStudents],['ownerAttendanceKpis',renderAttendance],
+   ['ownerGroupList',renderGroups],['ownerHealthIssues',renderHealth],['ownerStudentList',renderStudents],['ownerAttendanceKpis',renderAttendance],
    ['ownerLessonList',renderLessons],['ownerTeacherTable',renderTeachers],['ownerScheduleList',renderSchedule],
    ['ownerAlertList',renderAlerts],['ownerAccountsTable',renderAccounts]
   ];
@@ -415,7 +436,7 @@
  $('ownerRefresh').addEventListener('click',refresh);
  $('ownerLogout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');token='';overview=null;tracking=null;reminders=null;contactDirectory=null;lessonHomework=null;activeApi='';$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';const skip=$('ownerSkip');if(skip){skip.href='#ownerLogin';skip.textContent='Giriş bölümüne geç';}window.dispatchEvent(new Event('ayda:owner-logout'));});
  $('ownerNav').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)activate(b.dataset.tab);});
- window.addEventListener('hashchange',()=>{const n=location.hash.slice(1);if(['overview','messages','alerts','attendance','students','groups','lessons','teachers','schedule','accounts'].includes(n)&&token)activate(n);});
+ window.addEventListener('hashchange',()=>{const n=location.hash.slice(1);if(['overview','messages','alerts','attendance','students','groups','health','lessons','teachers','schedule','accounts'].includes(n)&&token)activate(n);});
  for(const b of document.querySelectorAll('[data-jump]'))b.addEventListener('click',()=>activate(b.dataset.jump));
  for(const id of ['ownerStudentSearch','ownerStudentGroup','ownerStudentStatus','ownerStudentSort'])$(id).addEventListener(id==='ownerStudentSearch'?'input':'change',renderStudents);
  for(const id of ['ownerGroupSearch','ownerGroupLevel','ownerGroupStatus'])$(id).addEventListener(id==='ownerGroupSearch'?'input':'change',renderGroups);
