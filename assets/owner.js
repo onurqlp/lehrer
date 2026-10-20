@@ -53,7 +53,8 @@
    let finished=false;
    const finish=(error,data)=>{if(finished)return;finished=true;clearTimeout(timer);delete window[cb];script.remove();error?reject(error):resolve(data);};
    const transport=msg=>{const e=Error(msg);e.transport=true;return e;};
-   const timer=setTimeout(()=>finish(transport('Google yanıtı zaman aşımına uğradı.')),12000);
+   const timeoutMs=action==='backupSetup'?90000:12000;
+   const timer=setTimeout(()=>finish(transport('Google işlemi '+Math.round(timeoutMs/1000)+' saniyede yanıt vermedi. İşlem Google tarafında sürmüş olabilir; yedek durumunu kontrol edin.')),timeoutMs);
    window[cb]=result=>result?.ok?finish(null,result.data):finish(Error(result?.error||'Sunucu geçersiz cevap verdi.'));
    u.searchParams.set('action',action);u.searchParams.set('callback',cb);u.searchParams.set('key',key);for(const [k,v] of Object.entries(params))u.searchParams.set(k,v);
    script.onerror=()=>finish(transport('Google Apps Script bağlantısı kurulamadı.'));
