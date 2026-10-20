@@ -61,7 +61,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    let finished=false;
    const finish=(error,data)=>{if(finished)return;finished=true;clearTimeout(timer);delete window[cb];script.remove();error?reject(error):resolve(data);};
    const transport=msg=>{const e=Error(msg);e.transport=true;return e;};
-   const timeoutMs=action==='backupSetup'?90000:12000;
+   const timeoutMs=action==='backupSetup'?90000:action==='overview'?45000:action==='vaultExport'?50000:30000;
    const timer=setTimeout(()=>finish(transport('Google işlemi '+Math.round(timeoutMs/1000)+' saniyede yanıt vermedi. İşlem Google tarafında sürmüş olabilir; yedek durumunu kontrol edin.')),timeoutMs);
    window[cb]=result=>result?.ok?finish(null,result.data):finish(Error(result?.error||'Sunucu geçersiz cevap verdi.'));
    u.searchParams.set('action',action);u.searchParams.set('callback',cb);u.searchParams.set('key',key);for(const [k,v] of Object.entries(params))u.searchParams.set(k,v);
@@ -71,9 +71,13 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   });
  }
  async function api(action,key,params={}){
+  const activity=window.AYDA_ACTIVITY?.start(action);
+  let activitySuccess=false;
+  try{
   const readOnly=['overview','trackingSummary','reminders','integrityStatus','backupStatus','studentNotes','vaultExport','feedbackInbox','contactDirectory','homeworkTasks','lessonHomework'].includes(action);let err;
-  for(const address of (readOnly?[...new Set([activeApi,...candidates()].filter(Boolean))]:[activeApi||candidates()[0]])){try{const data=await apiRequest(address,action,key,params);activeApi=address;return data;}catch(e){err=e;if(!e.transport)throw e;}}
+  for(const address of (readOnly?[...new Set([activeApi,...candidates()].filter(Boolean))]:[activeApi||candidates()[0]])){try{const data=await apiRequest(address,action,key,params);activeApi=address;activitySuccess=true;return data;}catch(e){err=e;if(!e.transport)throw e;if(/saniyede yanıt vermedi/.test(e.message||''))break;}}
   throw err||Error('Google Apps Script bağlantısı kurulamadı.');
+  }finally{window.AYDA_ACTIVITY?.finish(activity,activitySuccess);}
  }
  const errorMessage=message=>{const target=$('ownerError');if(target)target.textContent=message||'';};
  const setLoading=value=>{loading=value;$('ownerLoginButton').disabled=value;$('ownerRefresh').disabled=value;};
@@ -571,7 +575,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
  }
  $('ownerLoginForm').addEventListener('submit',e=>{e.preventDefault();login($('ownerKey').value);});
  $('ownerRefresh').addEventListener('click',refresh);
- $('ownerLogout').addEventListener('click',()=>{if(isAdmin()){sessionStorage.removeItem('aydaKey');aydaSession.clear();}else viewerSession.clear();document.body.classList.remove('ayda-viewer-mode');token='';overview=null;tracking=null;reminders=null;contactDirectory=null;lessonHomework=null;activeApi='';$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';const skip=$('ownerSkip');if(skip){skip.href='#ownerLogin';skip.textContent='Giriş bölümüne geç';}window.dispatchEvent(new Event('ayda:owner-logout'));});
+ $('ownerLogout').addEventListener('click',()=>{if(isAdmin()){sessionStorage.removeItem('aydaKey');aydaSession.clear();}else viewerSession.clear();document.body.classList.remove('ayda-viewer-mode');token='';overview=null;tracking=null;reminders=null;contactDirectory=null;lessonHomework=null;activeApi='';$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';const skip=$('ownerSkip');if(skip){skip.href='#ownerLogin';skip.textContent='Giriş bölümüne geç';}window.AYDA_ACTIVITY?.clear();window.dispatchEvent(new Event('ayda:owner-logout'));});
  // Yönetici menüsünü görev odaklı üç gruba ayır; mevcut sekme ve erişim davranışı korunur.
  (function organizeOwnerNav(){
   const nav=$('ownerNav');if(!nav||nav.dataset.organized)return;nav.dataset.organized='true';
@@ -610,6 +614,14 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   const esc=x=>'"'+String(x??'').replace(/^[\s]*[=+@-]/,m=>"'"+m).replace(/"/g,'""')+'"';
   const csv='\ufeff'+exportRows.map(r=>r.map(esc).join(';')).join('\r\n');
   const u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=u;a.download='AYDA-ogretmen-saatleri-'+$('ownerTeacherMonth').value+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
+ });
+ // Yönetim verilerini güncelle: rapor veya öğrenci kaydı oluşturmaz.
+ window.AYDA_ACTIVITY?.bindRefresh(async()=>{
+  if(!token||loading)return;
+  const latest=await api('overview',token);
+  if(!['admin','viewer'].includes(latest?.user?.role))throw Error('Yönetim oturumu doğrulanamadı.');
+  overview=latest;await loadTracking();
+  window.dispatchEvent(new Event('ayda:owner-ready'));
  });
  // Bir kere paylaşılan özel bağlantı cihazı eşleştirir; anahtar adres çubuğunda kalmaz.
  const linkToken=/^#izleme=(IZ-[A-Z0-9]+)$/i.exec(location.hash)?.[1]||'';
