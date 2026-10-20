@@ -1148,6 +1148,8 @@ function aydaFormSummary_(user){
  rows:rows.slice(-300).reverse().map(r=>({id:r[0],date:r[1],email:r[2],name:r[3]+' '+r[4],birthDate:r[5],phone:r[6],levels:r[7],other:r[8],city:r[9],occupation:r[10],status:r[11]}))};
 }
 
+function aydaSurveyOptions_(){return {groups:aydaRead_('GRUPLAR').filter(x=>x['Durum']==='Aktif').map(x=>({id:x['ID'],name:x['Grup'],teacherId:x['Öğretmen ID']})),teachers:aydaRead_('OGRETMENLER').filter(x=>x['Durum']==='Aktif').map(x=>({id:x['ID'],name:x['Öğretmen']}))};}
+function aydaSurveySubmit_(p){const o=aydaSurveyOptions_(),g=o.groups.find(x=>x.id===p.groupId),t=o.teachers.find(x=>x.id===p.teacherId);if(!g||!t)throw Error('Grup ve eğitmen seçimi geçersiz.');if(p.teacherType==='kurs'&&g.teacherId!==t.id)throw Error('Kurs eğitmeni bu gruba bağlı değil.');const score=Number(p.score);if(!Number.isInteger(score)||score<1||score>5||!['Evet','Belki','Kararsızım','Hayır'].includes(p.recommend))throw Error('Zorunlu alanlar eksik.');for(const k of ['clarity','participation','progress','materials'])if(!['Evet','Hayır','Diğer'].includes(p[k]))throw Error('Değerlendirme eksik.');const str=k=>String(p[k]||'').trim().slice(0,1200);const lock=LockService.getScriptLock();lock.waitLock(20000);try{let sh=aydaDb_().getSheetByName('MEMNUNIYET_ANKETI');if(!sh){sh=aydaDb_().insertSheet('MEMNUNIYET_ANKETI');sh.appendRow(['ID','Tarih','Grup ID','Grup','Eğitmen ID','Eğitmen','Tür','Puan','Öneri','Anlatım','Anlatım notu','Katılım','Katılım notu','İlerleme','İlerleme notu','Materyaller','Materyal notu','Kurs hocası görüşü','Konuşma hocası görüşü','En iyi yön','Geliştirme','Ek not']);}const id=Utilities.getUuid();sh.appendRow([id,new Date(),g.id,g.name,t.id,t.name,str('teacherType'),score,str('recommend'),str('clarity'),str('clarityNote'),str('participation'),str('participationNote'),str('progress'),str('progressNote'),str('materials'),str('materialsNote'),str('courseTeacherNote'),str('speakingTeacherNote'),str('best'),str('improve'),str('additional')]);SpreadsheetApp.flush();return {saved:true,id:id};}finally{lock.releaseLock();}}
 function doGet(e){
   const p=e&&e.parameter||{},cb=String(p.callback||'');
   if(!/^ayda_cb_[A-Za-z0-9_]{1,64}$/.test(cb))return ContentService.createTextOutput('Invalid callback').setMimeType(ContentService.MimeType.TEXT);
@@ -1155,6 +1157,8 @@ function doGet(e){
   try{
     const action=String(p.action||'overview');
     if(action==='ping'){out={ok:true,data:{status:'ok',version:'2026-10-19.8'}};}
+    else if(action==='surveyOptions'){out={ok:true,data:aydaSurveyOptions_()};}
+    else if(action==='submitSurvey'){const raw=Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8');if(raw.length>16000)throw Error('Anket çok uzun.');out={ok:true,data:aydaSurveySubmit_(JSON.parse(raw))};}
     else if(action==='publicDashboard'){out={ok:true,data:aydaPublicDashboard_()};}
     else if(action==='submitInfoForm'){const raw=Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8');if(raw.length>5000)throw Error('Form boyutu geçersiz.');out={ok:true,data:aydaFormSubmit_(JSON.parse(raw))};}
     else if(action==='publicTrackingDashboard'){out={ok:false,error:'Öğrenci bilgileri anonim erişime kapalı.'};}
