@@ -116,3 +116,9 @@ body.ayda-manager #ownerApp .owner-heading .ayda-archive-shortcut{margin:0}
 body.ayda-internal .ayda-mobile-archive-link{display:flex;align-items:center;text-align:left;min-height:50px;padding:13px;border:1px solid #cbe2e9;border-radius:11px;background:#e5f3f7;color:#135d73!important;font-size:13px;font-weight:800;text-decoration:none}
 @media(max-width:1023px){body.ayda-manager #ownerApp .owner-heading .owner-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}body.ayda-manager #ownerApp .owner-heading .ayda-archive-shortcut{margin:0;background:#16627a;border-color:#ffffff66;color:#fff}}
 @media(min-width:769px){body.ayda-internal .ayda-mobile-archive-link{display:none!important}}
+
+
+body.ayda-is-admin .ayda-group-close-note{display:grid;gap:6px;margin-bottom:13px;padding:14px 16px;border:1px solid #ebd3ad;border-left:4px solid #c18c3a;border-radius:11px;background:#fff7ea}
+body.ayda-is-admin .ayda-group-close-note strong{font-size:13px;color:#724b1c}
+body.ayda-is-admin .ayda-group-close-note span{font-size:12px;line-height:1.6;color:#785a36}
+body.ayda-is-admin .ayda-group-close-note a{margin:5px 0 0}
