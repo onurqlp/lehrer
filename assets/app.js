@@ -194,13 +194,13 @@ $('status').addEventListener('change',aydaSyncSaveLabel);
 function renderHistory(){clear('history');const filter=$('historyFilter').value;const list=[...data.history,...(data.privateHistory||[])].filter(x=>!filter||x.groupId===filter).sort((a,b)=>b.date.localeCompare(a.date));for(const r of list){const g=data.groups.find(x=>x.id===r.groupId),card=$el('div','card historyitem'),line=$el('div','topline');line.append($el('strong','',(g?g.name:(r.student||r.groupId))+' · '+r.date),$el('span','tag',r.status));card.append(line,$el('div','muted','Son tamamlanan ünite: '+r.completed+' · '+r.teacherId),$el('p','',r.note||r.topic||''));if(r.groupId&&(data.user.role==='admin'||r.teacherId===data.user.id)){
   const edit=$el('details','ayda-history-edit'),summary=$el('summary','','✏️ Raporun süre / açıklamasını düzelt');edit.append(summary);
   const area=$el('textarea');area.value=r.note||r.topic||'';area.maxLength=2000;area.minLength=3;area.rows=3;area.setAttribute('aria-label','Düzeltilmiş ders notu');
-  const duration=$el('select');duration.setAttribute('aria-label','Ders süresi (30 dakikalık aralıklar)');
-  for(let min=30;min<=360;min+=30){const h=String(Math.floor(min/60)).padStart(2,'0'),m=min%60?'30':'00';duration.add(new Option(min===30?'30 dakika':Math.floor(min/60)+' saat'+(min%60?' 30 dk':''),h+':'+m));}
-  if(/^(?:00:30|0[1-5]:(?:00|30)|06:00)$/.test(r.actual||''))duration.value=r.actual;
+  const duration=$el('select');duration.setAttribute('aria-label','Ders süresi (1–6 tam saat)');
+  for(let hour=1;hour<=6;hour++){const h=String(hour).padStart(2,'0');duration.add(new Option(hour+' saat',h+':00'));}
+  if(/^0[1-6]:00$/.test(r.actual||''))duration.value=r.actual;
   else {const legacy=new Option('Eski süre: '+(r.actual||'belirtilmemiş')+' · yeni süre seçin','');legacy.disabled=true;legacy.selected=true;duration.insertBefore(legacy,duration.firstChild);}
   const button=$el('button','ayda-inline-btn','Düzeltmeyi kaydet');button.type='button';
   const feedback=$el('small','ayda-note-state');
-  button.addEventListener('click',async()=>{const note=area.value.trim(),actual=duration.value;if(note.length<3){feedback.textContent='En az 3 karakter yazın.';return;}if(!/^(?:00:30|0[1-5]:(?:00|30)|06:00)$/.test(actual)){feedback.textContent='30 dakikalık aralıklarla süre seçin.';return;}button.disabled=true;feedback.textContent='Kaydediliyor…';
+  button.addEventListener('click',async()=>{const note=area.value.trim(),actual=duration.value;if(note.length<3){feedback.textContent='En az 3 karakter yazın.';return;}if(!/^0[1-6]:00$/.test(actual)){feedback.textContent='1–6 arasında tam saat seçin.';return;}button.disabled=true;feedback.textContent='Kaydediliyor…';
    try{await aydaVerifyDurationBackend(actual);const result=await jsonp('updateReport',{payload:utf8Base64Url(JSON.stringify({id:r.id,note,actual}))});if(!result.saved)throw Error('Kayıt onayı alınamadı.');
     feedback.textContent='Düzeltme kaydedildi.';data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
    }catch(err){feedback.textContent='Düzeltme doğrulanamadı; tekrar denemeden önce kontrol edin. '+err.message;}
