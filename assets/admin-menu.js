@@ -74,6 +74,7 @@
    b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected));
   }
   try{sessionStorage.setItem('aydaAdminTab',active)}catch(_){}
+  if(active==='health')window.dispatchEvent(new Event('ayda:health-open'));
   if(active==='forms')window.dispatchEvent(new Event('ayda:forms-open'));
   if(active==='messages')window.dispatchEvent(new Event('ayda:messages-open'));
   if(scroll)nav.scrollIntoView({block:'start',behavior:'smooth'});
@@ -98,6 +99,8 @@
  open(hashTab()||old,false);
  window.addEventListener('hashchange',applyHash);
  window.addEventListener('ayda:login',applyHash);
+ document.getElementById('aydaOpenHealth')?.addEventListener('click',event=>{event.preventDefault();open('health',true);if(location.hash!=='#saglik')history.replaceState(null,'','#saglik');});
+ document.getElementById('aydaAdminHealthShow')?.addEventListener('click',event=>{event.preventDefault();open('health',true);if(location.hash!=='#saglik')history.replaceState(null,'','#saglik');});
  window.AYDA_ADMIN_MENU={open:(tab,sub)=>open(normalize(tab,sub),false),active:()=>active};
  // Her görev tek tıklamayla açılır, yan menüye ya da ayrı sayfaya gitmez.
  const shortcuts=[
