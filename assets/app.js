@@ -159,7 +159,7 @@ function renderHistory(){clear('history');const filter=$('historyFilter').value;
   const feedback=$el('small','ayda-note-state');
   button.addEventListener('click',async()=>{const note=area.value.trim(),actual=duration.value;if(note.length<3){feedback.textContent='En az 3 karakter yazın.';return;}if(!/^(?:00:30|0[1-5]:(?:00|30)|06:00)$/.test(actual)){feedback.textContent='30 dakikalık aralıklarla süre seçin.';return;}button.disabled=true;feedback.textContent='Kaydediliyor…';
    try{await aydaVerifyDurationBackend(actual);const result=await jsonp('updateReport',{payload:utf8Base64Url(JSON.stringify({id:r.id,note,actual}))});if(!result.saved)throw Error('Kayıt onayı alınamadı.');
-    feedback.textContent='Düzeltme kaydedildi.';data=await jsonp('overview');render();
+    feedback.textContent='Düzeltme kaydedildi.';data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
    }catch(err){feedback.textContent='Düzeltme doğrulanamadı; tekrar denemeden önce kontrol edin. '+err.message;}
    finally{button.disabled=false;}
   });
@@ -272,7 +272,7 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  $('note').value='';
  window.AYDA_ATTENDANCE?.resetAfterSave?.();
  try{
-  data=await jsonp('overview');render();
+  data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
   if(data.user.role==='admin')loadTrackingSummary();
  }catch(refreshError){
   message('formMessage',confirmation+' Liste güncellenemedi; sayfayı yenileyin.','success');
@@ -326,7 +326,7 @@ function renderAcademic(){
 }
 for(const id of ['academicLevel','academicStatus','academicSearch'])$(id).addEventListener(id==='academicSearch'?'input':'change',renderAcademic);
 
-async function adminAction(action,payload,output,button){button.disabled=true;clear(output);try{const r=await jsonp(action,{payload:utf8Base64Url(JSON.stringify(payload))});if(r.key){const groupCount=action==='createTeacher'?(payload.groupIds||[]).length:0;const confirmed=action!=='createTeacher'||(r.teacherType===payload.teacherType&&Number(r.assignedGroups)===groupCount);const msg=$el('div','message '+(confirmed?'success':'error'),'Yeni öğretmen '+r.name+' ('+r.teacherId+') oluşturuldu. '+(confirmed?'Giriş anahtarı yalnızca burada gösterilir.':'Google Apps Script sürümü güncel değil: öğretmen türü / grup atamaları doğrulanamadı. Yönetici hesabından kayıtları kontrol edin; aynı öğretmeni tekrar oluşturmayın.'));const area=$el('textarea');area.value=r.key;area.readOnly=true;area.rows=3;$(output).append(msg,area);}else message(output,(r.name||r.id||'Kayıt')+' başarıyla kaydedildi.','success');data=await jsonp('overview');render();}catch(e){message(output,e.message);}finally{button.disabled=false;}}
+async function adminAction(action,payload,output,button){button.disabled=true;clear(output);try{const r=await jsonp(action,{payload:utf8Base64Url(JSON.stringify(payload))});if(r.key){const groupCount=action==='createTeacher'?(payload.groupIds||[]).length:0;const confirmed=action!=='createTeacher'||(r.teacherType===payload.teacherType&&Number(r.assignedGroups)===groupCount);const msg=$el('div','message '+(confirmed?'success':'error'),'Yeni öğretmen '+r.name+' ('+r.teacherId+') oluşturuldu. '+(confirmed?'Giriş anahtarı yalnızca burada gösterilir.':'Google Apps Script sürümü güncel değil: öğretmen türü / grup atamaları doğrulanamadı. Yönetici hesabından kayıtları kontrol edin; aynı öğretmeni tekrar oluşturmayın.'));const area=$el('textarea');area.value=r.key;area.readOnly=true;area.rows=3;$(output).append(msg,area);}else message(output,(r.name||r.id||'Kayıt')+' başarıyla kaydedildi.','success');data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));}catch(e){message(output,e.message);}finally{button.disabled=false;}}
 $('teacherCreateForm').addEventListener('submit',e=>{e.preventDefault();adminAction('createTeacher',{name:$('newTeacherName').value.trim(),teacherType:$('newTeacherType').value,groupIds:[...$('newTeacherGroups').querySelectorAll('input:checked')].map(x=>x.value)},'teacherCreateResult',e.submitter||$('teacherCreateForm').querySelector('button'));});
 $('groupCreateForm').addEventListener('submit',e=>{e.preventDefault();const days=[...$('newGroupDays').querySelectorAll('input:checked')].map(x=>x.value);if(!days.length){message('groupCreateResult','En az bir ders günü seçin.');return;}adminAction('createGroup',{name:$('newGroupName').value.trim(),level:$('newGroupLevel').value,teacherId:$('newGroupTeacher').value,start:$('newGroupStart').value,students:Number($('newGroupStudents').value),total:Number($('newGroupTotal').value),completed:0,days,time:$('newGroupTime').value,end:$('newGroupEnd').value},'groupCreateResult',e.submitter||$('groupCreateForm').querySelector('button'));});
 $('groupUpdateForm').addEventListener('submit',e=>{e.preventDefault();adminAction('updateGroup',{id:$('editGroupId').value,completed:Number($('editCompleted').value),students:Number($('editStudents').value),whatsapp:$('editGroupWhatsapp').value.trim()},'groupUpdateResult',e.submitter||$('groupUpdateForm').querySelector('button'));});
@@ -385,7 +385,7 @@ $('passwordForm').addEventListener('submit',async e=>{
   if(result.isSelf){authKey=password;sessionStorage.setItem('aydaKey',password);}
   $('passwordNew').value='';$('passwordConfirm').value='';
   message('passwordMessage','Yeni parola kaydedildi. Bu hesaba ait eski anahtar geçersiz oldu.','success');
-  data=await jsonp('overview');render();
+  data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
  }catch(err){message('passwordMessage',err.message);}finally{button.disabled=false;}
 });
 $('ownPasswordForm').addEventListener('submit',async e=>{
@@ -454,7 +454,7 @@ $('teacherGroupsForm').addEventListener('submit',async e=>{
  button.disabled=true;
  try{const result=await jsonp('assignTeacherGroups',{payload:utf8Base64Url(JSON.stringify({teacherId,groupIds}))});
   if(result.teacherId!==teacherId||result.assigned!==groupIds.length)throw Error('Google yanıtı beklenen eşleştirmeyi doğrulamıyor.');
-  data=await jsonp('overview');render();message('teacherGroupsResult','Sınıf atamaları kaydedildi: '+result.assigned+' sınıf.','success');
+  data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));message('teacherGroupsResult','Sınıf atamaları kaydedildi: '+result.assigned+' sınıf.','success');
  }catch(err){message('teacherGroupsResult',err.message);}finally{button.disabled=false;}
 });
 $('adminStudentPick').addEventListener('change',aydaPickStudent);
@@ -464,7 +464,7 @@ $('adminStudentForm').addEventListener('submit',async e=>{
  const payload={id:$('adminStudentPick').value,name:$('adminStudentName').value.trim(),groupId:$('adminStudentGroup').value,phone:$('adminStudentPhone').value.trim(),parentPhone:$('adminStudentParentPhone').value.trim(),email:$('adminStudentEmail').value.trim(),note:$('adminStudentNote').value.trim()};
  try{const result=await jsonp('saveStudent',{payload:utf8Base64Url(JSON.stringify(payload))});
   if(!result.id)throw Error('Sunucu öğrenci kimliğini doğrulamadı. Tekrar kaydetmeden önce listeyi yenileyin.');
-  data=await jsonp('overview');render();await aydaLoadAdminStudents();$('adminStudentPick').value=result.id;aydaPickStudent();
+  data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));await aydaLoadAdminStudents();$('adminStudentPick').value=result.id;aydaPickStudent();
   message('adminStudentResult','Öğrenci '+(result.created?'eklendi':'güncellendi')+' · '+result.id,'success');
  }catch(err){message('adminStudentResult',err.message);}finally{b.disabled=false;}
 });
