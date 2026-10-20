@@ -23,3 +23,12 @@ body.ayda-is-admin.ayda-admin-health-page #aydaAdminHealth .ayda-shared-health-l
 #aydaAdminHealthIssues .ayda-shared-health-item>small{color:#5a7180;line-height:1.5}
 #aydaAdminHealthIssues .ayda-health-fix-button{display:inline-flex;align-items:center;justify-content:center;border:1px solid #add3e0;background:#e8f5fa;color:#115d79;border-radius:9px;min-height:38px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer}
 #aydaAdminHealthIssues .ayda-health-fix-button:hover,#aydaAdminHealthIssues .ayda-health-fix-button:focus-visible{background:#146681;color:#fff}
+
+/* Admin health embeds the exact Academic Monitoring health interface. */
+#aydaAdminHealthFrame{display:block;width:100%;height:min(1000px,80vh);min-height:600px;border:1px solid #dce8f1;border-radius:12px;background:#f7fafc}
+.ayda-health-shared-view{width:100%;min-width:0}
+#aydaAdminHealthFrameStatus{margin:8px 0;font-size:13px;color:#4c6178}
+.ayda-health-admin-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:13px 0 3px;border-top:1px solid #e2ecf1;padding-top:12px}
+.ayda-health-admin-tools strong{margin-right:8px;color:#29435a;font-size:13px}
+.ayda-health-admin-tools button{border:1px solid #bcd9e6;border-radius:9px;background:#e9f6fa;color:#155a74;padding:9px 12px;cursor:pointer;font-size:13px;font-weight:700}
+@media(max-width:650px){#aydaAdminHealthFrame{height:75vh;min-height:490px}.ayda-health-admin-tools button{flex:1 1 40%}}
