@@ -23,6 +23,10 @@
  const target=document.getElementById('ownerHighlights');
  if(target)target.insertAdjacentElement('beforebegin',card);else host.prepend(card);
  const bridge=()=>window.AYDA_OWNER_BRIDGE;
+ const refreshPermissions=()=>{const canManage=bridge()?.canManage?.()===true;backup.hidden=!canManage;details.textContent=canManage?'Kontrol canlı kayıtları değiştirmez. Yedekleme ayrı bir Drive kopyası oluşturur.':'Akademik kayıt bütünlüğü ve son yedekleme durumu salt okunur olarak gösterilir.';};
+ window.addEventListener('ayda:owner-role',refreshPermissions);
+ window.addEventListener('ayda:owner-logout',refreshPermissions);
+ refreshPermissions();
  const change=(busy)=>{check.disabled=busy;backup.disabled=busy;};
  async function call(action){
   const b=bridge();if(!b?.ready?.())throw Error('Yönetici oturumu gerekli.');
