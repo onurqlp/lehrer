@@ -3,7 +3,7 @@ const AYDA_DB_ID = '1FDLlugevKNHLP83M1uZGjjf4MNz0NV91KkxdZ6yJheg';
 const AYDA_TZ = 'Europe/Istanbul';
 // Sıfırdan başlayan sistem için eski dersleri eksik kayda dahil etme.
 const AYDA_TRACKING_START = '2026-10-20';
-const AYDA_API_VERSION = '2026-10-20.6';
+const AYDA_API_VERSION = '2026-10-20.7';
 
 function aydaDb_(){ return SpreadsheetApp.openById(AYDA_DB_ID); }
 function aydaSheet_(name){ const s=aydaDb_().getSheetByName(name); if(!s) throw Error('Tablo bulunamadı: '+name); return s; }
@@ -837,7 +837,7 @@ function aydaSaveFeedback_(user,p){
  }finally{lock.releaseLock();}
 }
 function aydaFeedbackReply_(user,p){
- if(!aydaIsMonitor_(user))throw Error('Mesaj yanıtı yetkisi gerekir.');
+ if(user.role!=='admin')throw Error('Öğretmen geri bildirimine yanıt yalnızca Admin Panelinden verilebilir.');
  const id=String((p||{}).id||''),reply=String((p||{}).reply||'').trim();
  const status=String((p||{}).status||'İncelendi');
  if(!['Yeni','İncelendi','Yanıtlandı','Kapatıldı'].includes(status))throw Error('Durum geçersiz.');
@@ -1282,7 +1282,7 @@ function doGet(e){
     else if(action==='submitInfoForm'){const raw=Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8');if(raw.length>5000)throw Error('Form boyutu geçersiz.');out={ok:true,data:aydaFormSubmit_(JSON.parse(raw))};}
     else if(action==='publicTrackingDashboard'){out={ok:false,error:'Öğrenci bilgileri anonim erişime kapalı.'};}
     else {const user=aydaAuth_(p.key);
-    if(user.role==='viewer'&&!['overview','trackingSummary','reminders','studentRoster','studentNotes','contactDirectory','lessonHomework','homeworkTasks','backupStatus','integrityStatus','infoFormSummary','surveySummary','feedbackInbox','feedbackReply'].includes(action))throw Error('İzleme hesabı bu yönetim işlemini yapamaz.');
+    if(user.role==='viewer'&&!['overview','trackingSummary','reminders','studentRoster','studentNotes','contactDirectory','lessonHomework','homeworkTasks','backupStatus','integrityStatus','infoFormSummary','surveySummary','feedbackInbox'].includes(action))throw Error('İzleme hesabı bu yönetim işlemini yapamaz.');
     if(action==='surveySummary')out={ok:true,data:aydaSurveySummary_(user)};
     else if(action==='infoFormSummary')out={ok:true,data:aydaFormSummary_(user)};
     else if(action==='overview')out={ok:true,data:aydaOverview_(user)};
