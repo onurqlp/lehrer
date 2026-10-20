@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0c2038">
+<meta name="robots" content="noindex,nofollow">
+<title>Grup Arşivi ve Akademik Değerlendirme | AYDA</title>
+<link rel="stylesheet" href="assets/ayda-brand.css?v=20261020-1">
+<link rel="stylesheet" href="assets/ayda-grup-arsivi.css?v=20261021-1">
+<link rel="stylesheet" href="assets/ayda-desktop-20261021.css?v=20261021-1">
+</head>
+<body class="ayda-internal ayda-archive">
+<header class="archive-topbar">
+ <a class="archive-brand" href="./index.html" aria-label="AYDA Ana sayfa"><img src="./assets/ayda-logo.png" alt="AYDA"><span>AKADEMİK TAKİP <small>GRUP ARŞİVİ</small></span></a>
+ <div class="archive-top-actions"><a href="./index.html">Öğretmen / Admin</a><a href="./yonetici.html">Yönetici izleme</a></div>
+</header>
+<main class="archive-shell">
+ <section class="archive-intro">
+  <div><span class="archive-eyebrow">AYDA · AKADEMİK ARŞİV</span><h1>Grup Arşivi <em>&</em> Değerlendirme</h1><p>Her grubun ders geçmişi, ilerlemesi, mevcut öğrenci takibi ve ödevleri tek raporda. Veriler mevcut AYDA kayıtlarından okunur; yeni Google kaydı oluşturulmaz.</p></div>
+  <div class="archive-intro-mark" aria-hidden="true">A<span>·</span></div>
+ </section>
+ <section id="archiveAuth" class="archive-auth" aria-live="polite"><div><strong>Yetkili oturum kontrol ediliyor…</strong><p>Giriş yapılmış tarayıcıdaki AYDA oturumunuz kullanılacak.</p></div><a href="./index.html">Ana sayfaya dön</a></section>
+ <section id="archiveWorkspace" hidden>
+  <div class="archive-toolbar">
+   <div class="archive-toolbar-select"><label for="archiveGroup">Grup seçimi</label><select id="archiveGroup"><option value="">Gruplar yükleniyor…</option></select></div>
+   <div class="archive-toolbar-status"><span class="archive-status-light"></span><span id="archiveStatus">Veriler bekleniyor</span><small id="archiveUpdated"></small></div>
+   <button id="archiveRefresh" type="button" class="archive-button secondary">↻ Güncelle</button>
+   <button id="archivePrint" type="button" class="archive-button secondary" disabled>Yazdır / PDF</button>
+   <button id="archiveExport" type="button" class="archive-button primary" disabled>Tam arşivi indir (JSON)</button>
+  </div>
+  <div id="archiveWarnings" class="archive-warnings" role="status" aria-live="polite"></div>
+  <div class="archive-header">
+   <div><span id="archiveGroupTag" class="archive-eyebrow">GRUP RAPORU</span><h2 id="archiveGroupName">Grup seçin</h2><p id="archiveGroupMeta">Akademik değerlendirme dosyası</p></div>
+   <div id="archiveGroupBadge" class="archive-group-badge">—</div>
+  </div>
+  <div id="archiveKpis" class="archive-kpis"></div>
+  <nav id="archiveTabs" class="archive-tabs" aria-label="Grup arşivi bölümleri">
+   <button type="button" class="active" data-archive-tab="overview" aria-current="page">Genel durum</button>
+   <button type="button" data-archive-tab="lessons">Ders geçmişi</button>
+   <button type="button" data-archive-tab="students">Öğrenci takibi</button>
+   <button type="button" data-archive-tab="homework">Ödev arşivi</button>
+   <button type="button" data-archive-tab="evaluation">Değerlendirme</button>
+  </nav>
+  <section id="archivePanel-overview" class="archive-panel">
+   <div class="archive-two-col"><article class="archive-card"><div class="archive-card-heading"><h3>Grup kimliği ve program</h3><span>Kayıtlı bilgiler</span></div><div id="archiveIdentity"></div></article><article class="archive-card"><div class="archive-card-heading"><h3>İlerleme ve son durum</h3><span>Müfredat</span></div><div id="archiveProgress"></div></article></div>
+   <article class="archive-card"><div class="archive-card-heading"><h3>Aylara göre akademik faaliyet</h3><span>Kaydedilmiş derslerden hesaplanır</span></div><div id="archiveMonthly"></div></article>
+   <article class="archive-card"><div class="archive-card-heading"><h3>Son ders ve öğretmen notları</h3><button type="button" class="archive-text-button" data-archive-jump="lessons">Tüm derslere geç →</button></div><div id="archiveRecent"></div></article>
+  </section>
+  <section id="archivePanel-lessons" class="archive-panel" hidden><article class="archive-card"><div class="archive-card-heading"><h3>Tüm erişilebilir ders kayıtları</h3><span id="archiveLessonCount"></span></div><div id="archiveLessons"></div></article></section>
+  <section id="archivePanel-students" class="archive-panel" hidden><article class="archive-card"><div class="archive-card-heading"><h3>Öğrenciler · Yoklama · Ödev kontrolü</h3><span>Son kontroller ve toplamlar</span></div><div id="archiveStudents"></div></article></section>
+  <section id="archivePanel-homework" class="archive-panel" hidden><div class="archive-two-col"><article class="archive-card"><div class="archive-card-heading"><h3>Derslerde verilen ödevler</h3></div><div id="archiveHomeworks"></div></article><article class="archive-card"><div class="archive-card-heading"><h3>Teslim tarihli görevler</h3></div><div id="archiveTasks"></div></article></div></section>
+  <section id="archivePanel-evaluation" class="archive-panel" hidden><div class="archive-two-col"><article class="archive-card"><div class="archive-card-heading"><h3>Akademik değerlendirme</h3><span>Sayısal göstergelere dayalı</span></div><div id="archiveEvaluation"></div></article><article class="archive-card"><div class="archive-card-heading"><h3>Eksikler ve veri kapsamı</h3><span>Kaynak denetimi</span></div><div id="archiveCoverage"></div></article></div><article class="archive-card"><div class="archive-card-heading"><h3>Memnuniyet anketleri</h3><span>Yönetici yetkisi varsa · grup adı eşleşmesi</span></div><div id="archiveSurveys"></div></article></section>
+  <div class="archive-footer-actions"><button id="archiveCsv" type="button" class="archive-button secondary" disabled>Ders tablosunu CSV indir</button><p>Arşiv raporu salt okunurdur. İndirilen dosyalar yalnızca kurum içi, yetkili erişimde saklanmalıdır.</p></div>
+ </section>
+</main>
+<footer class="archive-footer">AYDA Dil Akademisi · Akademik Grup Arşivi · Yalnızca yetkili kurumsal kullanım</footer>
+<script src="assets/config.js?v=20261020-new-api-v1"></script>
+<script src="assets/ayda-grup-arsivi.js?v=20261021-1" defer></script>
+</body>
+</html>
