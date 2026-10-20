@@ -40,3 +40,7 @@ body.ayda-is-admin #app>.historylist,
 body.ayda-is-admin #app>#teacherTracking {display:none!important}
 body.ayda-is-admin #adminArea>.section[data-admin-tab]:not([hidden]){display:flex}
 body.ayda-is-admin #adminArea>.grid[data-admin-tab]:not([hidden]){display:grid}
+
+/* Genel Bakış kısa kalsın; gerçek uyarı listesi yalnız Sistem Sağlığı sekmesinde. */
+body.ayda-is-admin.ayda-admin-overview #aydaAdminHealth .ayda-health-shared-view,
+body.ayda-is-admin.ayda-admin-overview #aydaAdminHealth .ayda-health-admin-tools{display:none!important}
