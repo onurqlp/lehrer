@@ -1,0 +1,40 @@
+
+/* AYDA ortak yönetim çalışma alanı */
+body.ayda-workspace-open{overflow:hidden!important}
+.ayda-workspace[hidden]{display:none!important}
+.ayda-workspace{position:fixed;inset:0;z-index:99999;display:flex;align-items:stretch;justify-content:center;background:rgba(11,24,43,.78);backdrop-filter:blur(3px);padding:16px}
+.ayda-workspace-shell{width:min(1440px,100%);height:100%;display:flex;flex-direction:column;min-width:0;overflow:hidden;background:#f8fbfd;border:1px solid #d1e0e9;border-radius:17px;box-shadow:0 20px 60px #001b2c73}
+.ayda-workspace-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 19px;background:#12364e;color:#fff;min-height:67px;flex:none}
+.ayda-workspace-title{display:flex;flex-direction:column;gap:3px}
+.ayda-workspace-title strong{color:#fff;font-size:16px;line-height:1.4}
+.ayda-workspace-title small{color:#bcd9e7;font-size:11px}
+.ayda-workspace-actions{display:flex;gap:8px}
+.ayda-workspace-close{background:#fff;color:#17405b;border:0;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer;min-height:41px}
+.ayda-workspace-close:hover,.ayda-workspace-close:focus-visible{background:#e1f5fd}
+.ayda-workspace-entry{display:inline-flex;align-items:center;justify-content:center;min-height:38px;border-radius:10px;background:#d8f1f6;color:#075c76;border:1px solid #a9dce6;padding:8px 13px;font-size:13px;font-weight:800;cursor:pointer}
+.ayda-workspace-entry:hover{background:#bde7f1}
+.ayda-workspace-frame{border:0;width:100%;height:100%;flex:1 1 auto;background:#f9fbfd}
+@media(max-width:650px){.ayda-workspace{padding:0}.ayda-workspace-shell{border-radius:0;border:0}.ayda-workspace-header{min-height:57px;padding:8px 12px}.ayda-workspace-title strong{font-size:14px}.ayda-workspace-close{padding:9px 12px}.ayda-workspace-entry{width:auto}}
+/* İç ekranda dış ekranın menü/başlıklarını tekrarlama. */
+body.ayda-workspace-embedded .ayda-site-header,
+body.ayda-workspace-embedded .topbar,
+body.ayda-workspace-embedded footer,
+body.ayda-workspace-embedded .ayda-internal-footer,
+body.ayda-workspace-embedded .ayda-skip{display:none!important}
+body.ayda-workspace-embedded #app{max-width:none!important;padding:12px 16px 26px!important;margin:0!important}
+body.ayda-workspace-embedded #app>.hero,
+body.ayda-workspace-embedded #app>.stats,
+body.ayda-workspace-embedded #app>.section,
+body.ayda-workspace-embedded #app>#todayLessons,
+body.ayda-workspace-embedded #app>#groups,
+body.ayda-workspace-embedded #app>#teacherTracking,
+body.ayda-workspace-embedded #app>#schedule,
+body.ayda-workspace-embedded #app>#daily,
+body.ayda-workspace-embedded #app>#history,
+body.ayda-workspace-embedded #app>#adminOperationalTitle,
+body.ayda-workspace-embedded #app>.card:not(#adminArea){display:none!important}
+body.ayda-workspace-embedded #adminArea{display:block!important;max-width:none!important;margin:0!important}
+body.ayda-workspace-embedded #adminArea>.adminQuick{display:none!important}
+body.ayda-workspace-embedded #ownerApp{max-width:none!important;padding:10px 14px!important;margin:0!important}
+body.ayda-workspace-embedded #ownerApp>.owner-heading{display:none!important}
+body.ayda-workspace-embedded .owner-controls>a[href*="index.html"]{display:none!important}
