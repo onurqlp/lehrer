@@ -23,7 +23,14 @@ async function update(){
  const ticket=++requestId;root.replaceChildren(make('p','Sistem Sağlığı kontrol ediliyor…'));
  const current=data,groups=current.groups||[],schedule=current.schedule||[],teachers=current.teachers||[];
  const active=groups.filter(g=>g.status==='Aktif'),activeIds=new Set(active.map(g=>g.id));
- const [tResult,rResult,cResult]=await Promise.allSettled([jsonp('trackingSummary'),jsonp('reminders'),jsonp('contactDirectory')]);
+ // Temel grup/öğretmen kontrollerini Google ayrıntı sorgularını bekletmeden göster.
+ const requests=[
+  Promise.resolve().then(()=>jsonp('trackingSummary')),
+  Promise.resolve().then(()=>jsonp('reminders')),
+  Promise.resolve().then(()=>jsonp('contactDirectory'))
+ ];
+ const withLimit=(promise)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(Error('Google yanıtı gecikti')),16000))]);
+ const [tResult,rResult,cResult]=await Promise.allSettled(requests.map(withLimit));
  if(ticket!==requestId||typeof data==='undefined'||data?.user?.role!=='admin')return;
  const tracking=tResult.status==='fulfilled'?tResult.value:null;
  const reminders=rResult.status==='fulfilled'?rResult.value:null;
@@ -87,6 +94,9 @@ async function update(){
  const tab=document.querySelector('#adminNav button[data-target="health"]');
  if(tab)tab.textContent=issueCount?'✚ Sistem Sağlığı · '+issueCount:'✚ Sistem Sağlığı';
 }
+// Sağlık sekmesi her zaman ulaşılabilir; geciken servisler için yeniden kontrol sun.
+window.AYDA_ADMIN_HEALTH={refresh:update};
+window.addEventListener('ayda:health-open',update);
 window.addEventListener('ayda:login',update);
 window.addEventListener('ayda:logout',()=>{requestId++;root.replaceChildren(make('p','Yönetici girişi gerekli.'));});
 window.addEventListener('ayda:admin-data-updated',update);
