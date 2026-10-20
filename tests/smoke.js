@@ -78,4 +78,20 @@ check('Embedded admin health stays on the same-origin session bridge',()=>{
  assert.match(file('assets/ayda-admin-health-embed.js'),/sendExistingSession/);
  assert.match(file('assets/owner.js'),/embeddedHealth/);
 });
+check('Partner group summary is visible and complete',()=>{
+ const doc=file('yonetici.html'),code=file('assets/owner.js'),css=file('assets/ayda-owner-20261020.css');
+ assert.ok(doc.includes('class="ayda-partner-group-summary"'));
+ assert.ok(doc.includes('id="ownerGroupPreviewStats"'));
+ assert.ok(doc.includes('id="ownerGroupTotals"'));
+ assert.ok(!/class="owner-extended-summary" hidden><div id="ownerGroupPreview"/.test(doc));
+ assert.ok(code.includes('for(const group of all)preview.append(groupCard(group))'));
+ assert.ok(!code.includes("activeGroups().slice(0,6)"));
+ assert.ok(css.includes('/* Partner group monitoring 2026-10-20 */'));
+});
+check('Partner group cards expose latest report, remaining units and roster',()=>{
+ const c=file('assets/owner.js');
+ for(const term of ['Son ders raporu','Kalan ','Yoklama listesindeki öğrenci','Grup kaydındaki öğrenci','Haftalık program','Program veya saat eksik']) assert.ok(c.includes(term),term);
+ assert.ok(c.includes('groupLatest(g.id)'));
+ assert.ok(c.includes('renderGroupTotals(\'ownerGroupTotals\',groups)'));
+});
 process.stdout.write('\nAYDA smoke: '+count+' checks complete'+(process.exitCode?' (FAILED)':' (PASSED)')+'\n');
