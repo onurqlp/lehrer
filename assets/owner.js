@@ -137,8 +137,8 @@
    kpi('Kayıtlı öğrenci',tracking?ts.length:'—','Aktif öğrenci listesi'),
    kpi('Bu ay işlenen saat',hoursText(totalHours),'Grup ve özel ders')
   );
-  $('ownerAlertBadge').textContent=(tracking||reminders)?'('+((tracking?.alerts||[]).length+(reminders?.total||0))+')':'';
-  $('ownerUpdated').textContent='Güncellendi: '+new Date().toLocaleString('tr-TR');
+  if($('ownerAlertBadge'))$('ownerAlertBadge').textContent=(tracking||reminders)?'('+((tracking?.alerts||[]).length+(reminders?.total||0))+')':'';
+  if($('ownerUpdated'))$('ownerUpdated').textContent='Güncellendi: '+new Date().toLocaleString('tr-TR');
  }
  function renderHighlights(){
   const root=$('ownerHighlights');root.replaceChildren();
@@ -265,7 +265,7 @@
   const values=all.filter(s=>(!q||s.name.toLocaleLowerCase('tr').includes(q))&&(!group||s.groupId===group)&&(!kind||status(s)===kind));
   const order={danger:0,watch:1,regular:2,untracked:3};
   values.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'tr'):sort==='attendance'?b.absent-a.absent:sort==='homework'?b.homeworkMissing-a.homeworkMissing:(order[status(a)]-order[status(b)]||a.name.localeCompare(b.name,'tr')));
-  $('ownerStudentCount').textContent=values.length+' / '+all.length+' öğrenci';
+  if($('ownerStudentCount'))$('ownerStudentCount').textContent=values.length+' / '+all.length+' öğrenci';
   const root=$('ownerStudentList');root.replaceChildren();for(const s of values)root.append(studentCard(s));
   if(!values.length)showEmpty('ownerStudentList',tracking?'Kriterlere uygun öğrenci yok.':'Öğrenci verileri yüklenemedi.');
  }
@@ -286,7 +286,7 @@
  function renderLessons(){
   const month=$('ownerLessonMonth').value,q=$('ownerLessonSearch').value.trim().toLocaleLowerCase('tr'),type=$('ownerLessonType').value,st=$('ownerLessonStatus').value;
   const list=lessons().filter(r=>(!month||r.date?.startsWith(month))&&(!type||r.type===type)&&(!st||r.status===st)&&(!q||(r.groupName+' '+tName(r.teacherId)+' '+(r.topic||'')+' '+(r.note||'')+' '+(r.student||'')).toLocaleLowerCase('tr').includes(q)));
-  $('ownerLessonCount').textContent='Gösterilen: '+Math.min(lessonLimit,list.length)+' / '+list.length+' rapor';
+  if($('ownerLessonCount'))$('ownerLessonCount').textContent='Gösterilen: '+Math.min(lessonLimit,list.length)+' / '+list.length+' rapor';
   const root=$('ownerLessonList');root.replaceChildren();for(const r of list.slice(0,lessonLimit))root.append(lessonRow(r));
   if(!list.length)showEmpty('ownerLessonList','Bu filtrelerle eşleşen ders raporu yok.');
   $('ownerShowMoreLessons').hidden=lessonLimit>=list.length;
