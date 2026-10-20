@@ -214,6 +214,27 @@ $('lessonType')?.addEventListener('change',aydaSyncHomeworkField);
 $('status')?.addEventListener('change',aydaSyncHomeworkField);
 window.addEventListener('ayda:login',aydaSyncHomeworkField);
 
+// Keep the next action prominent without retaining a tall completed form.
+function aydaSetLessonSaved(saved){
+ const section=$('daily'),newButton=$('aydaNewLesson');
+ section?.classList.toggle('ayda-lesson-saved',!!saved);
+ if(newButton)newButton.hidden=!saved;
+ if(saved){$('attendancePreview')?.removeAttribute('open');section?.scrollIntoView({behavior:'smooth',block:'start'});}
+}
+$('aydaNewLesson')?.addEventListener('click',()=>{
+ aydaSetLessonSaved(false);
+ $('sendHomeworkToGroup').hidden=true;
+ $('aydaShareHint').hidden=true;
+ clear('formMessage');
+ $('note').value='';
+ $('attendancePreview')?.setAttribute('open','');
+ window.AYDA_ATTENDANCE?.resetAfterSave?.();
+ $('lessonDate')?.focus({preventScroll:true});
+});
+$('aydaCreateLesson')?.addEventListener('click',()=>{
+ if($('daily')?.classList.contains('ayda-lesson-saved'))$('aydaNewLesson')?.click();
+});
+window.addEventListener('ayda:logout',()=>aydaSetLessonSaved(false));
 $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$('saveBtn');b.disabled=true;b.textContent='Kaydediliyor...';clear('formMessage');try{
  const payload={type:$('lessonType').value,student:$('privateStudent').value,groupId:$('groupId').value,date:$('lessonDate').value,unit:Number($('completed').value),completed:Number($('completed').value),actual:$('actual').value,status:$('status').value,topic:'',note:$('note').value.trim(),homeworkText:$('note').value.trim()};
  if(payload.type==='private'){payload.unit=0;payload.completed=0;}
@@ -244,6 +265,7 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  $('sendHomeworkToGroup').textContent='WhatsApp’ta paylaş →';
  $('aydaShareHint').hidden=true;
  if(lastSharedHomework)window.dispatchEvent(new CustomEvent('ayda:homework-saved',{detail:lastSharedHomework}));
+ aydaSetLessonSaved(true);
  $('note').value='';
  window.AYDA_ATTENDANCE?.resetAfterSave?.();
  try{
