@@ -1,0 +1,54 @@
+/* AYDA | 21.10.2026 mobile + teacher monitoring */
+.ayda-owner-entry{display:inline-flex;align-items:center;justify-content:center;min-height:43px;padding:9px 13px;border-radius:11px;border:1px solid #6fa49d;color:#fff!important;background:#0b6a64;text-decoration:none;font-size:13px;font-weight:800;white-space:nowrap}
+.ayda-owner-entry[hidden]{display:none!important}
+.ayda-owner-entry:focus-visible{outline:3px solid #e9b95b;outline-offset:3px}
+#ownerApp .ayda-teacher-watch{padding:19px 20px 21px;margin:17px 0 19px;border:1px solid #d6e5ef;border-radius:18px;background:linear-gradient(155deg,#f7fbff,#eff6fb)}
+#ownerApp .ayda-teacher-watch-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+#ownerApp .ayda-teacher-watch-heading h2{color:#153651;font-size:clamp(19px,2vw,24px);margin:4px 0 6px}
+#ownerApp .ayda-teacher-watch-heading p{font-size:13px;color:#536c80;margin:0;line-height:1.5}
+#ownerApp .ayda-kicker{font-size:10px;font-weight:850;letter-spacing:.1em;color:#14708c}
+#ownerApp .ayda-teacher-watch-actions{display:flex;gap:8px;flex-wrap:wrap}
+#ownerApp .ayda-watch-link,#ownerApp .ayda-watch-action{border:1px solid #afd3dc;background:#106681;color:#fff;font-size:12px;font-weight:800;cursor:pointer;border-radius:10px;min-height:40px;padding:10px 12px}
+#ownerApp .ayda-watch-link.secondary{background:#fff;color:#15516c}
+#ownerApp .ayda-watch-status{display:flex;align-items:center;gap:11px;padding:13px 15px;background:#e8f7ef;border:1px solid #c3e4d0;border-radius:12px;margin-bottom:14px;flex-wrap:wrap}
+#ownerApp .ayda-watch-status.needs-attention{background:#fff3e2;border-color:#f2d3a4}
+#ownerApp .ayda-watch-status-icon{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;background:#237558;color:#fff;font-weight:900;flex-shrink:0}
+#ownerApp .needs-attention .ayda-watch-status-icon{background:#b56d22}
+#ownerApp .ayda-watch-status strong{font-size:14px;color:#21435a}
+#ownerApp .ayda-watch-status p{margin:3px 0 0;font-size:12px;color:#54697b}
+#ownerApp .ayda-watch-unknown{width:100%;font-size:12px;color:#8b551e}
+#ownerApp .ayda-watch-controls{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:11px}
+#ownerApp .ayda-watch-count{font-weight:750;color:#31546a;font-size:12px}
+#ownerApp .ayda-watch-filter{padding:8px 12px;border-radius:9px;border:1px solid #cedfe9;background:#fff;color:#23445e;font-size:13px;max-width:100%}
+#ownerApp .ayda-watch-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+#ownerApp .ayda-watch-card{min-width:0;border-radius:12px;background:#fff;border:1px solid #dce8ef;padding:14px 15px;display:flex;flex-direction:column;gap:8px}
+#ownerApp .ayda-watch-card.warning{border-left:4px solid #d69131}
+#ownerApp .ayda-watch-card.clear{border-left:4px solid #398969}
+#ownerApp .ayda-watch-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:9px;flex-wrap:wrap}
+#ownerApp .ayda-watch-card-head strong{display:block;color:#16334a;font-size:14px;line-height:1.45}
+#ownerApp .ayda-watch-card-head small{display:block;color:#607384;font-size:12px;line-height:1.5;margin-top:3px;overflow-wrap:anywhere}
+#ownerApp .ayda-watch-pill{font-weight:800;font-size:11px;padding:6px 8px;border-radius:8px;background:#e7f4ec;color:#246248;white-space:nowrap}
+#ownerApp .warning .ayda-watch-pill{background:#fff0d9;color:#875011}
+#ownerApp .pending .ayda-watch-pill{background:#edf2f7;color:#586a7d}
+#ownerApp .ayda-watch-missing-list{padding-left:18px;margin:0;color:#4c6174;font-size:12px;line-height:1.75}
+#ownerApp .ayda-watch-description,#ownerApp .ayda-watch-more{font-size:12px;color:#577085;margin:0}
+#ownerApp .ayda-watch-card-actions{margin-top:auto}
+#ownerApp .ayda-watch-action{min-height:38px;background:#fff;color:#125a73}
+#ownerApp .ayda-watch-empty{grid-column:1/-1;padding:16px;color:#557085;background:white;border-radius:11px}
+#ownerApp .ayda-partner-group-summary{margin-top:16px!important}
+#ownerApp .ayda-partner-group-card:nth-child(4n+1){border-top:3px solid #19758e}
+#ownerApp .ayda-partner-group-card:nth-child(4n+2){border-top:3px solid #218264}
+#ownerApp .ayda-partner-group-card:nth-child(4n+3){border-top:3px solid #bc8541}
+#ownerApp .ayda-partner-group-card:nth-child(4n+4){border-top:3px solid #6a75a9}
+@media(max-width:760px){
+ .ayda-owner-entry{min-height:39px;padding:7px 9px;font-size:11px}
+ body.ayda-internal .ayda-site-header .topright{gap:5px}
+ #ownerApp .ayda-teacher-watch{padding:13px;margin:12px 0}
+ #ownerApp .ayda-watch-grid{grid-template-columns:1fr}
+ #ownerApp .ayda-teacher-watch-actions{width:100%}
+ #ownerApp .ayda-watch-link{flex:1;min-width:115px}
+ #ownerApp .ayda-watch-status{align-items:flex-start;padding:11px}
+ #ownerApp .ayda-watch-card{padding:12px}
+}
+@media(max-width:370px){.ayda-owner-entry{font-size:10px;padding:7px}.ayda-header-help{font-size:11px}}
+@media(prefers-reduced-motion:reduce){#ownerApp .ayda-teacher-watch *{scroll-behavior:auto}}
