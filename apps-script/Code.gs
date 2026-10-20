@@ -28,7 +28,7 @@ function aydaPrivateHistory_(user){const s=aydaDb_().getSheetByName('AYDA_OZEL_D
 function aydaPrivateSave_(user,p){if(user.role!=='teacher')throw Error('Özel ders kaydı için öğretmen girişi gerekir.');const date=String(p.date||''),student=String(p.student||'').trim(),topic=String(p.topic||'').trim(),note=String(p.note||'').trim(),actual=String(p.actual||''),status=String(p.status||'İşlendi');if(!aydaValidateDate_(date)||date>aydaToday_())throw Error('Geçersiz tarih.');if(!student||student.length>120||topic.length>300||note.length<3||note.length>2000)throw Error('Öğrenci adı veya not geçersiz.');if(!/^(?:00:30|0[1-5]:(?:00|30)|06:00)$/.test(actual))throw Error('Özel ders süresi 30 dakika ile 6 saat arasında, 30 dakikalık aralıklarla olmalı.');if(!['İşlendi','İptal','Ertelendi'].includes(status))throw Error('Geçersiz durum.');const unit=Number(p.unit||0),completed=Number(p.completed||0);if(!Number.isInteger(unit)||unit<0||unit>100||!Number.isInteger(completed)||completed<0||completed>unit)throw Error('Ünite bilgisi geçersiz.');const lock=LockService.getScriptLock();lock.waitLock(20000);try{const s=aydaPrivateSheet_();const v=s.getDataRange().getDisplayValues();if(v.slice(1).some(r=>aydaDate_(r[1])===date&&r[2]===user.id&&r[3]===student))throw Error('Bu öğrenci için aynı gün kayıt var.');const id='OD-'+Utilities.getUuid();s.appendRow([id,date,user.id,student,actual,status,unit,completed,topic,note,new Date()]);return {saved:true,id};}finally{lock.releaseLock();}}
 function aydaTeachers_(){
  const users=aydaRead_('KULLANICILAR').filter(x=>x['Rol']==='Öğretmen');
- return users.map(u=>({id:u['Öğretmen ID'],userId:u['Kullanıcı ID'],name:u['Kullanıcı Adı'],status:u['Durum']}));
+ return users.map(u=>({id:u['Öğretmen ID'],userId:u['Kullanıcı ID'],name:u['Kullanıcı Adı'],status:u['Durum'],teacherType:PropertiesService.getScriptProperties().getProperty('AYDA_OGRETMEN_TURU_'+u['Öğretmen ID'])||'kurs'}));
 }
 function aydaNextId_(sheet,header,prefix){const rows=aydaRead_(sheet),max=rows.reduce((n,r)=>Math.max(n,Number(String(r[header]||'').replace(/[^0-9]/g,''))||0),0);return prefix+String(max+1).padStart(3,'0');}
 function aydaAppendNamed_(sheet,values){const sh=aydaSheet_(sheet),head=sh.getRange(1,1,1,sh.getLastColumn()).getDisplayValues()[0].map(x=>String(x).trim());sh.appendRow(head.map(h=>Object.prototype.hasOwnProperty.call(values,h)?values[h]:''));}
@@ -63,6 +63,13 @@ function aydaVaultStatus_(user){
 function aydaAdminCreateTeacher_(user,p){
  if(user.role!=='admin')throw Error('Yönetici yetkisi gerekir.');
  const name=String(p.name||'').trim();if(name.length<3||name.length>100)throw Error('Öğretmen adı 3–100 karakter olmalı.');
+ const teacherType=String(p.teacherType||'kurs'),groupIds=Array.isArray(p.groupIds)?p.groupIds.map(String):[];
+ if(!['kurs','konusma','ozel'].includes(teacherType))throw Error('Geçersiz öğretmen türü.');
+ if(groupIds.length!==new Set(groupIds).size)throw Error('Tekrarlanan sınıf seçimi.');
+ const gs=aydaSheet_('GRUPLAR'),allGroups=gs.getDataRange().getDisplayValues(),header=allGroups[0].map(String),gid=header.indexOf('ID'),gt=header.indexOf('Öğretmen ID'),gstatus=header.indexOf('Durum');
+ if(groupIds.length&&(gid<0||gt<0||gstatus<0))throw Error('Grup eşleştirme sütunları bulunamadı.');
+ const selected=groupIds.map(id=>{const index=allGroups.findIndex((row,i)=>i>0&&row[gid]===id&&row[gstatus]==='Aktif');if(index<1)throw Error('Aktif sınıf bulunamadı: '+id);return {index,old:allGroups[index][gt]};});
+
  const lock=LockService.getScriptLock();lock.waitLock(20000);
  try{
  const teacherId=aydaNextId_('OGRETMENLER','Öğretmen ID','H'),userId=aydaNextId_('KULLANICILAR','Kullanıcı ID','U');
@@ -72,7 +79,11 @@ function aydaAdminCreateTeacher_(user,p){
  ts.appendRow(th.map(k=>rec[k]||''));
  aydaAppendNamed_('KULLANICILAR',{'Kullanıcı ID':userId,'Kullanıcı Adı':name,'Öğretmen ID':teacherId,'Rol':'Öğretmen','Durum':'Aktif'});
  const key=[Utilities.getUuid(),Utilities.getUuid()].join('-');aydaVaultSave_(userId,'Öğretmen',name,key);PropertiesService.getScriptProperties().setProperty('AYDA_GIRIS_'+userId,aydaHash_(key));
- return {teacherId,userId,key,name};
+ const props=PropertiesService.getScriptProperties();props.setProperty('AYDA_OGRETMEN_TURU_'+teacherId,teacherType);
+ let assigned=0;
+ try{for(const g of selected){gs.getRange(g.index+1,gt+1).setValue(teacherId);assigned++;}SpreadsheetApp.flush();}
+ catch(err){for(let i=assigned-1;i>=0;i--)try{gs.getRange(selected[i].index+1,gt+1).setValue(selected[i].old);}catch(rollbackError){Logger.log('Öğretmen grup geri alma başarısız: '+rollbackError.message);}throw Error('Öğretmen oluşturuldu ancak sınıf eşleştirmesi tamamlanamadı. Yeni öğretmen ID: '+teacherId+'; grupları kontrol edin. '+err.message);}
+ return {teacherId,userId,key,name,teacherType,assignedGroups:assigned};
  }finally{lock.releaseLock();}
 }
 function aydaAdminCreateGroup_(user,p){
