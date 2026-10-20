@@ -91,11 +91,25 @@ function renderAccounts(){
  const target=$('accountList');target.replaceChildren();
  const accounts=data.accounts||[],archive=data.vaultStatus||[],teachers=data.teachers||[];
  const table=$el('table','data-table');const head=$el('tr');
- for(const t of ['Hesap','Öğretmen ID','Durum','Anahtar arşivi'])head.append($el('th','',t));table.append(head);
- const records=[{id:'ADMIN',name:'Yönetici',teacherId:'—',status:'Aktif'},...accounts.map(x=>({id:x.id,name:x.name,teacherId:teachers.find(t=>t.userId===x.id)?.id||'—',status:x.status||'—'}))];
+ for(const t of ['Hesap','Öğretmen ID','Durum','Anahtar arşivi','İşlem'])head.append($el('th','',t));table.append(head);
+ const records=[{id:'ADMIN',name:'Yönetici',teacherId:'—',status:'Aktif'},...accounts.filter(x=>x.status!=='Silindi').map(x=>({id:x.id,name:x.name,teacherId:teachers.find(t=>t.userId===x.id)?.id||'—',status:x.status||'—'}))];
  for(const r of records){const tr=$el('tr');const has=archive.find(x=>x.accountId===r.id);
-  for(const v of [r.name+' ('+r.id+')',r.teacherId,r.status,has?'Arşivde · '+has.created:'Eski anahtar / arşivde yok'])tr.append($el('td','',v));table.append(tr);}
+  for(const v of [r.name+' ('+r.id+')',r.teacherId,r.status,has?'Arşivde · '+has.created:'Eski anahtar / arşivde yok'])tr.append($el('td','',v));const cell=$el('td');if(r.id!=='ADMIN'&&r.status!=='Silindi'){const remove=$el('button','outline','Öğretmeni kaldır');remove.type='button';remove.addEventListener('click',()=>aydaRemoveTeacherAccount(r));cell.append(remove);}tr.append(cell);table.append(tr);}
  target.append(table);
+}
+async function aydaRemoveTeacherAccount(account){
+ const teachers=data.teachers||[],teacher=teachers.find(t=>t.userId===account.id);
+ const assigned=(data.groups||[]).filter(g=>g.teacherId===teacher?.id&&g.status==='Aktif');
+ if(assigned.length){alert('Önce aktif grupları başka öğretmene devredin: '+assigned.map(g=>g.name).join(', '));return;}
+ if(!confirm(account.name+' adlı öğretmen sistemden kaldırılsın mı? Girişi kapatılır; geçmiş ders ve yoklamalar silinmez.'))return;
+ const confirmation=prompt('İşlemi onaylamak için SİL yazın:');
+ if(confirmation!=='SİL')return;
+ try{
+  const result=await jsonp('removeTeacher',{payload:utf8Base64Url(JSON.stringify({accountId:account.id}))});
+  if(!result?.removed||!result?.historyPreserved)throw Error('Kaldırma işlemi doğrulanmadı.');
+  data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
+  alert('Öğretmen erişimi kaldırıldı. Eski ders kayıtları korundu.');
+ }catch(error){alert('Öğretmen kaldırılamadı: '+error.message);}
 }
 function downloadCSV(rows,filename){
  const safe=v=>{let x=String(v??'');if(/^[\s]*[=+@-]/.test(x))x="'"+x;return '"'+x.replace(/"/g,'""')+'"';};
