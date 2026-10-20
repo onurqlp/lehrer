@@ -296,6 +296,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    add(wrap,'summary','','Verilen ödevler · '+homework.length+(pending?' · '+pending+' paylaşılmamış':''));
    for(const h of homework)add(wrap,'p','',fmt(h.date)+' · '+h.text+' · '+(h.shareStatus||'Paylaşım bilgisi yok'));
   }
+  const archiveLink=node('a','ayda-group-archive-link','▤ Grup arşivi ve değerlendirme ↗');archiveLink.href='./grup-arsivi.html?group='+encodeURIComponent(g.id);box.append(archiveLink);
   box.append(quick('Grubun öğrencilerini gör →',()=>{activate('students');$('ownerStudentGroup').value=g.id;renderStudents();}));
   return box;
  }
