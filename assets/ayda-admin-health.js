@@ -16,7 +16,7 @@ const link=(fix,groupId,studentId)=>{
  if(studentId)u.searchParams.set('studentId',studentId);
  u.hash=fix==='student'?'grup-islemleri':'duzenle';return u.href;
 };
-const manager=tab=>'./yonetici.html#'+tab;
+const manager=tab=>'#'+(tab==='messages'||tab==='alerts'?'mesajlar':tab==='health'?'saglik':tab==='accounts'?'ogretmenler':'gruplar');
 let requestId=0;
 async function update(){
  if(typeof data==='undefined'||data?.user?.role!=='admin')return;
@@ -33,7 +33,7 @@ async function update(){
  const roster=new Map((tracking?.groups||[]).map(g=>[g.id,g]));
  for(const g of active){
   if(!g.teacherId||!teacherIds.has(g.teacherId))add(g.name+' · Öğretmen atanmadı','Sınıfa yetkili öğretmen atanmalı.',link('teacher',g.id),'Öğretmen ata →');
-  else if(!activeTeachers.has(g.teacherId))add(g.name+' · Öğretmen hesabı pasif','Hesabı etkinleştirin ya da grup öğretmenini değiştirin.','./index.html#ogretmenler','Hesabı incele →');
+  else if(!activeTeachers.has(g.teacherId))add(g.name+' · Öğretmen hesabı pasif','Hesabı etkinleştirin ya da grup öğretmenini değiştirin.','#ogretmenler','Hesabı incele →');
   const plans=schedule.filter(r=>r.groupId===g.id);
   if(!plans.length)add(g.name+' · Haftalık program yok','Grubun ders günleri ve saatleri belirtilmemiş.',link('schedule',g.id),'Programı oluştur →');
   else if(plans.some(p=>p.status!=='Aktif'||!p.start||!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(p.end||''))))
@@ -45,11 +45,11 @@ async function update(){
   if(g.end&&g.end<'2026-10-20')add(g.name+' · Eski grup aktif','Geçmiş kayıtları silmeden grubu tamamlayın.',link('status',g.id),'Grubu tamamlandı yap →');
  }
  const count=new Map();for(const t of teachers)count.set(t.id,(count.get(t.id)||0)+1);
- for(const [id,n] of count)if(id&&n>1)add('Aynı öğretmen ID birden fazla hesapta','Öğretmen '+id+' · '+n+' hesap. Kimlik eşleşmelerini inceleyin.','./index.html#ogretmenler','Hesapları incele →');
+ for(const [id,n] of count)if(id&&n>1)add('Aynı öğretmen ID birden fazla hesapta','Öğretmen '+id+' · '+n+' hesap. Kimlik eşleşmelerini inceleyin.','#ogretmenler','Hesapları incele →');
  for(const t of teachers.filter(t=>t.status==='Aktif'&&!groups.some(g=>g.teacherId===t.id)))
   add(t.name+' · Sınıf eşleşmesi yok','Özel ders öğretmeniyse bu uyarı normal olabilir.',link('teacher',''),'Öğretmen ata →');
  for(const row of schedule)if(row.status==='Aktif'&&!groups.some(g=>g.id===row.groupId))
-  add('Program · Tanımsız grup','Grup: '+row.groupId,'./index.html#gruplar','Programı incele →');
+  add('Program · Tanımsız grup','Grup: '+row.groupId,'#gruplar','Programı incele →');
  for(const student of (tracking?.students||[]).filter(x=>activeIds.has(x.groupId)&&x.riskLevel==='danger'&&x.followupStatus!=='Çözüldü')){
   const group=groups.find(x=>x.id===student.groupId);
   const card=add('Öncelikli öğrenci · '+student.name,
@@ -75,7 +75,7 @@ async function update(){
   add('Öğrenci adı · '+student.name,'Ad-soyad alanında eksik isim veya CRM notu var.',link('student',student.groupId,student.id),'Öğrenci adını düzelt →');
  }
  for(const item of (reminders?.items||[]).filter(r=>String(r.date||'')>='2026-10-20'))
-  add((item.type==='attendance'?'Eksik yoklama':'Eksik ders raporu')+' · '+(item.group||'Grup'),item.date+' tarihli kayıt tamamlanmalı.',manager('alerts'),'Uyarıları incele →');
+  add((item.type==='attendance'?'Eksik yoklama':'Eksik ders raporu')+' · '+(item.group||'Grup'),item.date+' tarihli kayıt tamamlanmalı.',manager('alerts'),'Öğretmene hatırlat →');
  if(contacts?.missingStudentPhones)
   add('Öğrenci telefon bilgileri eksik',contacts.missingStudentPhones+' öğrenci için telefon doğrulaması gerekiyor.',manager('messages'),'Telefonları düzenle →');
  if(!tracking)add('Öğrenci takip verileri alınamadı','Bağlantıyı kontrol etmek için ayrıntılı panele geçin.',manager('health'),'Kontrol ekranını aç →');
