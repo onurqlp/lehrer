@@ -3,7 +3,7 @@ const AYDA_DB_ID = '1FDLlugevKNHLP83M1uZGjjf4MNz0NV91KkxdZ6yJheg';
 const AYDA_TZ = 'Europe/Istanbul';
 // Sıfırdan başlayan sistem için eski dersleri eksik kayda dahil etme.
 const AYDA_TRACKING_START = '2026-10-20';
-const AYDA_API_VERSION = '2026-10-20.7';
+const AYDA_API_VERSION = '2026-10-20.8';
 
 function aydaDb_(){ return SpreadsheetApp.openById(AYDA_DB_ID); }
 function aydaSheet_(name){ const s=aydaDb_().getSheetByName(name); if(!s) throw Error('Tablo bulunamadı: '+name); return s; }
@@ -87,7 +87,8 @@ function aydaAdminCreateTeacher_(user,p){
 
  const lock=LockService.getScriptLock();lock.waitLock(20000);
  try{
- const teacherId=aydaNextId_('OGRETMENLER','Öğretmen ID','H'),userId=aydaNextId_('KULLANICILAR','Kullanıcı ID','U');
+ const teacherColumns=aydaSheet_('OGRETMENLER').getRange(1,1,1,aydaSheet_('OGRETMENLER').getLastColumn()).getDisplayValues()[0];
+  const teacherId=aydaNextId_('OGRETMENLER',teacherColumns.includes('Öğretmen ID')?'Öğretmen ID':'ID','H'),userId=aydaNextId_('KULLANICILAR','Kullanıcı ID','U');
  const ts=aydaSheet_('OGRETMENLER'),th=ts.getRange(1,1,1,ts.getLastColumn()).getDisplayValues()[0];
  const rec={};for(const k of th){if(/^(Öğretmen ID|ID)$/.test(k))rec[k]=teacherId;else if(/^(Öğretmen|Ad Soyad|Ad|Öğretmen Adı)$/.test(k))rec[k]=name;else if(k==='Durum')rec[k]='Aktif';}
  if(!Object.values(rec).includes(teacherId))throw Error('OGRETMENLER tablosunda öğretmen ID başlığı bulunamadı.');
@@ -1251,7 +1252,7 @@ function aydaSetTeacherAccountStatus_(user,p){
   if(at<1)throw Error('Öğretmen hesabı bulunamadı.');
   const teacherCol=headers.indexOf('Öğretmen ID'),teacherId=teacherCol>=0?values[at][teacherCol]:'';
   const teachers=aydaSheet_('OGRETMENLER'),trows=teachers.getDataRange().getDisplayValues(),th=trows[0]||[];
-  const tc=th.indexOf('Öğretmen ID'),ts=th.indexOf('Durum');
+  const tc=th.includes('Öğretmen ID')?th.indexOf('Öğretmen ID'):th.indexOf('ID'),ts=th.indexOf('Durum');
   if(teacherId&&(tc<0||ts<0))throw Error('Öğretmen tablosu sütunları eksik.');
   const tindex=teacherId?trows.findIndex((r,i)=>i>0&&r[tc]===teacherId):-1;
   if(teacherId&&tindex<1)throw Error('Öğretmen kaydı eşleşmiyor.');
@@ -1265,34 +1266,48 @@ function aydaSetTeacherAccountStatus_(user,p){
 /** Öğretmen hesabını geçmiş dersleri silmeden sistemden kaldırır. */
 function aydaRemoveTeacher_(user,p){
  if(user.role!=='admin')throw Error('Yalnızca yönetici öğretmen kaldırabilir.');
- const id=String(p.accountId||'').trim();
+ const id=String(p&&p.accountId||'').trim();
  if(!id||id==='ADMIN')throw Error('Geçersiz öğretmen hesabı.');
  const lock=LockService.getScriptLock();lock.waitLock(20000);
  try{
-  const accounts=aydaSheet_('KULLANICILAR'),av=accounts.getDataRange().getDisplayValues(),ah=av[0];
+  const accounts=aydaSheet_('KULLANICILAR'),av=accounts.getDataRange().getDisplayValues(),ah=av[0]||[];
   const ai=ah.indexOf('Kullanıcı ID'),ar=ah.indexOf('Rol'),at=ah.indexOf('Öğretmen ID'),as=ah.indexOf('Durum');
   if([ai,ar,at,as].some(x=>x<0))throw Error('Kullanıcı tablosunun sütunları eksik.');
-  const idx=av.findIndex((r,i)=>i>0&&r[ai]===id&&r[ar]==='Öğretmen');
-  if(idx<1)throw Error('Öğretmen hesabı bulunamadı.');
-  const teacherId=av[idx][at];
+  const ix=av.findIndex((r,i)=>i>0&&r[ai]===id&&r[ar]==='Öğretmen');
+  if(ix<1)throw Error('Öğretmen hesabı bulunamadı.');
+  if(av[ix][as]==='Silindi')return {removed:true,accountId:id,teacherId:av[ix][at],historyPreserved:true,alreadyRemoved:true};
+  const teacherId=String(av[ix][at]||'').trim();
+  if(!teacherId)throw Error('Öğretmen kimliği bulunamadı.');
+  // Eski aktarımda farklı hesaplar aynı H001 kimliğini paylaşabiliyor.
+  // Yalnızca bu kullanıcının giriş yetkisini kaldır; ortak kimliği kullanan diğer hesapları kapatma.
+  const otherActive=av.filter((r,i)=>i>0&&i!==ix&&r[ar]==='Öğretmen'&&r[at]===teacherId&&r[as]==='Aktif');
   const linked=aydaRead_('GRUPLAR').filter(g=>g['Öğretmen ID']===teacherId&&g['Durum']==='Aktif');
-  if(linked.length)throw Error('Önce öğretmenin aktif gruplarını başka öğretmene devredin: '+linked.map(g=>g.Grup).join(', '));
-  const teachers=aydaSheet_('OGRETMENLER'),tv=teachers.getDataRange().getDisplayValues(),th=tv[0];
-  const ti=th.indexOf('Öğretmen ID'),ts=th.indexOf('Durum');
-  if(ti<0||ts<0)throw Error('Öğretmen tablosu sütunları eksik.');
-  const tx=tv.findIndex((r,i)=>i>0&&r[ti]===teacherId);
-  const old=av[idx][as],oldTeacher=tx>0?tv[tx][ts]:'';
-  accounts.getRange(idx+1,as+1).setValue('Silindi');
+  if(linked.length&&!otherActive.length)
+    throw Error('Önce aktif grupları başka öğretmene devredin: '+linked.map(g=>g.Grup).join(', '));
+  const teachers=aydaSheet_('OGRETMENLER'),tv=teachers.getDataRange().getDisplayValues(),th=tv[0]||[];
+  const ti=th.includes('Öğretmen ID')?th.indexOf('Öğretmen ID'):th.indexOf('ID'),ts=th.indexOf('Durum');
+  // Bir öğretmen kimliğini paylaşan başka aktif hesap kalmıyorsa öğretmen kaydını da kapat.
+  // Birden fazla hesabın aynı ID'ye bağlı olduğu veri setinde yanlış satırı silme.
+  const teacherRows=ti>=0&&ts>=0&&!otherActive.length
+    ?tv.map((row,i)=>i>0&&row[ti]===teacherId?{row:i+1,old:row[ts]}:null).filter(Boolean):[];
+  const statusCell=accounts.getRange(ix+1,as+1);
+  const oldStatus=av[ix][as],updated=[];
   try{
-   if(tx>0)teachers.getRange(tx+1,ts+1).setValue('Silindi');
+   statusCell.setValue('Silindi');
+   for(const row of teacherRows){
+    teachers.getRange(row.row,ts+1).setValue('Silindi');
+    updated.push(row);
+   }
    SpreadsheetApp.flush();
-  }catch(e){
-   accounts.getRange(idx+1,as+1).setValue(old);
-   if(tx>0)teachers.getRange(tx+1,ts+1).setValue(oldTeacher);
-   throw e;
+   if(statusCell.getDisplayValue()!=='Silindi')throw Error('Hesabın kaldırıldığı Google tarafından doğrulanamadı.');
+  }catch(err){
+   try{statusCell.setValue(oldStatus);}catch(e){Logger.log('Kullanıcı geri alma: '+e.message);}
+   for(const row of updated)try{teachers.getRange(row.row,ts+1).setValue(row.old);}catch(e){Logger.log('Öğretmen geri alma: '+e.message);}
+   throw Error('Öğretmen kaldırılamadı: '+err.message);
   }
+  // Bu anahtarı geçersiz kılarken aynı öğretmen ID'sini kullanan diğer hesapların anahtarlarına dokunma.
   PropertiesService.getScriptProperties().deleteProperty('AYDA_GIRIS_'+id);
-  return {removed:true,accountId:id,teacherId,historyPreserved:true};
+  return {removed:true,accountId:id,teacherId,historyPreserved:true,otherActiveAccounts:otherActive.length,linkedGroups:linked.length};
  }finally{lock.releaseLock();}
 }
 function aydaFormSubmit_(input){
@@ -1325,7 +1340,7 @@ function aydaFormSummary_(user){
  rows:rows.slice(-300).reverse().map(r=>({id:r[0],date:r[1],email:r[2],name:r[3]+' '+r[4],birthDate:r[5],phone:r[6],levels:r[7],other:r[8],city:r[9],occupation:r[10],status:r[11]}))};
 }
 
-function aydaSurveyOptions_(){return {groups:aydaRead_('GRUPLAR').filter(x=>x['Durum']==='Aktif').map(x=>({id:x['ID'],name:x['Grup'],teacherId:x['Öğretmen ID']})),teachers:aydaRead_('OGRETMENLER').filter(x=>x['Durum']==='Aktif').map(x=>({id:x['ID'],name:x['Öğretmen']}))};}
+function aydaSurveyOptions_(){return {groups:aydaRead_('GRUPLAR').filter(x=>x['Durum']==='Aktif').map(x=>({id:x['ID'],name:x['Grup'],teacherId:x['Öğretmen ID']})),teachers:aydaRead_('OGRETMENLER').filter(x=>x['Durum']==='Aktif').map(x=>({id:x['Öğretmen ID']||x['ID'],name:x['Öğretmen']}))};}
 function aydaSurveySubmit_(p){const o=aydaSurveyOptions_(),g=o.groups.find(x=>x.id===p.groupId),t=o.teachers.find(x=>x.id===p.teacherId);if(!g||!t)throw Error('Grup ve eğitmen seçimi geçersiz.');if(g.teacherId!==t.id)throw Error('Seçilen gruba atanan eğitmen ile kayıt eşleşmiyor.');const score=Number(p.score);if(!Number.isInteger(score)||score<1||score>5||!['Evet','Belki','Kararsızım','Hayır'].includes(p.recommend))throw Error('Zorunlu alanlar eksik.');for(const k of ['clarity','participation','progress','materials'])if(!['Evet','Hayır','Diğer'].includes(p[k]))throw Error('Değerlendirme eksik.');const str=k=>String(p[k]||'').trim().slice(0,1200);const lock=LockService.getScriptLock();lock.waitLock(20000);try{let sh=aydaDb_().getSheetByName('MEMNUNIYET_ANKETI');if(!sh){sh=aydaDb_().insertSheet('MEMNUNIYET_ANKETI');sh.appendRow(['ID','Tarih','Grup ID','Grup','Eğitmen ID','Eğitmen','Tür','Puan','Öneri','Anlatım','Anlatım notu','Katılım','Katılım notu','İlerleme','İlerleme notu','Materyaller','Materyal notu','Kurs hocası görüşü','Konuşma hocası görüşü','En iyi yön','Geliştirme','Ek not']);}const id=Utilities.getUuid();sh.appendRow([id,new Date(),g.id,g.name,t.id,t.name,str('teacherType'),score,str('recommend'),str('clarity'),str('clarityNote'),str('participation'),str('participationNote'),str('progress'),str('progressNote'),str('materials'),str('materialsNote'),str('courseTeacherNote'),str('speakingTeacherNote'),str('best'),str('improve'),str('additional')]);SpreadsheetApp.flush();return {saved:true,id:id};}finally{lock.releaseLock();}}
 function aydaSurveySummary_(user){if(!aydaIsMonitor_(user))throw Error('Yönetici yetkisi gerekli.');const sh=aydaDb_().getSheetByName('MEMNUNIYET_ANKETI');if(!sh||sh.getLastRow()<2)return {count:0,average:0,rows:[]};const v=sh.getDataRange().getDisplayValues();v.shift();const data=v.filter(r=>r.some(Boolean));const ratings=data.map(r=>Number(r[7])).filter(Number.isFinite);return {count:data.length,average:ratings.length?Math.round(ratings.reduce((a,b)=>a+b,0)/ratings.length*10)/10:0,rows:data.slice(-300).reverse().map(r=>({date:r[1],group:r[3],teacher:r[5],type:r[6],score:r[7],recommend:r[8],clarity:r[9],clarityNote:r[10],participation:r[11],participationNote:r[12],progress:r[13],progressNote:r[14],materials:r[15],materialsNote:r[16],courseTeacherNote:r[17],speakingTeacherNote:r[18],best:r[19],improve:r[20],additional:r[21]}))};}
 function doGet(e){
