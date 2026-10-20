@@ -312,7 +312,8 @@
   for(const t of rows){
    const box=add(root,'article','owner-teacher-card');const hd=add(box,'div','owner-group-head');add(hd,'h3','',t.teacher.name);hd.append(pill(t.teacher.status||'—',t.teacher.status==='Aktif'?'regular':'watch'));
    const gs=(overview.groups||[]).filter(g=>g.teacherId===t.teacher.id);
-   add(box,'p','','Ders alanı: '+(gs.length?'Normal kurs / grup':'Özel ders / henüz grup atanmamış') );
+   add(box,'p','','Öğretmen türü: '+({kurs:'Normal kurs hocası',konusma:'Konuşma hocası',ozel:'Özel ders hocası'}[t.teacher.teacherType]||'Belirtilmedi'));
+   add(box,'p','','Sınıf eşleşmesi: '+(gs.length?gs.length+' sınıf':'Henüz sınıf atanmadı'));
    add(box,'p','','Grupları: '+(gs.map(g=>g.name+' ('+g.level+')').join(', ')||'Atanmış grup yok'));
    add(box,'p','','Bu ay: '+t.done+' ders · '+hoursText(t.hours)+' saat · '+t.canceled+' iptal · '+t.postponed+' erteleme');
    add(box,'p','','Öğretmen ID: '+t.teacher.id+' · Kullanıcı ID: '+(t.teacher.userId||'—'));
