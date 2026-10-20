@@ -1,92 +1,111 @@
 "use strict";
-/* AYDA manager priorities: track/act first; infrequently used mutations live under Settings. */
+/* AYDA — Yöneticinin en sık yaptığı işler tek seviyeli menüde. */
 (()=>{
  const area=document.getElementById('adminArea'),nav=document.getElementById('adminNav');
  if(!area||!nav)return;
- const $=id=>document.getElementById(id);
- const main=[
-  {id:'academic',label:'📊 Genel Bakış'},
-  {id:'health',label:'🩺 Sistem Sağlığı'},
-  {id:'students',label:'👥 Öğrenci Takibi'},
-  {id:'money',label:'🗓️ Ders ve Muhasebe'},
-  {id:'settings',label:'⚙️ Ayarlar'}
+ const tabs=[
+  {id:'academic',label:'◉ Genel Bakış'},
+  {id:'health',label:'✚ Sistem Sağlığı'},
+  {id:'students',label:'👥 Öğrenciler'},
+  {id:'groups',label:'▦ Gruplar'},
+  {id:'teachers',label:'◉ Öğretmenler'},
+  {id:'money',label:'◷ Ders Saatleri'}
  ];
- const settingItems=[
-  {id:'groups',label:'🏫 Grup İşlemleri'},
-  {id:'teachers',label:'👩‍🏫 Öğretmenler ve Anahtarlar'},
-  {id:'update',label:'⚙️ Düzenle'}
- ];
- const map={
+ const sectionMap={
   'Yönetim · Aylık Ders ve Ücret Çizelgesi':'money',
   'Akademik Planlama · 24 Ünite + 2 Sınav Hazırlığı':'academic',
   'Öğrenci Takibi · Devamsızlık ve Ödev':'students',
   'CRM CSV Karşılaştırması · İsteğe Bağlı':'students',
   'Yeni Öğretmen Ekle':'teachers',
+  'Öğretmenlerin Sınıflarını Değiştir':'teachers',
+  'Öğrenci Kayıt İşlemleri':'students',
   'Yeni Grup Aç ve Programını Belirle':'groups',
-  'Mevcut Grup Bilgilerini Düzenle':'update',
-  'Grup Eksiklerini Tamamla':'update',
-  'Öğrenci Kayıt İşlemleri':'groups',
+  'Mevcut Grup Bilgilerini Düzenle':'groups',
+  'Grup Eksiklerini Tamamla':'groups',
   'Öğretmen Hesapları ve Anahtar Arşivi':'teachers',
   'Kolay Parola Yönetimi':'teachers',
   'Giriş Anahtarı Yönetimi':'teachers',
-  'Grup Durumu ve Son İşlenen Konular':'academic'
+  'Grup Durumu ve Son İşlenen Konular':'groups'
  };
- let current='academic',settingsTab='groups',section='academic';
+ let section='academic',active='academic';
+ // Kayıt formları aynı DOM'da kalır; sadece ilgili görevde gösterilir.
  for(const child of [...area.children]){
-  if(child.classList.contains('section')){
-   const title=child.querySelector('h2')?.textContent?.trim();
-   if(map[title])section=map[title];
-  }
   if(child.id==='adminNav'||child.classList.contains('adminQuick'))continue;
   if(child.id==='aydaAdminHealth'){child.dataset.adminTab='health';continue;}
+  if(child.classList.contains('section')){
+   const title=child.querySelector('h2')?.textContent?.trim();
+   if(sectionMap[title])section=sectionMap[title];
+  }
   child.dataset.adminTab=section;
  }
- const sub=document.createElement('nav');sub.id='adminSettingsNav';sub.className='admin-settings-nav';
- sub.setAttribute('aria-label','Yönetim ayarları');
- nav.insertAdjacentElement('afterend',sub);
- const label=document.createElement('div');label.className='admin-settings-intro';label.textContent='Hesap, grup ve parola işlemleri günlük takibin dışında tutulur.';
- sub.append(label);
- function btn(id,name,parent,isSettings){
-  const b=document.createElement('button');b.type='button';b.textContent=name;b.dataset.target=id;
-  b.setAttribute('aria-pressed','false');
-  b.addEventListener('click',()=>isSettings?select('settings',id):select(id));
-  parent.append(b);return b;
+ const legacyNav=document.getElementById('adminSettingsNav');
+ if(legacyNav)legacyNav.remove();
+ nav.replaceChildren();
+ for(const tab of tabs){
+  const b=document.createElement('button');
+  b.type='button';b.dataset.target=tab.id;b.textContent=tab.label;b.setAttribute('aria-pressed','false');
+  b.addEventListener('click',()=>open(tab.id,true));
+  nav.append(b);
  }
- for(const x of main)btn(x.id,x.label,nav,false);
- for(const x of settingItems)btn(x.id,x.label,sub,true);
- function select(tab,subTab){
-  const isDirectSettings=settingItems.some(x=>x.id===tab);
-  if(isDirectSettings){subTab=tab;tab='settings';}
-  current=main.some(x=>x.id===tab)?tab:'academic';
-  if(settingItems.some(x=>x.id===subTab))settingsTab=subTab;
-  sub.hidden=current!=='settings';
+ function normalize(tab,sub){
+  if(tab==='settings'||tab==='ayarlar')return sub==='teachers'?'teachers':sub==='students'?'students':sub==='money'?'money':'groups';
+  if(tab==='update')return 'groups';
+  if(tab==='accounts')return 'teachers';
+  if(tab==='saglik'||tab==='sağlık')return 'health';
+  return tabs.some(x=>x.id===tab)?tab:'academic';
+ }
+ function open(tab,scroll){
+  active=normalize(tab);
   for(const child of area.querySelectorAll(':scope > [data-admin-tab]')){
-   child.hidden=child.dataset.adminTab==='health'?!['academic','health'].includes(current):child.dataset.adminTab!==(current==='settings'?settingsTab:current);
+   child.hidden=child.dataset.adminTab==='health'
+    ?!['academic','health'].includes(active)
+    :child.dataset.adminTab!==active;
   }
-  for(const b of nav.querySelectorAll(':scope > button')){
-   const active=b.dataset.target===current;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));
+  for(const b of nav.querySelectorAll('button')){
+   const selected=b.dataset.target===active;
+   b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected));
   }
-  for(const b of sub.querySelectorAll('button')){
-   const active=b.dataset.target===settingsTab;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));
-  }
-  try{
-   sessionStorage.setItem('aydaAdminTab',current);
-   sessionStorage.setItem('aydaAdminSettingsTab',settingsTab);
-  }catch{}
+  try{sessionStorage.setItem('aydaAdminTab',active)}catch(_){}
+  if(scroll)nav.scrollIntoView({block:'start',behavior:'smooth'});
  }
- const oldTab=sessionStorage.getItem('aydaAdminTab')||'academic';
- const oldSetting=sessionStorage.getItem('aydaAdminSettingsTab')||'groups';
- select(oldTab,oldSetting);
- const hash=()=>String(location.hash||'').replace(/^#/,'').toLocaleLowerCase('tr-TR');
+ function hashTab(){
+  const hash=decodeURIComponent(location.hash.slice(1)).toLocaleLowerCase('tr-TR');
+  if(['saglik','sağlık','health','sistem-sagligi'].includes(hash))return 'health';
+  if(['grup-islemleri','gruplar','duzenle'].includes(hash))return 'groups';
+  if(['ogretmenler','hesaplar'].includes(hash))return 'teachers';
+  if(['ogrenciler','öğrenciler'].includes(hash))return 'students';
+  if(['ders-saatleri','muhasebe'].includes(hash))return 'money';
+  if(['ayarlar','settings'].includes(hash))return 'groups';
+  return '';
+ }
  function applyHash(){
   if(!document.body.classList.contains('ayda-is-admin'))return;
-  if(['saglik','sağlık','health','sistem-sagligi'].includes(hash()))select('health');
-  else if(['ayarlar','settings'].includes(hash()))select('settings');
-  else if(['grup-islemleri','gruplar'].includes(hash()))select('settings','groups');
-  else if(['ogretmenler','hesaplar'].includes(hash()))select('settings','teachers');
-  else if(['duzenle'].includes(hash()))select('settings','update');
+  const target=hashTab();if(target)open(target,false);
  }
+ const old=sessionStorage.getItem('aydaAdminTab')||'academic';
+ open(hashTab()||old,false);
  window.addEventListener('hashchange',applyHash);
  window.addEventListener('ayda:login',applyHash);
- window.AYDA_ADMIN_MENU={open:(tab,subTab)=>select(tab,subTab)};
+ window.AYDA_ADMIN_MENU={open:(tab,sub)=>open(normalize(tab,sub),false),active:()=>active};
+ // Her görev tek tıklamayla açılır, yan menüye ya da ayrı sayfaya gitmez.
+ const shortcuts=[
+  {text:'＋ Yeni grup',tab:'groups',target:'groupCreateForm'},
+  {text:'＋ Öğrenci ekle / düzenle',tab:'students',target:'adminStudentForm'},
+  {text:'◉ Öğretmen işlemleri',tab:'teachers',target:'teacherGroupsForm'},
+  {text:'✚ Eksikleri düzelt',tab:'health',target:'aydaAdminHealth'}
+ ];
+ const quick=document.querySelector('#adminArea > .adminQuick');
+ if(quick&&!document.getElementById('aydaAdminQuickActions')){
+  const actions=document.createElement('div');
+  actions.id='aydaAdminQuickActions';actions.className='ayda-admin-quick-actions';
+  for(const item of shortcuts){
+   const b=document.createElement('button');b.type='button';b.textContent=item.text;b.dataset.quickTab=item.tab;
+   b.addEventListener('click',()=>{
+    open(item.tab,false);
+    const target=document.getElementById(item.target);
+    if(target){target.scrollIntoView({block:'start',behavior:'smooth'});if(item.target!=='aydaAdminHealth')target.querySelector('input:not([disabled]),select:not([disabled])')?.focus({preventScroll:true})}
+   });actions.append(b);
+  }
+  quick.append(actions);
+ }
 })();
