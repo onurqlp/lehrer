@@ -1,106 +1,125 @@
-/* AYDA | İki yönetici ekranında aynı Sistem Sağlığı uyarıları. Salt okunur. */
-(()=>{'use strict';
+/* AYDA ortak Sistem Sağlığı — yonetici.html ile aynı kontrol kuralları, Admin içinde düzenleme. */
+(()=>{
+'use strict';
 const root=document.getElementById('aydaAdminHealthIssues');if(!root)return;
-if(new URLSearchParams(location.search).get('aydaEmbed')==='1')return;
-const make=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);return x;};
-const names=/(?:^|\s)(?:ödendi|ödenmedi|taksit(?:ler)?|borç|bakiye|ödeme|peşin|hesap|öğrenci|toplamı|danışmanlık|abisi|oğlu|kızı|eltden|elt|cncler|multimanustan|imam|ark|ağustos|agustos|ank|elazığ|yeni|hanım|bey|müsdavdan|yaseminden)(?=\s|$)/iu;
-function issueName(s){const p=String(s||'').trim().split(/\s+/).filter(Boolean);return p.length<2||/[0-9?!@]/.test(s)||names.test(s)||p.length>4;}
-function add(title,detail,href,label){
- const c=make('div');c.className='ayda-shared-health-item';
- const a=make('strong',title),b=make('small',detail),link=make('a',label||'Düzenle →');
- link.href=href;c.append(a,b,link);root.append(c);return c;
-}
-const link=(fix,groupId,studentId)=>{
- const u=new URL('./index.html',location.href);u.searchParams.set('aydaFix',fix);
- if(groupId)u.searchParams.set('groupId',groupId);
- if(studentId)u.searchParams.set('studentId',studentId);
- u.hash=fix==='student'?'grup-islemleri':'duzenle';return u.href;
-};
-const manager=tab=>'#'+(tab==='messages'||tab==='alerts'?'mesajlar':tab==='health'?'saglik':tab==='accounts'?'ogretmenler':'gruplar');
-let requestId=0;
-async function update(){
- if(typeof data==='undefined'||data?.user?.role!=='admin')return;
- const ticket=++requestId;
- const initialGroups=data.groups||[];
- root.replaceChildren(make('p','Sistem Sağlığı açık · '+initialGroups.filter(g=>g.status==='Aktif').length+' aktif grup kontrol ediliyor. Ayrıntılı uyarılar yükleniyor…'));
- const current=data,groups=current.groups||[],schedule=current.schedule||[],teachers=current.teachers||[];
- const active=groups.filter(g=>g.status==='Aktif'),activeIds=new Set(active.map(g=>g.id));
- // Temel grup/öğretmen kontrollerini Google ayrıntı sorgularını bekletmeden göster.
- const requests=[
-  Promise.resolve().then(()=>jsonp('trackingSummary')),
-  Promise.resolve().then(()=>jsonp('reminders')),
-  Promise.resolve().then(()=>jsonp('contactDirectory'))
- ];
- const withLimit=(promise)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(Error('Google yanıtı gecikti')),16000))]);
- const [tResult,rResult,cResult]=await Promise.allSettled(requests.map(withLimit));
- if(ticket!==requestId||typeof data==='undefined'||data?.user?.role!=='admin')return;
- const tracking=tResult.status==='fulfilled'?tResult.value:null;
- const reminders=rResult.status==='fulfilled'?rResult.value:null;
- const contacts=cResult.status==='fulfilled'?cResult.value:null;
+const overviewReady=()=>typeof data!=='undefined'&&data?.user?.role==='admin';
+const make=(tag,txt)=>{const n=document.createElement(tag);if(txt!==undefined)n.textContent=String(txt);return n;};
+const formatDate=value=>{const v=String(value||'');return /^\d{4}-\d\d-\d\d$/.test(v)?v.slice(8)+'.'+v.slice(5,7)+'.'+v.slice(0,4):v;};
+let requestId=0,cache={tracking:null,reminders:null,contacts:null},loading=false;
+function render(overview,tracking,reminders,contactDirectory){
  root.replaceChildren();
- const teacherIds=new Set(teachers.map(t=>t.id)),activeTeachers=new Set(teachers.filter(t=>t.status==='Aktif').map(t=>t.id));
- const roster=new Map((tracking?.groups||[]).map(g=>[g.id,g]));
- for(const g of active){
-  if(!g.teacherId||!teacherIds.has(g.teacherId))add(g.name+' · Öğretmen atanmadı','Sınıfa yetkili öğretmen atanmalı.',link('teacher',g.id),'Öğretmen ata →');
-  else if(!activeTeachers.has(g.teacherId))add(g.name+' · Öğretmen hesabı pasif','Hesabı etkinleştirin ya da grup öğretmenini değiştirin.','#ogretmenler','Hesabı incele →');
-  const plans=schedule.filter(r=>r.groupId===g.id);
-  if(!plans.length)add(g.name+' · Haftalık program yok','Grubun ders günleri ve saatleri belirtilmemiş.',link('schedule',g.id),'Programı oluştur →');
-  else if(plans.some(p=>p.status!=='Aktif'||!p.start||!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(p.end||''))))
-   add(g.name+' · Ders saati eksik','Ders başlangıç/bitiş saatlerini tamamlayın.',link('schedule',g.id),'Ders saatlerini düzenle →');
-  if(!Number(g.students))add(g.name+' · Öğrenci sayısı sıfır','Sınıf öğrenci listesini kontrol edin.',link('student',g.id),'Öğrenci ekle →');
-  const actual=roster.get(g.id)?.students;
-  if(actual!==undefined&&Number(actual)!==Number(g.students))
-   add(g.name+' · Öğrenci sayıları uyuşmuyor','Grup: '+g.students+' · Öğrenci listesi: '+actual,link('count',g.id),'Grup sayısını düzelt →');
-  if(g.end&&g.end<'2026-10-20')add(g.name+' · Eski grup aktif','Geçmiş kayıtları silmeden grubu tamamlayın.',link('status',g.id),'Grubu tamamlandı yap →');
- }
- const count=new Map();for(const t of teachers)count.set(t.id,(count.get(t.id)||0)+1);
- for(const [id,n] of count)if(id&&n>1)add('Aynı öğretmen ID birden fazla hesapta','Öğretmen '+id+' · '+n+' hesap. Kimlik eşleşmelerini inceleyin.','#ogretmenler','Hesapları incele →');
- for(const t of teachers.filter(t=>t.status==='Aktif'&&!groups.some(g=>g.teacherId===t.id)))
-  add(t.name+' · Sınıf eşleşmesi yok','Özel ders öğretmeniyse bu uyarı normal olabilir.',link('teacher',''),'Öğretmen ata →');
- for(const row of schedule)if(row.status==='Aktif'&&!groups.some(g=>g.id===row.groupId))
-  add('Program · Tanımsız grup','Grup: '+row.groupId,'#gruplar','Programı incele →');
- for(const student of (tracking?.students||[]).filter(x=>activeIds.has(x.groupId)&&x.riskLevel==='danger'&&x.followupStatus!=='Çözüldü')){
-  const group=groups.find(x=>x.id===student.groupId);
-  const card=add('Öncelikli öğrenci · '+student.name,
-   (group?.name||student.groupId)+' · Gelmedi: '+(student.absent||0)+' · Ödev eksik: '+(student.homeworkMissing||0),
-   './index.html#ogrenciler','Öğrenciyi incele →');
-  const actions=document.createElement('div');actions.className='ayda-health-followup-actions';
-  for(const status of ['Takipte','Çözüldü']){
-   const button=make('button',status);button.type='button';button.className='outline';
-   button.addEventListener('click',async()=>{
-    if(button.disabled||!confirm(student.name+' öğrencisinin takip durumunu "'+status+'" olarak kaydedelim mi?'))return;
-    button.disabled=true;button.textContent='Kaydediliyor…';
-    try{
-     const response=await jsonp('setFollowup',{payload:utf8Base64Url(JSON.stringify({studentId:student.id,status}))});
-     if(!response?.saved)throw Error('Google kayıt onayı alınamadı.');
-     window.dispatchEvent(new Event('ayda:admin-data-updated'));
-    }catch(error){button.textContent='Hata: '+error.message;button.disabled=false;}
-   });actions.append(button);
+ const tName=id=>overview.teachers?.find(t=>t.id===id)?.name||id||'—';
+ const gName=id=>overview.groups?.find(g=>g.id===id)?.name||id||'—';
+ const fmt=formatDate;
+  const groups=overview.groups||[],teachers=overview.teachers||[],schedule=overview.schedule||[],issues=[];
+  const validTeachers=new Set(teachers.map(t=>t.id));
+  const activeTeachers=new Set(teachers.filter(t=>t.status==='Aktif').map(t=>t.id));
+  const validGroups=new Set(groups.map(g=>g.id));
+  const rosterGroups=new Map((tracking?.groups||[]).map(g=>[g.id,g]));
+  const action=(label,fix,groupId,more={})=>({label,fix,groupId,...more});
+  const panel=(label,tab,focus)=>({label,tab,focus});
+  const warn=(title,detail,actions=[])=>issues.push({title,detail,actions});
+  for(const g of groups){
+   if(g.status!=='Aktif')continue;
+   if(!g.teacherId||!validTeachers.has(g.teacherId))
+    warn(g.name+' · Öğretmen atanmadı','Öğretmen seçilmeden ders ve yoklama kaydedilemez.',[action('Öğretmen ata →','teacher',g.id)]);
+   else if(!activeTeachers.has(g.teacherId))
+    warn(g.name+' · Öğretmen hesabı pasif','Öğretmeni veya hesap durumunu kontrol edin: '+tName(g.teacherId),[
+     panel('Hesabı etkinleştir →','accounts','aydaTeacherManage'),action('Öğretmen değiştir →','teacher',g.id)
+    ]);
+   const plans=schedule.filter(r=>r.groupId===g.id);
+   if(!plans.length)
+    warn(g.name+' · Haftalık program yok','Ders günü ile başlangıç/bitiş saati girilmeli.',[action('Programı oluştur →','schedule',g.id)]);
+   else if(plans.some(p=>p.status!=='Aktif'||!p.start||!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(p.end||''))))
+    warn(g.name+' · Ders saati eksik','Programdaki başlangıç veya bitiş saatlerini tamamlayın.',[action('Ders saatlerini düzenle →','schedule',g.id)]);
+   if(!Number(g.students))
+    warn(g.name+' · Öğrenci sayısı sıfır','Sınıf öğrenci listesini kontrol edin.',[action('Öğrenci ekle →','student',g.id)]);
+   const actual=rosterGroups.get(g.id)?.students;
+   if(Number.isFinite(Number(actual))&&Number(actual)!==Number(g.students))
+    warn(g.name+' · Öğrenci sayıları uyuşmuyor','Grup kartı: '+g.students+' / Öğrenci listesi: '+actual+'. Kimlikleri kontrol edin.',[
+     action('Grup sayısını düzelt →','count',g.id),action('Öğrencileri düzenle →','student',g.id)
+    ]);
+   if(g.end&&g.end<'2026-10-20')
+    warn(g.name+' · Önceki dönem grubu hâlâ aktif','Kurs tamamlandıysa geçmişe taşıyın; kayıtları silmeyin.',[action('Grubu tamamlandı yap →','status',g.id)]);
   }
-  card.append(actions);
- }
+  // Sadece bir gruba bağlı öğrenci kayıtları; isim alanındaki CRM notlarını uyarıya çıkar.
+  const issueWords=/(?:^|\s)(?:ödendi|ödenmedi|taksit(?:ler)?|borç|bakiye|ödeme|peşin|hesap|öğrenci|toplamı|danışmanlık|abisi|oğlu|kızı|eltden|elt|cncler|multimanustan|imam|ark|ağustos|agustos|ank|elazığ|yeni|hanım|bey|müsdavdan|yaseminden)(?=\s|$)/iu;
+  const nameIssue=name=>{
+   const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
+   if(parts.length<2)return 'Ad ve soyad birlikte yazılmalı.';
+   if(/[0-9?!@]/.test(name))return 'İsim içinde sayı veya açıklama işareti var.';
+   if(issueWords.test(name))return 'İsim alanında ödeme, yakınlık veya CRM açıklaması bulunuyor.';
+   if(parts.length>4)return 'İsim çok uzun; ad-soyad dışı açıklama olabilir.';
+   return '';
+  };
   for(const student of tracking?.students||[]){
-  if(!activeIds.has(student.groupId)||!student.id||!issueName(student.name))continue;
-  add('Öğrenci adı · '+student.name,'Ad-soyad alanında eksik isim veya CRM notu var.',link('student',student.groupId,student.id),'Öğrenci adını düzelt →');
+   if(!validGroups.has(student.groupId)||!student.id)continue;
+   const reason=nameIssue(student.name);
+   if(reason)warn('Öğrenci adı kontrolü · '+student.name,reason+' · '+gName(student.groupId),[action('Öğrenci adını düzelt →','student',student.groupId,{studentId:student.id})]);
+  }
+  const duplicates=new Map();for(const t of teachers)duplicates.set(t.id,(duplicates.get(t.id)||0)+1);
+  for(const [id,count] of duplicates)if(id&&count>1)
+   warn('Hesaplarda ortak öğretmen ID','Öğretmen ID: '+id+' · '+count+' hesap aynı gruplara erişebilir; eşleşmeleri doğrulayın.',[panel('Hesapları incele →','accounts','ownerAccountsTable')]);
+  for(const t of teachers.filter(t=>t.status==='Aktif'&&!groups.some(g=>g.teacherId===t.id)))
+   warn(t.name+' · Sınıf eşleşmesi yok','Özel ders öğretmeniyse bu durum normal olabilir.',[action('Sınıfa öğretmen ata →','teacher','',{teacherId:t.id})]);
+  for(const r of schedule)if(r.status==='Aktif'&&!validGroups.has(r.groupId))
+   warn('Program · Tanımsız sınıf','Grup ID: '+r.groupId,[panel('Programı incele →','schedule','ownerScheduleList')]);
+  for(const row of (reminders?.items||[]).filter(x=>String(x.date||'')>='2026-10-20'))
+   warn((row.type==='attendance'?'Eksik yoklama':'Eksik ders raporu')+' · '+(row.group||'Sınıf'),fmt(row.date)+' · '+tName(row.teacherId),[
+    {label:'Öğretmene hatırlat →',compose:{teacherId:row.teacherId,groupId:row.groupId,date:row.date,type:row.type}}
+   ]);
+  if(contactDirectory?.missingStudentPhones)
+   warn('Öğrenci iletişim bilgileri eksik',contactDirectory.missingStudentPhones+' öğrencinin kayıtlı veya geçerli telefonu yok.',[panel('Telefonları düzenle →','messages','aydaMsgStudentSearch')]);
+  if(!reminders)
+   warn('Eksik rapor kontrolü kullanılamıyor','Google Apps Script bağlantısını ve güncel dağıtımı kontrol edin.',[{label:'Verileri yenile →',refresh:true}]);
+
+ const header=document.getElementById('aydaAdminHealthShow');
+ if(header)header.textContent=issues.length?'Toplam '+issues.length+' uyarı · İncele →':'Sistem Sağlığı · Tüm kontroller →';
+ const btn=document.querySelector('#adminNav [data-target="health"]');
+ if(btn)btn.textContent=issues.length?'✚ Sistem Sağlığı · '+issues.length:'✚ Sistem Sağlığı';
+ if(!issues.length){root.append(make('p',reminders?'Kontrol edilen alanlarda eksik bilgi yok.':'Temel kontroller tamam. Eksik rapor servisi henüz yanıt vermedi.'));return;}
+ for(const item of issues){
+  const card=make('article');card.className='ayda-shared-health-item';
+  card.append(make('strong',item.title),make('small',item.detail));
+  for(const a of item.actions){
+   const button=make('button',a.label);button.type='button';button.className='ayda-health-fix-button';
+   button.addEventListener('click',()=>{
+    if(a.fix){
+     window.AYDA_HEALTH_EDITORS?.open({fix:a.fix,groupId:a.groupId||'',studentId:a.studentId||'',teacherId:a.teacherId||''});
+    }else if(a.compose){
+     window.AYDA_ADMIN_MENU?.open('messages');
+     window.dispatchEvent(new CustomEvent('ayda:compose-teacher',{detail:a.compose}));
+    }else if(a.refresh){update(true)}
+    else if(a.tab){
+     const tab=a.tab==='accounts'?'teachers':a.tab==='messages'?'messages':a.tab==='schedule'?'groups':a.tab;
+     window.AYDA_ADMIN_MENU?.open(tab);
+     const target=document.getElementById(a.focus);
+     target?.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+   });
+   card.append(button);
+  }
+  root.append(card);
  }
- for(const item of (reminders?.items||[]).filter(r=>String(r.date||'')>='2026-10-20'))
-  add((item.type==='attendance'?'Eksik yoklama':'Eksik ders raporu')+' · '+(item.group||'Grup'),item.date+' tarihli kayıt tamamlanmalı.',manager('alerts'),'Öğretmene hatırlat →');
- if(contacts?.missingStudentPhones)
-  add('Öğrenci telefon bilgileri eksik',contacts.missingStudentPhones+' öğrenci için telefon doğrulaması gerekiyor.',manager('messages'),'Telefonları düzenle →');
- if(!tracking)add('Öğrenci takip verileri alınamadı','Bağlantıyı kontrol etmek için ayrıntılı panele geçin.',manager('health'),'Kontrol ekranını aç →');
- if(!reminders)add('Eksik rapor kontrolü yanıt vermedi','Google bağlantısını veya son Apps Script dağıtımını inceleyin.',manager('health'),'Kontrol ekranını aç →');
- if(!root.children.length)root.append(make('p','Kontrol edilen alanlarda sorun bulunmadı.'));
- const issueCount=root.querySelectorAll('.ayda-shared-health-item').length;
- const link=document.getElementById('aydaAdminHealthShow');
- if(link)link.textContent=issueCount?'Tüm '+issueCount+' uyarıyı incele →':'Sistem Sağlığını aç →';
- const tab=document.querySelector('#adminNav button[data-target="health"]');
- if(tab)tab.textContent=issueCount?'✚ Sistem Sağlığı · '+issueCount:'✚ Sistem Sağlığı';
 }
-// Sağlık sekmesi her zaman ulaşılabilir; geciken servisler için yeniden kontrol sun.
-window.AYDA_ADMIN_HEALTH={refresh:update};
-window.addEventListener('ayda:health-open',update);
-window.addEventListener('ayda:login',update);
-window.addEventListener('ayda:logout',()=>{requestId++;root.replaceChildren(make('p','Yönetici girişi gerekli.'));});
-window.addEventListener('ayda:admin-data-updated',update);
-if(typeof data!=='undefined'&&data?.user?.role==='admin')update();
+async function update(force=false){
+ if(!overviewReady())return;
+ const ticket=++requestId;
+ if(!force&&cache.tracking&&cache.reminders){render(data,cache.tracking,cache.reminders,cache.contacts);return}
+ root.replaceChildren(make('p','Sistem Sağlığı kontrol ediliyor…'));
+ // Temel kontroller yüklenmese bile gösterilmeye devam eder.
+ render(data,cache.tracking,cache.reminders,cache.contacts);
+ loading=true;
+ const read=async action=>{try{return await jsonp(action)}catch{return null}};
+ const [tracking,reminders,contacts]=await Promise.all([read('trackingSummary'),read('reminders'),read('contactDirectory')]);
+ if(ticket!==requestId||!overviewReady())return;
+ cache={tracking,reminders,contacts};loading=false;
+ render(data,tracking,reminders,contacts);
+}
+window.AYDA_ADMIN_HEALTH={refresh:()=>update(true)};
+window.addEventListener('ayda:health-open',()=>update(false));
+window.addEventListener('ayda:login',()=>update(false));
+window.addEventListener('ayda:admin-data-updated',()=>{cache={tracking:null,reminders:null,contacts:null};update(true)});
+window.addEventListener('ayda:logout',()=>{requestId++;cache={tracking:null,reminders:null,contacts:null};root.replaceChildren(make('p','Yönetici girişi gerekli.'))});
+if(overviewReady())update(false);
 })();
