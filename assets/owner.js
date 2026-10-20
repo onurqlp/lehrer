@@ -432,7 +432,7 @@
    else if(!activeTeachers.has(g.teacherId))warn(g.name+' · Öğretmen hesabı pasif','Öğretmeni veya hesap durumunu kontrol edin: '+tName(g.teacherId));
    const plans=schedule.filter(r=>r.groupId===g.id);
    if(!plans.length)warn(g.name+' · Haftalık program yok','Ders günü ile başlangıç/bitiş saati girilmeli.');
-   else if(plans.some(p=>p.status!=='Aktif'||!p.start||!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(String(p.end||''))))warn(g.name+' · Ders saati eksik','Programdaki başlangıç veya bitiş saatlerini tamamlayın.');
+   else if(plans.some(p=>p.status!=='Aktif'||!p.start||!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(p.end||''))))warn(g.name+' · Ders saati eksik','Programdaki başlangıç veya bitiş saatlerini tamamlayın.');
    if(!Number(g.students))warn(g.name+' · Öğrenci sayısı sıfır','Sınıf öğrenci listesini kontrol edin.');
    const actual=rosterGroups.get(g.id)?.students;
    if(Number.isFinite(Number(actual))&&Number(actual)!==Number(g.students))warn(g.name+' · Öğrenci sayıları uyuşmuyor','Grup kartı: '+g.students+' / Öğrenci listesi: '+actual+'. Kimlikleri kontrol edin.');
