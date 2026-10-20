@@ -219,40 +219,95 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   for(const r of todayRows){const c=add(todayRoot,'div','owner-schedule-card');add(c,'strong','',r.group||gName(r.groupId));add(c,'small','',r.start+' – '+r.end+' · '+tName((overview.groups||[]).find(g=>g.id===r.groupId)?.teacherId));}
   if(!todayRows.length)showEmpty('ownerToday','Bugün planlı ders yok.');
   const r=$('ownerRecent');if(!r)return;r.replaceChildren();for(const x of lessons().slice(0,5))r.append(lessonRow(x,true));if(!r.children.length)showEmpty('ownerRecent','Henüz ders kaydı yok.');
-  const preview=$('ownerGroupPreview');if(!preview)return;preview.replaceChildren();for(const g of activeGroups().slice(0,6))preview.append(groupCard(g));
-  if(!preview.children.length)showEmpty('ownerGroupPreview','Aktif grup bulunamadı.');
+  const preview=$('ownerGroupPreview');if(!preview)return;preview.replaceChildren();
+  const all=orderedGroups(overview.groups||[]);
+  renderGroupTotals('ownerGroupPreviewStats',all);
+  for(const group of all)preview.append(groupCard(group));
+  if(!all.length)showEmpty('ownerGroupPreview','Kayıtlı grup bulunamadı.');
+ }
+ function orderedGroups(list){
+  return (Array.isArray(list)?list:[]).slice().sort((a,b)=>{
+   const rank=g=>g.status==='Aktif'?0:g.status==='Tamamlandı'?2:1;
+   return rank(a)-rank(b)||String(a.name||'').localeCompare(String(b.name||''),'tr');
+  });
+ }
+ function groupLatest(id){
+  return (overview.history||[]).filter(r=>r.groupId===id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]||null;
+ }
+ function groupProgram(id){return (overview.schedule||[]).filter(r=>r.groupId===id);}
+ function groupProgramComplete(g){
+  const plan=groupProgram(g.id);
+  return plan.length>0&&plan.every(p=>p.start&&p.end&&p.end>p.start);
+ }
+ function renderGroupTotals(id,groups){
+  const target=$(id);if(!target)return;target.replaceChildren();
+  const active=groups.filter(g=>g.status==='Aktif');
+  const roster=Array.isArray(tracking?.students)?tracking.students:null;
+  const values=[
+   ['Toplam grup',groups.length],
+   ['Aktif grup',active.length],
+   ['Grup kayıtlarındaki öğrenci',groups.reduce((n,g)=>n+(Number(g.students)||0),0)],
+   ['Yoklama listesindeki öğrenci',roster?roster.filter(s=>groups.some(g=>g.id===s.groupId)).length:'Yükleniyor'],
+   ['Programı eksik aktif grup',active.filter(g=>!groupProgramComplete(g)).length]
+  ];
+  for(const [label,value] of values){const card=add(target,'div','ayda-partner-group-stat');add(card,'strong','',String(value));add(card,'span','',label);}
  }
  function groupCard(g){
-  const total=unit(g),done=unitsDone(g),percent=Math.min(100,Math.round(done/total*100)),stat=(tracking?.groups||[]).find(x=>x.id===g.id),dates=dateStatus(g);
-  const box=node('article','owner-group-card');const head=add(box,'div','owner-group-head'),title=add(head,'div');
-  add(title,'span','owner-level',g.level||'—');add(title,'h3','',g.name);head.append(pill(g.status||'—',g.status==='Aktif'?'regular':'untracked'));
-  add(box,'div','owner-group-meta',tName(g.teacherId)+' · '+(stat?stat.students:g.students||0)+' öğrenci');
-  const prog=add(box,'div','owner-progress-info');add(prog,'strong','',done+' / '+total+' ünite');add(prog,'span','',percent+'%');
-  const bar=add(box,'div','owner-progress'),fill=add(bar,'div');fill.style.width=percent+'%';
-  const statRow=add(box,'div','owner-group-stats');for(const x of [stat?'Katılım '+round(stat.present,stat.present+stat.absent):'Yoklama henüz yok',stat?'Ödev eksik '+stat.homeworkMissing:'Ödev bekleniyor',stat?.atRisk?stat.atRisk+' öncelikli öğrenci':null])if(x)add(statRow,'span','',x);
-  const detail=add(box,'details');add(detail,'summary','','Program, son rapor ve tahmini tarihler');
-  const body=add(detail,'div','owner-group-detail');
+  const total=unit(g),done=unitsDone(g),rest=Math.max(0,total-done),pct=Math.min(100,Math.round(done/total*100));
+  const stat=(tracking?.groups||[]).find(x=>x.id===g.id),latest=groupLatest(g.id),program=groupProgram(g.id),estimate=dateStatus(g);
+  const box=node('article','owner-group-card ayda-partner-group-card'),head=add(box,'div','owner-group-head'),heading=add(head,'div');
+  add(heading,'span','owner-level',g.level||'—');add(heading,'h3','',g.name||g.id);
+  head.append(pill(g.status||'—',g.status==='Aktif'?'regular':'untracked'));
+  const meta=add(box,'div','owner-group-meta');
+  add(meta,'span','','Öğretmen: '+tName(g.teacherId));
+  add(meta,'span','','Grup kaydındaki öğrenci: '+(Number(g.students)||0));
+  if(stat)add(meta,'span','','Yoklama listesindeki öğrenci: '+stat.students);
+  const progress=add(box,'div','owner-progress-info');add(progress,'strong','',done+' / '+total+' ünite');add(progress,'span','',pct+'%');
+  const bar=add(box,'div','owner-progress');add(bar,'div').style.width=pct+'%';
+  const remaining=add(box,'div','ayda-partner-group-remaining');
+  add(remaining,'strong','',rest?'Kalan '+rest+' ünite':'Ünite hedefi tamamlandı');
+  add(remaining,'small','',g.total?'Hedef: '+total+' ünite':'Standart hedef: '+total+' ünite');
+  const flags=add(box,'div','ayda-partner-group-flags');
+  if(g.status==='Aktif'&&g.end&&g.end<today())add(flags,'span','ayda-partner-group-warn','Planlanan bitiş tarihi geçti');
+  if(g.status==='Aktif'&&g.start&&g.start>today())add(flags,'span','ayda-partner-group-info','Başlangıç: '+fmt(g.start));
+  if(g.status==='Aktif'&&!groupProgramComplete(g))add(flags,'span','ayda-partner-group-warn','Program veya saat eksik');
+  add(box,'p','ayda-partner-group-end','Planlanan bitiş: '+fmt(g.end));
+  const last=add(box,'div','ayda-partner-last');
+  add(last,'small','','Son ders raporu');
+  if(latest){
+   add(last,'strong','',fmt(latest.date)+' · '+latest.status+(latest.actual?' · '+latest.actual+' saat':''));
+   if(latest.status==='İşlendi'&&latest.completed!==undefined&&latest.completed!=='')add(last,'span','','Son rapordaki ünite: '+latest.completed);
+   if(latest.note)add(last,'p','',String(latest.note).slice(0,145)+(String(latest.note).length>145?'…':''));
+  }else add(last,'strong','','20.10.2026 tarihinden sonra rapor yok');
+  add(box,'p','ayda-partner-program','Haftalık program: '+(program.map(p=>p.day+' '+(p.start||'—')+'–'+(p.end||'saat eksik')).join(' · ')||'Girilmeyen program'));
+  const stats=add(box,'div','owner-group-stats');
+  for(const value of [stat?'Katılım '+round(stat.present,stat.present+stat.absent):'Yoklama verisi yüklenmedi',
+   stat?'Eksik ödev '+stat.homeworkMissing:'Ödev verisi yüklenmedi',
+   stat?.atRisk?stat.atRisk+' öncelikli öğrenci':''])if(value)add(stats,'span','',value);
+  const details=add(box,'details');add(details,'summary','','Akademik ayrıntılar ve ödevler');
+  const body=add(details,'div','owner-group-detail');
   add(body,'p','','Başlangıç: '+fmt(g.start)+' · Planlanan bitiş: '+fmt(g.end));
-  add(body,'p','','24./son ünite tahmini: '+dates.unit+' · 2 hazırlık dersi sonrası: '+dates.exam);
-  const program=(overview.schedule||[]).filter(r=>r.groupId===g.id);
-  add(body,'p','','Ders günleri: '+(program.map(p=>p.day+' '+p.start+'–'+p.end).join(' · ')||'Henüz program yok'));
-  const latest=(overview.history||[]).filter(r=>r.groupId===g.id).sort((a,b)=>b.date.localeCompare(a.date))[0];
-  if(latest)add(body,'p','','Son rapor: '+fmt(latest.date)+' · '+latest.status+(latest.note?' · '+latest.note:''));
-  const assigned=(lessonHomework?.items||[]).filter(r=>r.groupId===g.id).slice(0,6);
-  if(assigned.length){
-   const hw=add(body,'details','ayda-group-homework-detail');
-   const pending=assigned.filter(r=>r.shareStatus==='Bekliyor').length;
-   add(hw,'summary','','Verilen ödevler · '+assigned.length+' son kayıt'+(pending?' · '+pending+' WhatsApp bekliyor':''));
-   for(const r of assigned)add(hw,'p','',fmt(r.date)+' · '+r.text+' · '+(r.shareStatus==='Paylaşıldı'?'Gruba gönderildi (öğretmen onayı)':r.shareStatus==='Bekliyor'?'Paylaşım bekliyor':'Paylaşım bilgisi yok'));
+  add(body,'p','','Son ünite tahmini: '+estimate.unit+' · 2 sınav hazırlık dersinden sonra: '+estimate.exam);
+  add(body,'p','','Grup ID: '+g.id+' · Öğretmen ID: '+(g.teacherId||'—'));
+  const homework=(lessonHomework?.items||[]).filter(x=>x.groupId===g.id).slice(0,6);
+  if(homework.length){
+   const wrap=add(body,'details','ayda-group-homework-detail');
+   const pending=homework.filter(x=>x.shareStatus==='Bekliyor').length;
+   add(wrap,'summary','','Verilen ödevler · '+homework.length+(pending?' · '+pending+' paylaşılmamış':''));
+   for(const h of homework)add(wrap,'p','',fmt(h.date)+' · '+h.text+' · '+(h.shareStatus||'Paylaşım bilgisi yok'));
   }
   box.append(quick('Grubun öğrencilerini gör →',()=>{activate('students');$('ownerStudentGroup').value=g.id;renderStudents();}));
   return box;
  }
  function renderGroups(){
-  const groups=overview.groups||[],level=$('ownerGroupLevel').value,q=$('ownerGroupSearch').value.trim().toLocaleLowerCase('tr'),state=$('ownerGroupStatus').value;
-  const rows=groups.filter(g=>(!level||g.level===level)&&(!state||g.status===state)&&(!q||(g.name+' '+g.level+' '+tName(g.teacherId)).toLocaleLowerCase('tr').includes(q)));
-  const root=$('ownerGroupList');root.replaceChildren();for(const g of rows)root.append(groupCard(g));
-  if(!rows.length)showEmpty('ownerGroupList','Bu koşullara uygun grup bulunamadı.');
+  const groups=overview.groups||[],level=$('ownerGroupLevel').value,state=$('ownerGroupStatus').value;
+  const q=$('ownerGroupSearch').value.trim().toLocaleLowerCase('tr');
+  const subset=orderedGroups(groups.filter(g=>(!level||g.level===level)&&(!state||g.status===state)&&(!q||(g.name+' '+g.level+' '+tName(g.teacherId)).toLocaleLowerCase('tr').includes(q))));
+  renderGroupTotals('ownerGroupTotals',groups);
+  const summary=$('ownerGroupResults');if(summary)summary.textContent=subset.length+' / '+groups.length+' grup gösteriliyor · Google akademik kayıtları';
+  const container=$('ownerGroupList');container.replaceChildren();
+  for(const g of subset)container.append(groupCard(g));
+  if(!subset.length)showEmpty('ownerGroupList','Bu filtrelere uygun grup bulunamadı.');
  }
  function lastRecord(item,type){if(!item)return 'Kayıt yok';return (type==='attendance'&&item.excused&&item.status==='Gelmedi'?'Mazeretli':item.status)+' · '+fmt(item.date);}
  function studentCard(s){
