@@ -1,4 +1,7 @@
 "use strict";
+/* AYDA_SESSION_V2 */
+const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.stringify({key,expires:Date.now()+8*3600000}));}catch(_){}},read(){try{const x=JSON.parse(localStorage.getItem('aydaAdminSession')||'null');if(x?.key&&x.expires>Date.now())return x.key;localStorage.removeItem('aydaAdminSession');}catch(_){}return '';},clear(){try{localStorage.removeItem('aydaAdminSession')}catch(_){}}};
+
 (()=>{
  const $=id=>document.getElementById(id);
  const payload64=s=>{const b=new TextEncoder().encode(s);let a='';for(const c of b)a+=String.fromCharCode(c);return btoa(a).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
@@ -83,7 +86,7 @@
    const result=await api('overview',provided);
    if(result?.user?.role!=='admin')throw Error('Yalnızca yönetici hesabıyla açılabilir.');
    token=provided;overview=result;
-   sessionStorage.setItem('aydaKey',token);
+   sessionStorage.setItem('aydaKey',token);aydaSession.save(token);
    $('ownerLogin').hidden=true;$('ownerApp').hidden=false;$('ownerLogout').hidden=false;
    const skip=$('ownerSkip');if(skip){skip.href='#ownerApp';skip.textContent='Ana içeriğe geç';}
    $('ownerKey').value='';
@@ -526,7 +529,7 @@
  }
  $('ownerLoginForm').addEventListener('submit',e=>{e.preventDefault();login($('ownerKey').value);});
  $('ownerRefresh').addEventListener('click',refresh);
- $('ownerLogout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');token='';overview=null;tracking=null;reminders=null;contactDirectory=null;lessonHomework=null;activeApi='';$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';const skip=$('ownerSkip');if(skip){skip.href='#ownerLogin';skip.textContent='Giriş bölümüne geç';}window.dispatchEvent(new Event('ayda:owner-logout'));});
+ $('ownerLogout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');aydaSession.clear();token='';overview=null;tracking=null;reminders=null;contactDirectory=null;lessonHomework=null;activeApi='';$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';const skip=$('ownerSkip');if(skip){skip.href='#ownerLogin';skip.textContent='Giriş bölümüne geç';}window.dispatchEvent(new Event('ayda:owner-logout'));});
  // Yönetici menüsünü görev odaklı üç gruba ayır; mevcut sekme ve erişim davranışı korunur.
  (function organizeOwnerNav(){
   const nav=$('ownerNav');if(!nav||nav.dataset.organized)return;nav.dataset.organized='true';
@@ -566,5 +569,5 @@
   const csv='\ufeff'+exportRows.map(r=>r.map(esc).join(';')).join('\r\n');
   const u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=u;a.download='AYDA-ogretmen-saatleri-'+$('ownerTeacherMonth').value+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
  });
- const previous=sessionStorage.getItem('aydaKey');if(previous)login(previous);
+ const previous=sessionStorage.getItem('aydaKey')||aydaSession.read();if(previous)login(previous);
 })();
