@@ -6,7 +6,7 @@
   const a=document.createElement('a');a.className='outline';a.textContent=title;a.href=href;parent.prepend(a);
  };
  if(owner){
-  add(document.querySelector('.owner-controls'),'Öğretmen paneli ↗','./index.html#todayLessons');
+  const adminPanelLink=document.createElement('a');adminPanelLink.className='outline ayda-admin-only';adminPanelLink.textContent='Admin Paneli ↗';adminPanelLink.href='./index.html#ayarlar';document.querySelector('.owner-controls')?.prepend(adminPanelLink);
   const bridge=()=>window.AYDA_OWNER_BRIDGE;
   const cards=document.getElementById('ownerTeacherCards');
   const panel=document.getElementById('owner-teachers');
