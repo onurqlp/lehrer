@@ -213,7 +213,8 @@
   resetAfterSave(){
    rows.clear();const review=byId('attendanceReviewed');if(review)review.checked=false;renderRoster();
   },
-  isConnected(){return liveRoster;}
+  isConnected(){return liveRoster;},
+  refreshRoster(){return syncRoster(true);}
  };
  window.addEventListener('ayda:login',syncRoster);
  window.addEventListener('ayda:logout',()=>{roster=new Map();rows.clear();liveRoster=false;rosterLoading=false;rosterError='';demo=false;renderRoster();});
