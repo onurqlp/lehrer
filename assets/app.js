@@ -87,6 +87,28 @@ function renderAdmin(){const admin=data.user.role==='admin';$('adminArea').class
 function renderMonth(){if(!data||data.user.role!=='admin')return;const month=$('monthFilter').value,teacher=$('teacherFilter').value,items=allEntries().filter(x=>(!month||x.date.startsWith(month))&&(!teacher||x.teacherId===teacher));const totals=new Map();for(const x of items){const key=x.teacherId||'—',v=totals.get(key)||{count:0,hours:0,group:0,private:0,cancel:0,postponed:0};if(x.status==='İşlendi'){v.count++;v.hours+=hours(x.actual);v[x.type==='Özel'?'private':'group']++;}else if(x.status==='İptal')v.cancel++;else if(x.status==='Ertelendi')v.postponed++;totals.set(key,v);}const box=$('monthSummary');box.replaceChildren();const table=$el('table','data-table'),head=$el('tr');for(const label of ['Öğretmen','Ders','Grup','Özel','Saat','İptal','Ertelenen'])head.append($el('th','',label));table.append(head);for(const [id,v] of totals){const tr=$el('tr'),t=(data.teachers||[]).find(t=>t.id===id);for(const x of [t?.name||id,v.count,v.group,v.private,v.hours.toLocaleString('tr-TR',{maximumFractionDigits:2}),v.cancel,v.postponed])tr.append($el('td','',x));table.append(tr);}box.append(table);if(!totals.size)box.append($el('p','muted','Bu ay için kayıt bulunmuyor.'));}
 $('rotateBtn').addEventListener('click',async()=>{const target=$('keyTarget').value;if(!confirm((target==='ADMIN'?'Yönetici':target)+' anahtarı yenilensin mi? Eski anahtar hemen geçersiz olacak.'))return;const btn=$('rotateBtn');btn.disabled=true;clear('rotateResult');try{const result=await jsonp('rotateKey',{target});const box=$('rotateResult');const info=$el('p','muted','Yeni anahtar (yalnızca bir kez gösterilir). Güvenli bir yere kaydedin:');const field=$el('textarea');field.readOnly=true;field.rows=3;field.value=result.key;const copy=$el('button','primary','Anahtarı Kopyala');copy.type='button';copy.addEventListener('click',()=>navigator.clipboard.writeText(result.key));box.append(info,field,copy);if(target==='ADMIN'){authKey=result.key;sessionStorage.setItem('aydaKey',authKey);}}catch(err){message('rotateResult',err.message);}finally{btn.disabled=false;}});
 
+function renderTeacherRemovalCards(){
+ const root=$('aydaTeacherRemovalList');if(!root||data?.user?.role!=='admin')return;
+ root.replaceChildren();
+ const teachers=data.teachers||[],accounts=(data.accounts||[]).filter(a=>a.status!=='Silindi');
+ for(const account of accounts){
+  const t=teachers.find(x=>x.userId===account.id);
+  const groups=(data.groups||[]).filter(g=>g.status==='Aktif'&&g.teacherId===t?.id);
+  const card=$el('div','ayda-teacher-removal-item'),left=$el('div'),right=$el('div','ayda-teacher-removal-actions');
+  left.append($el('strong','',account.name||account.id),$el('small','',(account.status||'—')+' · '+account.id+' · '+(groups.length?groups.length+' aktif sınıf':'Aktif sınıfı yok')));
+  if(groups.length){
+   left.append($el('small','','Önce devredilecek: '+groups.map(g=>g.name).join(', ')));
+   const move=$el('button','outline','Sınıfları devret');
+   move.type='button';move.addEventListener('click',()=>{$('assignTeacher')?.focus({preventScroll:true});$('teacherGroupsForm')?.scrollIntoView({behavior:'smooth',block:'center'});});right.append(move);
+  }
+  const remove=$el('button','ayda-teacher-remove','Öğretmeni sil');
+  remove.type='button';remove.disabled=!!groups.length;
+  remove.title=groups.length?'Önce aktif sınıfları başka öğretmene devredin.':'Geçmiş kayıtlar korunarak giriş yetkisini kaldır.';
+  remove.addEventListener('click',()=>aydaRemoveTeacherAccount(account));
+  right.append(remove);card.append(left,right);root.append(card);
+ }
+ if(!accounts.length)root.append($el('p','muted','Kayıtlı öğretmen hesabı bulunamadı.'));
+}
 function renderAccounts(){
  const target=$('accountList');target.replaceChildren();
  const accounts=data.accounts||[],archive=data.vaultStatus||[],teachers=data.teachers||[];
@@ -96,6 +118,7 @@ function renderAccounts(){
  for(const r of records){const tr=$el('tr');const has=archive.find(x=>x.accountId===r.id);
   for(const v of [r.name+' ('+r.id+')',r.teacherId,r.status,has?'Arşivde · '+has.created:'Eski anahtar / arşivde yok'])tr.append($el('td','',v));const cell=$el('td');if(r.id!=='ADMIN'&&r.status!=='Silindi'){const remove=$el('button','outline','Öğretmeni kaldır');remove.type='button';remove.addEventListener('click',()=>aydaRemoveTeacherAccount(r));cell.append(remove);}tr.append(cell);table.append(tr);}
  target.append(table);
+ renderTeacherRemovalCards();
 }
 async function aydaRemoveTeacherAccount(account){
  const teachers=data.teachers||[],teacher=teachers.find(t=>t.userId===account.id);
