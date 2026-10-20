@@ -2,7 +2,29 @@
 (()=>{'use strict';
  const frame=document.getElementById('aydaAdminHealthFrame'),status=document.getElementById('aydaAdminHealthFrameStatus');
  if(!frame)return;
- let loaded=false,clock=0;
+ let loaded=false;
+ const isAdmin=()=>typeof data!=='undefined'&&data?.user?.role==='admin';
+ function openAdminTab(section,focus){
+  const tab=section==='accounts'?'teachers':section==='schedule'?'groups':section==='alerts'?'messages':section;
+  window.AYDA_ADMIN_MENU?.open(tab);
+  if(focus)requestAnimationFrame(()=>document.getElementById(focus)?.scrollIntoView({behavior:'smooth',block:'center'}));
+ }
+ // The academic health view is read-only. Editing always takes place in this Admin document.
+ window.addEventListener('message',event=>{
+  if(event.origin!==location.origin||event.source!==frame.contentWindow||!isAdmin())return;
+  const request=event.data;
+  if(!request||request.aydaHealthEmbed!==1)return;
+  if(request.action==='fix'){
+   const ctx=request.context||{};
+   const allowed=['teacher','schedule','status','count','student','account'];
+   if(allowed.includes(ctx.fix))window.AYDA_HEALTH_EDITORS?.open(ctx);
+  }else if(request.action==='tab'){
+   openAdminTab(request.tab||'health',request.focus||'');
+  }else if(request.action==='compose'){
+   openAdminTab('messages');
+   window.dispatchEvent(new CustomEvent('ayda:compose-teacher',{detail:request.context||{}}));
+  }
+ });
  function show(){
   if(typeof data==='undefined'||data?.user?.role!=='admin')return;
   const url=new URL(frame.dataset.src,location.href);
