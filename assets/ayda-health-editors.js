@@ -51,7 +51,7 @@
  function setup(){
   const state=currentData();if(!state)return;
   const gs=(state.groups||[]).map(g=>({id:g.id,label:formatGroup(g)}));
-  const active=(state.teachers||[]).filter(t=>t.status==='Aktif');
+  const active=[...new Map((state.teachers||[]).filter(t=>t.status==='Aktif').map(t=>[t.id,t])).values()];
   options('aydaFixTeacherGroup',gs,'Grup seçin');
   options('aydaFixScheduleGroup',gs.filter(g=>(state.groups||[]).find(x=>x.id===g.id)?.status==='Aktif'),'Grup seçin');
   options('aydaFixStatusGroup',gs,'Grup seçin');
