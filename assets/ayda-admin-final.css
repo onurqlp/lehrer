@@ -1,0 +1,35 @@
+/* AYDA Admin - sade, tek merkezli yönetim */
+#adminArea>.adminNav,#adminNav{scroll-margin-top:16px}
+#adminArea .adminNav{display:flex;flex-wrap:wrap;gap:7px;padding:10px;border-radius:16px;border:1px solid #dce7eb;background:#f8fbfd;margin:14px 0 17px}
+#adminArea .adminNav button{flex:1 1 auto;min-width:125px;padding:12px 13px;border:1px solid #d6e6ed;background:#fff;border-radius:11px;color:#28516a;font-weight:800;font-size:13px;cursor:pointer;white-space:normal}
+#adminArea .adminNav button.active{background:#105a78;color:#fff;border-color:#105a78;box-shadow:0 5px 15px #12577320}
+#adminArea .adminQuick{display:flex;flex-direction:column;align-items:stretch;gap:12px;border-radius:17px;padding:16px 18px;background:linear-gradient(125deg,#ecf7fa,#f9fcfd);border:1px solid #c9e6ed}
+#adminArea .adminQuick strong{font-size:18px;color:#143f54}
+#adminArea .adminQuick .ayda-admin-priority-links{display:flex;flex-wrap:wrap;gap:8px}
+#aydaAdminQuickActions{display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid #d3e6ed;padding-top:13px}
+#aydaAdminQuickActions button{background:white;border:1px solid #c8dfe7;border-radius:10px;padding:11px 13px;color:#105e78;font-weight:800;font-size:12px;min-height:40px;cursor:pointer}
+#aydaAdminQuickActions button:hover{background:#e0f4f9}
+body.ayda-admin-overview #aydaAdminHealthIssues{display:block;max-height:310px;overflow:auto}
+body.ayda-admin-overview #aydaAdminHealthIssues>.ayda-shared-health-item:nth-of-type(n+5){display:none}
+body.ayda-admin-health-page #aydaAdminHealthIssues{max-height:none}
+#owner-messages.ayda-admin-message-panel{display:block;scroll-margin-top:22px}
+#owner-messages .owner-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0 18px}
+#owner-messages .owner-section-title h2{font-size:21px;color:#193b51;margin:0}
+#owner-messages .owner-section-title>p{flex:1 1 100%;margin:0;color:#5a7382;font-size:13px}
+#owner-messages .ayda-feedback-inbox{background:#fff;border:1px solid #d6e5ec;border-radius:13px;padding:15px;min-width:0}
+#owner-messages .ayda-feedback-inbox>p{font-size:13px;line-height:1.6}
+#owner-messages .ayda-feedback-inbox textarea{display:block;width:100%;min-height:86px;margin:11px 0;border-radius:9px;border:1px solid #cedde6;padding:10px}
+#owner-messages .ayda-feedback-inbox.is-new{border-left:4px solid #d8a24e}
+#owner-messages .ayda-manager-feedback-list{margin:10px 0 22px}
+.ayda-admin-forms{scroll-margin-top:20px}
+.ayda-form-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+.ayda-form-links a{display:flex;flex-direction:column;gap:8px;padding:19px 20px;border:1px solid #d6e5ed;background:linear-gradient(130deg,#fff,#f4fafd);border-radius:15px;color:#17415b;text-decoration:none}
+.ayda-form-links a strong{font-size:16px}
+.ayda-form-links a small{font-size:12px;color:#587384}
+.ayda-form-links a:hover{border-color:#8cc6d6;box-shadow:0 8px 20px #102e4212}
+.ayda-forms-embedded-card{padding:13px!important;overflow:hidden}
+.ayda-forms-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:8px 11px 15px;flex-wrap:wrap}
+.ayda-forms-heading strong{font-size:16px;color:#21495e}
+#aydaFormResponses{display:block;width:100%;height:min(790px,83vh);min-height:420px;border:1px solid #d9e5eb;border-radius:12px;background:#fff}
+@media(max-width:780px){#adminArea .adminNav button{min-width:calc(50% - 7px);font-size:12px}#aydaAdminQuickActions button{flex:1 1 46%}.ayda-form-links{grid-template-columns:1fr}#aydaFormResponses{height:75vh;min-height:500px}}
+@media(max-width:450px){#adminArea .adminNav{padding:7px}#adminArea .adminNav button{padding:10px 8px}#adminArea .adminQuick{padding:12px}}
