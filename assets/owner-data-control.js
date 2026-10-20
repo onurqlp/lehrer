@@ -1,7 +1,7 @@
 /* AYDA V4.4 — Yönetici için sessiz ve isteğe bağlı veri sağlığı kontrolleri. */
 (()=>{
  'use strict';
- const host=document.getElementById('owner-overview');
+ const host=document.getElementById('owner-health');
  if(!host||document.getElementById('aydaDataControl'))return;
  const make=(tag,cls,value)=>{
   const e=document.createElement(tag);if(cls)e.className=cls;
@@ -9,7 +9,7 @@
   return e;
  };
  const card=make('details','card');card.id='aydaDataControl';
- const summary=make('summary','','Kayıt güvenliği ve yedekleme');
+ const summary=make('summary','','Veri bütünlüğü ve son yedekleme durumunu kontrol et');
  const state=make('p','muted','Henüz kontrol edilmedi.');
  state.setAttribute('role','status');state.setAttribute('aria-live','polite');
  const actions=make('div','actions');
@@ -20,7 +20,7 @@
  const details=make('p','tiny','Kontrol yalnızca yöneticiye açıktır. Testler canlı kayıtları değiştirmez. Yedekleme ayrı bir Drive kopyası oluşturur.');
  const result=make('div','muted');
  card.append(summary,state,details,actions,result);
- const target=document.getElementById('ownerHighlights');
+ const target=document.getElementById('ownerHealthIssues');
  if(target)target.insertAdjacentElement('beforebegin',card);else host.prepend(card);
  const bridge=()=>window.AYDA_OWNER_BRIDGE;
  const refreshPermissions=()=>{const canManage=bridge()?.canManage?.()===true;backup.hidden=!canManage;details.textContent=canManage?'Kontrol canlı kayıtları değiştirmez. Yedekleme ayrı bir Drive kopyası oluşturur.':'Akademik kayıt bütünlüğü ve son yedekleme durumu salt okunur olarak gösterilir.';};
