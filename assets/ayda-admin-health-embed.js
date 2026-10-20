@@ -24,6 +24,6 @@
  window.addEventListener('ayda:health-open',show);
  window.addEventListener('ayda:login',()=>{if(window.AYDA_ADMIN_MENU?.active?.()==='health')show()});
  window.addEventListener('ayda:logout',()=>{frame.src='about:blank';loaded=false;status.textContent='Yönetici girişi gerekli.';});
- window.AYDA_ADMIN_HEALTH={refresh(){if(!loaded){show();return;}frame.src=frame.dataset.src+'&r='+Date.now();}};
+ window.AYDA_ADMIN_HEALTH={refresh(){if(!loaded){show();return;}const u=new URL(frame.dataset.src,location.href);u.searchParams.set('r',Date.now().toString());frame.src=u.href;}};
  if(typeof data!=='undefined'&&data?.user?.role==='admin'&&window.AYDA_ADMIN_MENU?.active?.()==='health')show();
 })();
