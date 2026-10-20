@@ -20,6 +20,17 @@
   addLink(hero,'aydaTeacherArchiveEntry','▤ Grupların arşivini aç ↗',href);
   addLink(quick,'aydaAdminArchiveEntry','▤ Grup Arşivi ve Raporlar ↗',href);
   addLink(rail,'aydaTeacherArchiveRail','▤ Grup Arşivi ↗',href);
+  const statusForm=get('aydaFixStatusForm');
+  if(statusForm){
+   const notice=el('div','ayda-group-close-note');
+   const title=el('strong','','Grubu tamamlamadan önce akademik arşivini indirin.');
+   const explanation=el('span','','Mevcut Google API, grup kapandıktan sonra bazı öğrenci yoklama/ödev ayrıntılarını artık göstermiyor. Yalnızca mevcut kayıtlardan arşiv dosyası alınabilir.');
+   const link=el('a','ayda-group-archive-link','Seçili grubun arşivini aç ↗');
+   const picker=get('aydaFixStatusGroup');
+   const syncLink=()=>{link.href='./grup-arsivi.html?group='+encodeURIComponent(picker?.value||'');};
+   syncLink();picker?.addEventListener('change',syncLink);
+   notice.append(title,explanation,link);statusForm.prepend(notice);
+  }
   const sync=()=>{
    const authorized=typeof data!=='undefined'&&data?.user&&['admin','teacher'].includes(data.user.role);
    for(const id of ['aydaTeacherArchiveEntry','aydaAdminArchiveEntry','aydaTeacherArchiveRail']){
