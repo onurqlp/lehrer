@@ -26,3 +26,17 @@
 .ayda-health-card-actions .owner-link{background:#e9f5f8;color:#095b76;border:1px solid #c1dce6;padding:9px 13px;min-height:38px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;max-width:100%;white-space:normal;text-align:left}
 .ayda-health-card-actions .owner-link:hover,.ayda-health-card-actions .owner-link:focus-visible{background:#116783;color:#fff;border-color:#116783}
 @media(max-width:520px){.ayda-health-card-actions .owner-link{flex:1 1 100%;text-align:center}}
+
+/* İzleme hesabı: akademik okuma + öğretmen geri bildirimleri. Admin işlemleri görünmez. */
+body.ayda-viewer-mode .ayda-admin-only,
+body.ayda-viewer-mode #ownerNav button[data-tab="accounts"],
+body.ayda-viewer-mode #owner-accounts,
+body.ayda-viewer-mode #aydaWorkspaceAdminBtn,
+body.ayda-viewer-mode #ownerVaultReveal,
+body.ayda-viewer-mode #ownerVaultHide,
+body.ayda-viewer-mode #ownerVaultSecrets,
+body.ayda-viewer-mode #aydaMsgTeacherPhoneSave,
+body.ayda-viewer-mode #aydaMsgStudentPhoneSave {display:none!important}
+body.ayda-viewer-mode #aydaMsgTeacherPhone,
+body.ayda-viewer-mode #aydaMsgStudentPhone {pointer-events:none;opacity:.8}
+body.ayda-viewer-mode .owner-controls{justify-content:flex-end}
