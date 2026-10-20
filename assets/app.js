@@ -60,7 +60,10 @@ async function jsonp(action,params={}){
    if(/zaman aşımı/.test(err.message||''))break;
   }
  }
- if(readOnly&&candidates.length>1)throw Error('Google Apps Script iki adresten de yanıt vermedi. Dağıtımın erişimi “Herkes”, çalıştıranı “Ben” olmalı. '+(last?.message||''));
+ if(readOnly&&candidates.length>1){
+  if(last&&/zaman aşımı/.test(last.message||''))throw last;
+  throw Error('Google Apps Script bağlantısı doğrulanamadı. Sayfayı yenileyin veya bağlantıyı kontrol edin. '+(last?.message||''));
+ }
  if(last?.transport&&!readOnly)last.unknownCommit=true;
  throw last||Error('API bağlantısı kurulamadı.');
  }finally{window.AYDA_ACTIVITY?.finish(activity,activitySuccess);}
