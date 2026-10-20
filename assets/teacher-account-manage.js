@@ -7,5 +7,9 @@ async function refresh(){const b=bridge();if(!b?.ready())return;const o=b.overvi
 reset.addEventListener('click',async()=>{if(!confirm(a.name+' öğretmeninin giriş anahtarı yenilensin mi? Eski anahtar geçersiz olacak.'))return;reset.disabled=true;try{const r=await b.api('rotateKey',{target:a.id});const result=el('div');result.style='padding:12px;margin:8px 0;background:#eaf8f1;border-radius:9px;overflow-wrap:anywhere';result.append(el('strong','Yeni giriş anahtarı: '),el('span',r.key));const copy=el('button','Kopyala');copy.type='button';copy.onclick=()=>navigator.clipboard.writeText(r.key);result.append(' ',copy);row.after(result);}catch(e){alert('Şifre yenilenemedi: '+e.message)}finally{reset.disabled=false}});
 toggle.addEventListener('click',async()=>{const active=a.status!=='Aktif';if(!confirm(a.name+' hesabı '+(active?'yeniden etkinleştirilsin':'pasife alınsın')+' mı? Eski ders kayıtları silinmez.'))return;toggle.disabled=true;try{await b.api('setTeacherAccountStatus',{payload:encode({accountId:a.id,active})});name.querySelector('small').textContent='('+(active?'Aktif':'Pasif')+')';toggle.textContent=active?'Pasife al':'Yeniden etkinleştir';a.status=active?'Aktif':'Pasif';}catch(e){alert('İşlem başarısız: '+e.message)}finally{toggle.disabled=false}});
 }if(!items.length)host.append(el('p','Öğretmen hesapları yüklenemedi. Yönetici oturumunu kontrol edin.'));}
-host.addEventListener('click',e=>{});setInterval(refresh,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});refresh();
+window.addEventListener('ayda:owner-ready',refresh);
+window.addEventListener('ayda:owner-logout',()=>host.replaceChildren());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+setInterval(refresh,30000);
+refresh();
 })();
