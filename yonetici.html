@@ -30,7 +30,7 @@
 <button type="button" data-tab="overview" class="active">Genel Bakış</button>
 <button type="button" data-tab="students">Öğrenciler</button>
 <button type="button" data-tab="attendance">Yoklama &amp; Ödev</button>
-<button type="button" data-tab="groups">Gruplar</button>
+<button type="button" data-tab="groups">Sınıf Durumları</button><button type="button" data-tab="health">Sistem Sağlığı</button>
 <button type="button" data-tab="lessons">Ders Kayıtları</button>
 <button type="button" data-tab="teachers">Öğretmenler &amp; Saat</button>
 <button type="button" data-tab="schedule">Ders Programı</button>
@@ -42,7 +42,7 @@
 <div class="owner-dual"><div><div class="owner-section-title"><h2>Bugünkü ders programı</h2></div><div id="ownerToday"></div></div>
 <div><div class="owner-section-title"><h2>Son girilen ders raporları</h2><button type="button" class="text-button" data-jump="lessons">Tüm raporlar →</button></div><div id="ownerRecent"></div></div></div>
 <div class="owner-section-title"><h2>Grup ilerleme özeti</h2><button type="button" class="text-button" data-jump="groups">Tüm gruplar →</button></div><div id="ownerGroupPreview" class="owner-group-grid"></div></section>
-<section id="owner-students" class="owner-panel" hidden>
+<section id="owner-health" class="owner-panel" hidden><div class="owner-section-title"><h2>Sistem Sağlığı ve Eksik Bilgiler</h2><p>Yalnızca okuma: veri silme veya otomatik düzeltme yapılmaz. Kayıt eksiklikleri Google kaynağından kontrol edilir.</p></div><div id="ownerHealthOverview" class="owner-mini-kpis"></div><div id="ownerHealthIssues" class="owner-group-grid" aria-live="polite"></div></section><section id="owner-students" class="owner-panel" hidden>
 <div class="owner-section-title"><h2>Tüm öğrenciler</h2><p id="ownerStudentCount">Öğrenci kayıtları</p></div>
 <div class="owner-filters"><label>Öğrenci ara<input id="ownerStudentSearch" placeholder="Ad veya soyad" type="search"></label>
 <label>Grup<select id="ownerStudentGroup"><option value="">Tüm gruplar</option></select></label>
