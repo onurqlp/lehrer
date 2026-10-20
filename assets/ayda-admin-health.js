@@ -8,7 +8,7 @@ function issueName(s){const p=String(s||'').trim().split(/\s+/).filter(Boolean);
 function add(title,detail,href,label){
  const c=make('div');c.className='ayda-shared-health-item';
  const a=make('strong',title),b=make('small',detail),link=make('a',label||'Düzenle →');
- link.href=href;c.append(a,b,link);root.append(c);
+ link.href=href;c.append(a,b,link);root.append(c);return c;
 }
 const link=(fix,groupId,studentId)=>{
  const u=new URL('./index.html',location.href);u.searchParams.set('aydaFix',fix);
@@ -50,7 +50,27 @@ async function update(){
   add(t.name+' · Sınıf eşleşmesi yok','Özel ders öğretmeniyse bu uyarı normal olabilir.',link('teacher',''),'Öğretmen ata →');
  for(const row of schedule)if(row.status==='Aktif'&&!groups.some(g=>g.id===row.groupId))
   add('Program · Tanımsız grup','Grup: '+row.groupId,'./index.html#gruplar','Programı incele →');
- for(const student of tracking?.students||[]){
+ for(const student of (tracking?.students||[]).filter(x=>activeIds.has(x.groupId)&&x.riskLevel==='danger'&&x.followupStatus!=='Çözüldü')){
+  const group=groups.find(x=>x.id===student.groupId);
+  const card=add('Öncelikli öğrenci · '+student.name,
+   (group?.name||student.groupId)+' · Gelmedi: '+(student.absent||0)+' · Ödev eksik: '+(student.homeworkMissing||0),
+   './index.html#ogrenciler','Öğrenciyi incele →');
+  const actions=document.createElement('div');actions.className='ayda-health-followup-actions';
+  for(const status of ['Takipte','Çözüldü']){
+   const button=make('button',status);button.type='button';button.className='outline';
+   button.addEventListener('click',async()=>{
+    if(button.disabled||!confirm(student.name+' öğrencisinin takip durumunu "'+status+'" olarak kaydedelim mi?'))return;
+    button.disabled=true;button.textContent='Kaydediliyor…';
+    try{
+     const response=await jsonp('setFollowup',{payload:utf8Base64Url(JSON.stringify({studentId:student.id,status}))});
+     if(!response?.saved)throw Error('Google kayıt onayı alınamadı.');
+     window.dispatchEvent(new Event('ayda:admin-data-updated'));
+    }catch(error){button.textContent='Hata: '+error.message;button.disabled=false;}
+   });actions.append(button);
+  }
+  card.append(actions);
+ }
+  for(const student of tracking?.students||[]){
   if(!activeIds.has(student.groupId)||!student.id||!issueName(student.name))continue;
   add('Öğrenci adı · '+student.name,'Ad-soyad alanında eksik isim veya CRM notu var.',link('student',student.groupId,student.id),'Öğrenci adını düzelt →');
  }
