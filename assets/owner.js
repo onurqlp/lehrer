@@ -488,12 +488,18 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   summary.append(kpi('Aktif sınıf',groups.filter(g=>g.status==='Aktif').length),kpi('Aktif öğretmen',teachers.filter(t=>t.status==='Aktif').length),kpi('Kontrol gerektiren',issues.length),kpi('Eksik kayıt',reminders?.items?.length??'—'));
   if(!issues.length){showEmpty('ownerHealthIssues',reminders?'Kontrol edilen alanlarda eksiklik bulunamadı.':'Temel sınıf kontrolleri tamam. Eksik kayıt hizmetinden henüz yanıt alınmadı.');return;}
   function navigate(fix){
+   const context={fix:fix.fix,groupId:fix.groupId||'',teacherId:fix.teacherId||'',studentId:fix.studentId||''};
+   // Düzenleyici aynı sayfanın üzerinde açılır, iki yönetim paneli arasında gidip gelinmez.
+   if(new URLSearchParams(location.search).get('aydaEmbed')==='1'&&window.parent!==window){
+    window.parent.postMessage({aydaWorkspace:1,view:'admin',context},location.origin);return;
+   }
+   if(window.AYDA_UNIFIED_WORKSPACE?.openAdmin){window.AYDA_UNIFIED_WORKSPACE.openAdmin(context);return;}
    const url=new URL('./index.html',location.href);
-   url.searchParams.set('aydaFix',fix.fix);
-   if(fix.groupId)url.searchParams.set('groupId',fix.groupId);
-   if(fix.teacherId)url.searchParams.set('teacherId',fix.teacherId);
-   if(fix.studentId)url.searchParams.set('studentId',fix.studentId);
-   url.hash=fix.fix==='student'?'grup-islemleri':fix.fix==='account'?'ogretmenler':'duzenle';
+   url.searchParams.set('aydaFix',context.fix);
+   if(context.groupId)url.searchParams.set('groupId',context.groupId);
+   if(context.teacherId)url.searchParams.set('teacherId',context.teacherId);
+   if(context.studentId)url.searchParams.set('studentId',context.studentId);
+   url.hash=context.fix==='student'?'grup-islemleri':'duzenle';
    location.assign(url.href);
   }
   function runAction(item){
