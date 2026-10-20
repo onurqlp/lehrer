@@ -76,6 +76,7 @@
    appendOption(dateSelect,r.groupId+'|'+r.date+'|'+r.type,(r.type==='attendance'?'Yoklama':'Ders raporu')+' · '+r.group+' · '+fmt(r.date));
   }
   if([...dateSelect.options].some(o=>o.value===prev))dateSelect.value=prev;
+  else if(monitoring&&dateSelect.options.length>1)dateSelect.selectedIndex=1;
  }
  function fillStudent(){
   const prev=students.value,query=studentSearch.value.toLocaleLowerCase('tr-TR').trim();
@@ -165,7 +166,13 @@
  dateSelect.addEventListener('change',()=>{if(dateSelect.value)teacherType.value='auto';messageTeacher();});
  teacherType.addEventListener('change',messageTeacher);
  group.addEventListener('change',fillStudent);studentSearch.addEventListener('input',fillStudent);
- students.addEventListener('change',messageStudent);studentType.addEventListener('change',messageStudent);
+ students.addEventListener('change',()=>{
+  if(monitoring){
+   const p=bridge()?.tracking()?.students?.find(x=>x.id===students.value);
+   studentType.value=(p?.recentHomeworkMissing||0)>=3&&(p?.absenceStreak||p?.consecutiveAbsent||0)<3?'homework':'absence';
+  }
+  messageStudent();
+ });studentType.addEventListener('change',messageStudent);
  $('aydaMsgTeacherSend').addEventListener('click',()=>{try{const t=currentTeacher();if(!t)throw Error('Öğretmen seçin.');openWhatsapp(t.phone,teacherText.value);}catch(e){teacherStatus.textContent=e.message;}});
  $('aydaMsgStudentSend').addEventListener('click',()=>{try{const s=currentStudent();if(!s)throw Error('Öğrenci seçin.');openWhatsapp(s.phone,studentText.value);}catch(e){studentStatus.textContent=e.message;}});
 
