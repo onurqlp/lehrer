@@ -126,19 +126,33 @@
   const el=node('article','owner-kpi '+(kind||''));add(el,'span','',title);add(el,'strong','',value);if(sub)add(el,'small','',sub);return el;
  }
  function renderKpis(){
-  const ts=tracking?.students||[],gs=activeGroups(),hist=lessons(),att=tracking?.groups||[];
-  const present=att.reduce((n,g)=>n+g.present,0),absent=att.reduce((n,g)=>n+g.absent,0);
-  const month=today().slice(0,7),totalHours=hist.filter(r=>r.date?.startsWith(month)&&r.status==='İşlendi').reduce((n,r)=>n+hours(r.actual),0);
-  const root=$('ownerKpis');if(!root)return;root.replaceChildren(
-   kpi('Bugünkü planlı ders',(overview.todayLessons||[]).length,'Bugün: '+fmt(today())),
-   kpi('Eksik akademik kayıt',reminders?.total??'—','Ders raporu ve yoklama',reminders?.total?'warn':undefined),
-   kpi('Aktif grup',gs.length,'Tüm gruplar: '+(overview.groups||[]).length),
-   kpi('Aktif öğretmen',(overview.teachers||[]).filter(t=>t.status==='Aktif').length),
-   kpi('Kayıtlı öğrenci',tracking?ts.length:'—','Aktif öğrenci listesi'),
-   kpi('Bu ay işlenen saat',hoursText(totalHours),'Grup ve özel ders')
-  );
-  if($('ownerAlertBadge'))$('ownerAlertBadge').textContent=(tracking||reminders)?'('+((tracking?.alerts||[]).length+(reminders?.total||0))+')':'';
-  if($('ownerUpdated'))$('ownerUpdated').textContent='Güncellendi: '+new Date().toLocaleString('tr-TR');
+  // Ana ekran göstergeleri hiçbir yardımcı menü/etiket elemanına bağımlı değildir.
+  const root=document.getElementById('ownerKpis');if(!root)return;
+  const safeArray=x=>Array.isArray(x)?x:[];
+  const groups=safeArray(overview?.groups),teachers=safeArray(overview?.teachers);
+  const records=safeArray(overview?.history).filter(x=>String(x?.date||'')>='2026-10-20');
+  const privateRecords=safeArray(overview?.privateHistory).filter(x=>String(x?.date||'')>='2026-10-20');
+  const currentMonth=String(overview?.today||new Date().toISOString().slice(0,10)).slice(0,7);
+  const totalHours=[...records,...privateRecords].filter(x=>String(x.date||'').startsWith(currentMonth)&&x.status==='İşlendi').reduce((sum,x)=>sum+hours(x.actual),0);
+  const result=[
+   ['Bugünkü planlı ders',safeArray(overview?.todayLessons).length],
+   ['Eksik akademik kayıt',reminders?.total??'—'],
+   ['Aktif grup',groups.filter(g=>g.status==='Aktif').length],
+   ['Aktif öğretmen',teachers.filter(t=>t.status==='Aktif').length],
+   ['Kayıtlı öğrenci',tracking? safeArray(tracking.students).length:'—'],
+   ['Bu ay işlenen saat',hoursText(totalHours)]
+  ];
+  const cards=result.map(([label,value])=>{
+   const card=document.createElement('article');card.className='owner-kpi';
+   const heading=document.createElement('span');heading.append(document.createTextNode(String(label)));
+   const number=document.createElement('strong');number.append(document.createTextNode(String(value)));
+   card.append(heading,number);return card;
+  });
+  root.replaceChildren(...cards);
+  const badge=document.getElementById('ownerAlertBadge');
+  if(badge)badge.replaceChildren(document.createTextNode((tracking||reminders)?'('+ (safeArray(tracking?.alerts).length+(Number(reminders?.total)||0))+')':''));
+  const updated=document.getElementById('ownerUpdated');
+  if(updated)updated.replaceChildren(document.createTextNode('Güncellendi: '+new Date().toLocaleString('tr-TR')));
  }
  function renderHighlights(){
   const root=$('ownerHighlights');if(!root)return;root.replaceChildren();
