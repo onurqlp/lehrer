@@ -1236,6 +1236,39 @@ function aydaSetTeacherAccountStatus_(user,p){
   return {accountId:id,status:active?'Aktif':'Pasif'};
  }finally{lock.releaseLock();}
 }
+/** Öğretmen hesabını geçmiş dersleri silmeden sistemden kaldırır. */
+function aydaRemoveTeacher_(user,p){
+ if(user.role!=='admin')throw Error('Yalnızca yönetici öğretmen kaldırabilir.');
+ const id=String(p.accountId||'').trim();
+ if(!id||id==='ADMIN')throw Error('Geçersiz öğretmen hesabı.');
+ const lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  const accounts=aydaSheet_('KULLANICILAR'),av=accounts.getDataRange().getDisplayValues(),ah=av[0];
+  const ai=ah.indexOf('Kullanıcı ID'),ar=ah.indexOf('Rol'),at=ah.indexOf('Öğretmen ID'),as=ah.indexOf('Durum');
+  if([ai,ar,at,as].some(x=>x<0))throw Error('Kullanıcı tablosunun sütunları eksik.');
+  const idx=av.findIndex((r,i)=>i>0&&r[ai]===id&&r[ar]==='Öğretmen');
+  if(idx<1)throw Error('Öğretmen hesabı bulunamadı.');
+  const teacherId=av[idx][at];
+  const linked=aydaRead_('GRUPLAR').filter(g=>g['Öğretmen ID']===teacherId&&g['Durum']==='Aktif');
+  if(linked.length)throw Error('Önce öğretmenin aktif gruplarını başka öğretmene devredin: '+linked.map(g=>g.Grup).join(', '));
+  const teachers=aydaSheet_('OGRETMENLER'),tv=teachers.getDataRange().getDisplayValues(),th=tv[0];
+  const ti=th.indexOf('Öğretmen ID'),ts=th.indexOf('Durum');
+  if(ti<0||ts<0)throw Error('Öğretmen tablosu sütunları eksik.');
+  const tx=tv.findIndex((r,i)=>i>0&&r[ti]===teacherId);
+  const old=av[idx][as],oldTeacher=tx>0?tv[tx][ts]:'';
+  accounts.getRange(idx+1,as+1).setValue('Silindi');
+  try{
+   if(tx>0)teachers.getRange(tx+1,ts+1).setValue('Silindi');
+   SpreadsheetApp.flush();
+  }catch(e){
+   accounts.getRange(idx+1,as+1).setValue(old);
+   if(tx>0)teachers.getRange(tx+1,ts+1).setValue(oldTeacher);
+   throw e;
+  }
+  PropertiesService.getScriptProperties().deleteProperty('AYDA_GIRIS_'+id);
+  return {removed:true,accountId:id,teacherId,historyPreserved:true};
+ }finally{lock.releaseLock();}
+}
 function aydaFormSubmit_(input){
   const field=(v,max)=>String(v==null?'':v).trim().slice(0,max).replace(/^[=+@-]/,' ');
   if(input.website)throw Error('İstek reddedildi.');
@@ -1292,7 +1325,8 @@ function doGet(e){
     else if(action==='setGroupTeacher')out={ok:true,data:aydaAdminSetGroupTeacher_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='updateGroupSchedule')out={ok:true,data:aydaAdminUpdateGroupSchedule_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='setGroupStatus')out={ok:true,data:aydaAdminSetGroupStatus_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
-    else if(action==='setTeacherAccountStatus')out={ok:true,data:aydaSetTeacherAccountStatus_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
+    else if(action==='removeTeacher')out={ok:true,data:aydaRemoveTeacher_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
+     else if(action==='setTeacherAccountStatus')out={ok:true,data:aydaSetTeacherAccountStatus_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='rotateKey')out={ok:true,data:aydaRotateKey_(user,p.target)};
     else if(action==='vaultExport')out={ok:true,data:{rows:aydaVaultRows_(user)}};
     else if(action==='adminStudents')out={ok:true,data:{students:aydaAdminStudentList_(user)}};
