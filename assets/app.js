@@ -94,16 +94,18 @@ function renderTeacherRemovalCards(){
  for(const account of accounts){
   const t=teachers.find(x=>x.userId===account.id);
   const groups=(data.groups||[]).filter(g=>g.status==='Aktif'&&g.teacherId===t?.id);
+  const sharedAccount=accounts.some(a=>a.id!==account.id&&a.status==='Aktif'&&teachers.some(x=>x.userId===a.id&&x.id===t?.id));
+  const blocked=groups.length&&!sharedAccount;
   const card=$el('div','ayda-teacher-removal-item'),left=$el('div'),right=$el('div','ayda-teacher-removal-actions');
   left.append($el('strong','',account.name||account.id),$el('small','',(account.status||'—')+' · '+account.id+' · '+(groups.length?groups.length+' aktif sınıf':'Aktif sınıfı yok')));
-  if(groups.length){
+  if(blocked){
    left.append($el('small','','Önce devredilecek: '+groups.map(g=>g.name).join(', ')));
    const move=$el('button','outline','Sınıfları devret');
    move.type='button';move.addEventListener('click',()=>{$('assignTeacher')?.focus({preventScroll:true});$('teacherGroupsForm')?.scrollIntoView({behavior:'smooth',block:'center'});});right.append(move);
   }
   const remove=$el('button','ayda-teacher-remove','Öğretmeni sil');
-  remove.type='button';remove.disabled=!!groups.length;
-  remove.title=groups.length?'Önce aktif sınıfları başka öğretmene devredin.':'Geçmiş kayıtlar korunarak giriş yetkisini kaldır.';
+  remove.type='button';remove.disabled=!!blocked;
+  remove.title=blocked?'Önce aktif sınıfları başka öğretmene devredin.':sharedAccount?'Ortak öğretmen ID üzerindeki diğer hesaplar korunur.':'Geçmiş kayıtlar korunarak giriş yetkisini kaldır.';
   remove.addEventListener('click',()=>aydaRemoveTeacherAccount(account));
   right.append(remove);card.append(left,right);root.append(card);
  }
@@ -123,7 +125,8 @@ function renderAccounts(){
 async function aydaRemoveTeacherAccount(account){
  const teachers=data.teachers||[],teacher=teachers.find(t=>t.userId===account.id);
  const assigned=(data.groups||[]).filter(g=>g.teacherId===teacher?.id&&g.status==='Aktif');
- if(assigned.length){alert('Önce aktif grupları başka öğretmene devredin: '+assigned.map(g=>g.name).join(', '));return;}
+ const hasSharedAccount=(data.accounts||[]).some(a=>a.id!==account.id&&a.status==='Aktif'&&teachers.some(t=>t.userId===a.id&&t.id===teacher?.id));
+ if(assigned.length&&!hasSharedAccount){alert('Önce aktif grupları başka öğretmene devredin: '+assigned.map(g=>g.name).join(', '));return;}
  if(!confirm(account.name+' adlı öğretmen sistemden kaldırılsın mı? Girişi kapatılır; geçmiş ders ve yoklamalar silinmez.'))return;
  const confirmation=prompt('İşlemi onaylamak için SİL yazın:');
  if(confirmation!=='SİL')return;
@@ -216,12 +219,9 @@ async function aydaVerifyDurationBackend(actual){
 }
 async function aydaVerifyShareBackend(){
  if(shareBackendChecked)return;
- const ping=await jsonp('ping');
- const version=String(ping?.version||'');
- const compatible=/^2026-10-16\.(\d+)$/.exec(version);
- const current=/^2026-10-19\.(\d+)$/.exec(version);
- if(!((compatible&&Number(compatible[1])>=7)||(current&&Number(current[1])>=8)))
-  throw Error('Yeni WhatsApp ödev paylaşım takibi için Google Apps Script 2026-10-16.7 sürümünü dağıtın. Bu işlem yapılmadan ders raporu kaydedilemez.');
+ // Gerçek API yeteneğini doğrula; yeni tarihli sürümleri sabit regex ile engelleme.
+ const info=await jsonp('lessonHomework');
+ if(!info||!Array.isArray(info.items))throw Error('Google bağlantısında ödev paylaşımı servisi doğrulanamadı. Ders kaydedilmedi.');
  shareBackendChecked=true;
 }
 
