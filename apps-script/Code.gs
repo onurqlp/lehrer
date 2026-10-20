@@ -3,7 +3,7 @@ const AYDA_DB_ID = '1FDLlugevKNHLP83M1uZGjjf4MNz0NV91KkxdZ6yJheg';
 const AYDA_TZ = 'Europe/Istanbul';
 // Sıfırdan başlayan sistem için eski dersleri eksik kayda dahil etme.
 const AYDA_TRACKING_START = '2026-10-20';
-const AYDA_API_VERSION = '2026-10-20.3';
+const AYDA_API_VERSION = '2026-10-20.4';
 
 function aydaDb_(){ return SpreadsheetApp.openById(AYDA_DB_ID); }
 function aydaSheet_(name){ const s=aydaDb_().getSheetByName(name); if(!s) throw Error('Tablo bulunamadı: '+name); return s; }
@@ -1033,10 +1033,28 @@ function aydaBackupNow_(){
 function aydaDailyBackupTrigger(){return aydaBackupNow_();}
 function aydaBackupSetup_(user){
  if(user.role!=='admin')throw Error('Yalnızca yönetici yedeklemeyi kurabilir.');
- const first=aydaBackupNow_();
+ // Kurulum zaten tamamlanmışsa tekrar Drive dosyası oluşturma.
+ const previous=aydaBackupStatus_(user);
+ if(previous.installed&&previous.exists)return {ok:true,verified:true,daily:true,alreadyInstalled:true,at:previous.at,sheets:aydaDb_().getSheets().length};
+ // Aynı gün doğrulanmış kopya varsa önce onu kullan; zaman aşımı nedeniyle çift kopya oluşmasın.
+ const useExisting=previous.exists&&previous.at&&previous.at.slice(0,10)===aydaToday_();
+ const first=useExisting
+  ?{ok:true,verified:true,at:previous.at,sheets:aydaDb_().getSheets().length,reused:true}
+  :aydaBackupNow_();
  const triggers=ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()==='aydaDailyBackupTrigger');
  if(!triggers.length)ScriptApp.newTrigger('aydaDailyBackupTrigger').timeBased().atHour(3).everyDays(1).inTimezone(AYDA_TZ).create();
- return {...first,daily:true};
+ const after=aydaBackupStatus_(user);
+ if(!after.installed||!after.exists)throw Error('Günlük tetikleyici veya Drive yedeği doğrulanamadı. Apps Script yetkilerini kontrol edin.');
+ return {...first,daily:true,at:after.at};
+}
+/** Apps Script düzenleyicisinden tek defa Çalıştır: Drive / tetikleyici izinlerini alır,
+ * ilk tam yedeği oluşturur ve günlük yedeklemeyi kurar. Parola gerektirmez; web API üzerinden çağrılamaz.
+ */
+function aydaBackupYetkilendir(){
+ const setup=aydaBackupSetup_({role:'admin',id:'ADMIN'});
+ const result={ok:setup.ok,verified:setup.verified,daily:setup.daily,at:setup.at,sheets:setup.sheets};
+ Logger.log(JSON.stringify(result));
+ return result;
 }
 function aydaBackupStatus_(user){
  if(user.role!=='admin')throw Error('Yönetici yetkisi gerekli.');
