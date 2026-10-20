@@ -26,7 +26,7 @@
  const gName=id=>(overview?.groups||[]).find(g=>g.id===id)?.name||id||'—';
  const tName=id=>(overview?.teachers||[]).find(t=>t.id===id)?.name||id||'—';
  const activeGroups=()=>overview?.groups?.filter(g=>g.status==='Aktif')||[];
- const lessons=()=>[...(overview?.history||[]).map(r=>({...r,type:'Grup',groupName:gName(r.groupId)})),...(overview?.privateHistory||[]).map(r=>({...r,type:'Özel',groupName:r.student||'Özel ders'}))].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ const lessons=()=>[...(overview?.history||[]).filter(r=>String(r.date||'')>='2026-10-20').map(r=>({...r,type:'Grup',groupName:gName(r.groupId)})),...(overview?.privateHistory||[]).filter(r=>String(r.date||'')>='2026-10-20').map(r=>({...r,type:'Özel',groupName:r.student||'Özel ders'}))].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
  const hours=value=>{const s=String(value||'').trim(),m=s.match(/^(\d{1,3}):(\d{2})$/);return m?(+m[1]+(+m[2])/60):Number(s)||0;};
  const hoursText=n=>Number(n||0).toLocaleString('tr-TR',{maximumFractionDigits:2});
  const difference=(a,b)=>{const x=Date.parse(a+'T00:00:00Z'),y=Date.parse(b+'T00:00:00Z');return Number.isFinite(x)&&Number.isFinite(y)?Math.round((x-y)/86400000):Infinity;};
@@ -417,7 +417,9 @@
   }
   for(const t of teachers.filter(t=>t.status==='Aktif'&&!groups.some(g=>g.teacherId===t.id)))warn(t.name+' · Sınıf eşleşmesi yok','Özel ders öğretmeniyse bu durum normal olabilir.');
   for(const r of schedule)if(r.status==='Aktif'&&!validGroups.has(r.groupId))warn('Program · Tanımsız sınıf','Grup ID: '+r.groupId);
-  for(const row of reminders?.items||[])warn((row.type==='attendance'?'Eksik yoklama':'Eksik ders raporu')+' · '+(row.group||'Sınıf'),fmt(row.date)+' · '+tName(row.teacherId));
+  for(const row of (reminders?.items||[]).filter(x=>String(x.date||'')>='2026-10-20'))warn((row.type==='attendance'?'Eksik yoklama':'Eksik ders raporu')+' · '+(row.group||'Sınıf'),fmt(row.date)+' · '+tName(row.teacherId));
+  if(contactDirectory?.missingStudentPhones)warn('Öğrenci iletişim bilgileri eksik',contactDirectory.missingStudentPhones+' öğrencinin kayıtlı veya geçerli telefonu yok.');
+  if(!reminders)warn('Eksik rapor kontrolü kullanılamıyor','Google Apps Script bağlantısını ve güncel dağıtımı kontrol edin.');
   summary.append(kpi('Aktif sınıf',groups.filter(g=>g.status==='Aktif').length),kpi('Aktif öğretmen',teachers.filter(t=>t.status==='Aktif').length),kpi('Kontrol gerektiren',issues.length),kpi('Eksik kayıt',reminders?.items?.length??'—'));
   if(!issues.length){showEmpty('ownerHealthIssues',reminders?'Kontrol edilen alanlarda eksiklik bulunamadı.':'Temel sınıf kontrolleri tamam. Eksik kayıt hizmetinden henüz yanıt alınmadı.');return;}
   for(const issue of issues){const card=add(root,'article','note-card warn');add(card,'strong','',issue.title);add(card,'p','',issue.detail);}
@@ -436,6 +438,13 @@
  $('ownerLoginForm').addEventListener('submit',e=>{e.preventDefault();login($('ownerKey').value);});
  $('ownerRefresh').addEventListener('click',refresh);
  $('ownerLogout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');token='';overview=null;tracking=null;reminders=null;contactDirectory=null;lessonHomework=null;activeApi='';$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';const skip=$('ownerSkip');if(skip){skip.href='#ownerLogin';skip.textContent='Giriş bölümüne geç';}window.dispatchEvent(new Event('ayda:owner-logout'));});
+ // Yönetici menüsünü görev odaklı üç gruba ayır; mevcut sekme ve erişim davranışı korunur.
+ (function organizeOwnerNav(){
+  const nav=$('ownerNav');if(!nav||nav.dataset.organized)return;nav.dataset.organized='true';
+  const sections=[['GÜNLÜK KONTROL',['overview','alerts','health']],['AKADEMİK TAKİP',['students','groups','attendance','lessons','schedule']],['YÖNETİM',['teachers','messages','accounts']]];
+  const buttons=[...nav.querySelectorAll('button[data-tab]')];nav.replaceChildren();
+  for(const [title,ids] of sections){const area=document.createElement('div');area.className='ayda-nav-section';const h=document.createElement('span');h.className='ayda-nav-heading';h.textContent=title;area.append(h);const menu=document.createElement('div');menu.className='ayda-nav-items';for(const id of ids){const b=buttons.find(x=>x.dataset.tab===id);if(b){if(id==='health')b.textContent='Sistem Sağlığı';if(id==='overview')b.textContent='Ana Ekran';if(id==='alerts')b.textContent='Takip Uyarıları';menu.append(b);}}area.append(menu);nav.append(area);}
+ })();
  $('ownerNav').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)activate(b.dataset.tab);});
  window.addEventListener('hashchange',()=>{const n=location.hash.slice(1);if(['overview','messages','alerts','attendance','students','groups','health','lessons','teachers','schedule','accounts'].includes(n)&&token)activate(n);});
  for(const b of document.querySelectorAll('[data-jump]'))b.addEventListener('click',()=>activate(b.dataset.jump));
