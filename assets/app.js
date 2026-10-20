@@ -220,10 +220,8 @@ $('loginForm').addEventListener('submit',e=>{e.preventDefault();login($('key').v
 $('logout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');aydaSession.clear();authKey='';data=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');$('logout').classList.add('hidden');$('key').value='';$('roleChip').textContent='Öğretmen ve Yönetici';document.body.classList.remove('ayda-is-admin');history.replaceState(null,'',location.pathname);lastSharedHomework=null;shareBackendChecked=false;$('sendHomeworkToGroup').hidden=true;$('aydaShareHint').hidden=true;window.dispatchEvent(new Event('ayda:logout'));});
 let lastSharedHomework=null,shareBackendChecked=false;
 async function aydaVerifyDurationBackend(actual){
- if(!String(actual||'').endsWith(':30'))return;
- const ping=await jsonp('ping');
- const match=/^2026-10-19\.(\d+)$/.exec(String(ping?.version||''));
- if(!match||Number(match[1])<8)throw Error('30 dakikalık aralıklarla ders süresi kaydetmek için Google Apps Script 2026-10-19.8 sürümünün yayımlanması gerekiyor. Kayıt yapılmadı.');
+ // Ders saati yalnızca tam saat; eski sürüm kontrolü gereksiz Google isteği çıkarıyordu.
+ if(!/^0[1-6]:00$/.test(String(actual||'')))throw Error('Ders süresi 1, 2, 3, 4, 5 veya 6 tam saat olmalı.');
 }
 async function aydaVerifyShareBackend(){
  if(shareBackendChecked)return;
