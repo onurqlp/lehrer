@@ -141,7 +141,7 @@
   const n=++taskRequest;
   taskList.replaceChildren(el('p','ayda-auto-subtle','Ödev görevleri yükleniyor…'));
   try{const x=await jsonp('homeworkTasks');if(n!==taskRequest)return;taskResult=x;paintTasks(x);}
-  catch(e){if(n===taskRequest)taskList.replaceChildren(el('p','ayda-auto-subtle','Ödev görevleri için Apps Script 2026-10-16.5 sürümünü yayımlayın.'));}
+  catch(e){if(n===taskRequest)taskList.replaceChildren(el('p','ayda-auto-subtle','Ödev görevleri şu anda alınamadı: '+(e?.message||'Bağlantı hatası')+'. ↻ Yenile ile tekrar kontrol edin.'));}
  }
  assignmentForm.addEventListener('submit',async(e)=>{
   e.preventDefault();if(!tr())return;sendTask.disabled=true;taskFeedback.textContent='Kaydediliyor…';
