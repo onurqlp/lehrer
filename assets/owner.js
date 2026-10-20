@@ -452,6 +452,21 @@
    if(g.end&&g.end<'2026-10-20')
     warn(g.name+' · Önceki dönem grubu hâlâ aktif','Kurs tamamlandıysa geçmişe taşıyın; kayıtları silmeyin.',[action('Grubu tamamlandı yap →','status',g.id)]);
   }
+  // Sadece bir gruba bağlı öğrenci kayıtları; isim alanındaki CRM notlarını uyarıya çıkar.
+  const issueWords=/\b(?:ödendi|ödenmedi|taksit|borç|bakiye|ödeme|peşin|hesap|öğrenci|toplamı|danışmanlık|abisi|oğlu|kızı|müs\d*|eltden|elt|cncler|multimanus\w*|im[aâ]m|ark|ağustos|agustos|ank|elazığ|yeni)\b/iu;
+  const nameIssue=name=>{
+   const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
+   if(parts.length<2)return 'Ad ve soyad birlikte yazılmalı.';
+   if(/[0-9?!@]/.test(name))return 'İsim içinde sayı veya açıklama işareti var.';
+   if(issueWords.test(name))return 'İsim alanında ödeme, yakınlık veya CRM açıklaması bulunuyor.';
+   if(parts.length>4)return 'İsim çok uzun; ad-soyad dışı açıklama olabilir.';
+   return '';
+  };
+  for(const student of tracking?.students||[]){
+   if(!validGroups.has(student.groupId)||!student.id)continue;
+   const reason=nameIssue(student.name);
+   if(reason)warn('Öğrenci adı kontrolü · '+student.name,reason+' · '+gName(student.groupId),[action('Öğrenci adını düzelt →','student',student.groupId,{studentId:student.id})]);
+  }
   const duplicates=new Map();for(const t of teachers)duplicates.set(t.id,(duplicates.get(t.id)||0)+1);
   for(const [id,count] of duplicates)if(id&&count>1)
    warn('Hesaplarda ortak öğretmen ID','Öğretmen ID: '+id+' · '+count+' hesap aynı gruplara erişebilir; eşleşmeleri doğrulayın.',[panel('Hesapları incele →','accounts','ownerAccountsTable')]);
@@ -474,6 +489,7 @@
    url.searchParams.set('aydaFix',fix.fix);
    if(fix.groupId)url.searchParams.set('groupId',fix.groupId);
    if(fix.teacherId)url.searchParams.set('teacherId',fix.teacherId);
+   if(fix.studentId)url.searchParams.set('studentId',fix.studentId);
    url.hash=fix.fix==='student'?'grup-islemleri':fix.fix==='account'?'ogretmenler':'duzenle';
    location.assign(url.href);
   }
