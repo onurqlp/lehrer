@@ -28,9 +28,7 @@
 <div class="owner-controls"><span id="ownerUpdated" class="micro"></span><a class="outline ayda-settings-link ayda-admin-only" href="./index.html#ayarlar" aria-label="Yönetim ayarlarına git">⚙ Ayarlar</a><button id="ownerRefresh" class="outline" type="button">↻ Verileri yenile</button></div></div>
 <div id="ownerError" class="inline-error" role="alert"></div>
 <div id="ownerKpis" class="owner-kpis"></div>
-<section id="aydaFormWidget" style="background:#fff;border:1px solid #dfe6e9;border-radius:13px;padding:18px 22px;margin:18px 0;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
-<div><strong style="font-size:17px;color:#0b1b31">Öğrenci Formları</strong><p style="margin:7px 0;color:#647383">Toplam yanıt: <strong data-count>—</strong> · Yeni kayıt uyarısı: <strong data-new>—</strong></p><small data-status style="color:#756d5e">Form bilgileri yükleniyor…</small></div>
-<a href="./bilgi-formu/yonetim.html" style="display:inline-block;background:#0b1b31;color:#fff;text-decoration:none;padding:13px 18px;border-radius:9px;font-weight:700">Bilgi formu yanıtları →</a><a href="./formlar/" style="display:inline-block;color:#0b1b31;text-decoration:none;padding:12px 14px;font-weight:700">Formları aç ↗</a></section>
+
 <nav id="ownerNav" class="owner-tabs" aria-label="Yönetim takip kategorileri">
 <button type="button" data-tab="overview" class="active">Genel Bakış</button>
 <button type="button" data-tab="students">Öğrenciler</button>
@@ -40,14 +38,16 @@
 <button type="button" data-tab="teachers">Öğretmenler &amp; Saat</button>
 <button type="button" data-tab="schedule">Ders Programı</button>
 <button type="button" data-tab="alerts">Uyarılar <span id="ownerAlertBadge"></span></button>
-<button type="button" data-tab="messages">Mesaj Merkezi <span id="aydaMsgBadge"></span></button><button type="button" data-tab="accounts">Hesaplar</button></nav>
+<button type="button" data-tab="messages">Öğretmen Mesajları <span id="aydaMsgBadge"></span></button></nav>
 <section id="owner-overview" class="owner-panel">
-<div class="owner-section-title"><h2>Bugün &amp; öncelikli işler</h2><p>İlgilenilmesi gereken öğrenciler, yeni ve bitmek üzere olan gruplar</p></div>
-<div id="ownerHighlights" class="owner-highlights"></div><div id="ownerInboxPreview" class="ayda-owner-inbox-preview" aria-live="polite"></div><div id="ownerHomeworkPreview" class="ayda-owner-homework-preview"></div><div class="owner-section-title"><h2>Aylık akademik özet</h2><p>Son 7 günün otomatik özeti</p></div><div id="ownerWeekly" class="owner-highlights"></div>
+<div class="owner-section-title"><h2>Bugün neyi takip etmeliyiz?</h2><p>Öncelikli öğrenci ve ders uyarıları</p></div>
+<div id="ownerHighlights" class="owner-highlights"></div><div id="ownerInboxPreview" class="ayda-owner-inbox-preview" aria-live="polite"></div><div id="ownerHomeworkPreview" class="ayda-owner-homework-preview"></div><div class="owner-extended-summary" hidden><div class="owner-section-title"><h2>Aylık akademik özet</h2></div><div id="ownerWeekly" class="owner-highlights"></div></div>
 <div class="owner-dual"><div><div class="owner-section-title"><h2>Bugünkü ders programı</h2></div><div id="ownerToday"></div></div>
 <div><div class="owner-section-title"><h2>Son girilen ders raporları</h2><button type="button" class="text-button" data-jump="lessons">Tüm raporlar →</button></div><div id="ownerRecent"></div></div></div>
-<div class="owner-section-title"><h2>Grup ilerleme özeti</h2><button type="button" class="text-button" data-jump="groups">Tüm gruplar →</button></div><div id="ownerGroupPreview" class="owner-group-grid"></div></section>
-<section id="owner-health" class="owner-panel" hidden><div class="owner-section-title"><h2>Sistem Sağlığı ve Eksik Bilgiler</h2><p>Yalnızca okuma: veri silme veya otomatik düzeltme yapılmaz. Kayıt eksiklikleri Google kaynağından kontrol edilir.</p></div><div id="ownerHealthOverview" class="owner-mini-kpis"></div><div id="ownerHealthIssues" class="owner-group-grid" aria-live="polite"></div></section><section id="owner-students" class="owner-panel" hidden>
+<div class="owner-extended-summary" hidden><div id="ownerGroupPreview" class="owner-group-grid"></div></div></section>
+<section id="owner-health" class="owner-panel" hidden><div class="owner-section-title"><h2>Sistem Sağlığı ve Eksik Bilgiler</h2><p>Eksik bilgiler, öğrenci adları ve tamamlanması gereken akademik kayıtlar tek yerde.</p></div><div id="ownerHealthOverview" class="owner-mini-kpis"></div><section id="aydaFormWidget" style="background:#fff;border:1px solid #dfe6e9;border-radius:13px;padding:18px 22px;margin:18px 0;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+<div><strong style="font-size:17px;color:#0b1b31">Öğrenci Formları</strong><p style="margin:7px 0;color:#647383">Toplam yanıt: <strong data-count>—</strong> · Yeni kayıt uyarısı: <strong data-new>—</strong></p><small data-status style="color:#756d5e">Form bilgileri yükleniyor…</small></div>
+<a href="./bilgi-formu/yonetim.html" style="display:inline-block;background:#0b1b31;color:#fff;text-decoration:none;padding:13px 18px;border-radius:9px;font-weight:700">Bilgi formu yanıtları →</a><a href="./formlar/" style="display:inline-block;color:#0b1b31;text-decoration:none;padding:12px 14px;font-weight:700">Formları aç ↗</a></section><div id="ownerHealthIssues" class="owner-group-grid" aria-live="polite"></div></section><section id="owner-students" class="owner-panel" hidden>
 <div class="owner-section-title"><h2>Tüm öğrenciler</h2><p id="ownerStudentCount">Öğrenci kayıtları</p></div>
 <div class="owner-filters"><label>Öğrenci ara<input id="ownerStudentSearch" placeholder="Ad veya soyad" type="search"></label>
 <label>Grup<select id="ownerStudentGroup"><option value="">Tüm gruplar</option></select></label>
@@ -76,7 +76,7 @@
 <label>Durum<select id="ownerLessonStatus"><option value="">Tüm durumlar</option><option>İşlendi</option><option>İptal</option><option>Ertelendi</option></select></label></div>
 <div id="ownerLessonCount" class="micro"></div><div id="ownerLessonList" class="owner-lesson-list"></div><button id="ownerShowMoreLessons" class="outline" type="button" hidden>Daha fazla rapor göster</button></section>
 <section id="owner-teachers" class="owner-panel" hidden>
-<div class="owner-section-title"><h2>Öğretmen ve aylık çalışma çizelgesi</h2><p>Aktif/pasif hesaplar, sorumlu oldukları gruplar, işlenen ders ve toplam ders süresi</p><label>Ay<input type="month" id="ownerTeacherMonth"></label></div>
+<div class="owner-section-title"><h2>Öğretmenlerin aylık ders saatleri</h2><p>Aktif/pasif hesaplar, sorumlu oldukları gruplar, işlenen ders ve toplam ders süresi</p><label>Ay<input type="month" id="ownerTeacherMonth"></label></div>
 <div id="ownerTeacherSummary" class="owner-mini-kpis"></div><div class="table-panel" id="ownerTeacherTable"></div>
 <div class="owner-section-title"><h2>Öğretmen ayrıntıları</h2></div><div id="ownerTeacherCards" class="owner-teacher-grid"></div>
 <button type="button" id="ownerTeacherCSV" class="outline">Excel için aylık çizelge indir</button></section>
