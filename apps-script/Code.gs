@@ -22,8 +22,9 @@ function aydaIzlemeGirisiOlustur(){
  const secret='IZ-'+Utilities.getUuid().replace(/-/g,'').slice(0,20).toUpperCase();
  const props=PropertiesService.getScriptProperties();
  props.setProperty('AYDA_VIEWER_HASH',aydaHash_(secret));
- Logger.log('AYDA İZLEME HESABI (bir kez kopyalayın): '+secret);
- return {ok:true,role:'viewer',name:'Akademik İzleme',key:secret};
+ const link='https://lehrer.aydadil.com/yonetici.html#izleme='+encodeURIComponent(secret);
+ Logger.log('AYDA ORTAK İZLEME BAĞLANTISI (özel paylaşın): '+link);
+ return {ok:true,role:'viewer',name:'Akademik İzleme',link};
 }
 function aydaAuth_(key){
   const token=String(key||'');if(!token||token.length>150)throw Error('Parola veya giriş anahtarı eksik veya geçersiz.');
