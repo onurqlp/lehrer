@@ -33,7 +33,7 @@ async function update(){
  const roster=new Map((tracking?.groups||[]).map(g=>[g.id,g]));
  for(const g of active){
   if(!g.teacherId||!teacherIds.has(g.teacherId))add(g.name+' · Öğretmen atanmadı','Sınıfa yetkili öğretmen atanmalı.',link('teacher',g.id),'Öğretmen ata →');
-  else if(!activeTeachers.has(g.teacherId))add(g.name+' · Öğretmen hesabı pasif','Hesabı etkinleştirin ya da grup öğretmenini değiştirin.',manager('accounts'),'Hesabı incele →');
+  else if(!activeTeachers.has(g.teacherId))add(g.name+' · Öğretmen hesabı pasif','Hesabı etkinleştirin ya da grup öğretmenini değiştirin.','./index.html#ogretmenler','Hesabı incele →');
   const plans=schedule.filter(r=>r.groupId===g.id);
   if(!plans.length)add(g.name+' · Haftalık program yok','Grubun ders günleri ve saatleri belirtilmemiş.',link('schedule',g.id),'Programı oluştur →');
   else if(plans.some(p=>p.status!=='Aktif'||!p.start||!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(p.end||''))))
@@ -45,11 +45,11 @@ async function update(){
   if(g.end&&g.end<'2026-10-20')add(g.name+' · Eski grup aktif','Geçmiş kayıtları silmeden grubu tamamlayın.',link('status',g.id),'Grubu tamamlandı yap →');
  }
  const count=new Map();for(const t of teachers)count.set(t.id,(count.get(t.id)||0)+1);
- for(const [id,n] of count)if(id&&n>1)add('Aynı öğretmen ID birden fazla hesapta','Öğretmen '+id+' · '+n+' hesap. Kimlik eşleşmelerini inceleyin.',manager('accounts'),'Hesapları incele →');
+ for(const [id,n] of count)if(id&&n>1)add('Aynı öğretmen ID birden fazla hesapta','Öğretmen '+id+' · '+n+' hesap. Kimlik eşleşmelerini inceleyin.','./index.html#ogretmenler','Hesapları incele →');
  for(const t of teachers.filter(t=>t.status==='Aktif'&&!groups.some(g=>g.teacherId===t.id)))
   add(t.name+' · Sınıf eşleşmesi yok','Özel ders öğretmeniyse bu uyarı normal olabilir.',link('teacher',''),'Öğretmen ata →');
  for(const row of schedule)if(row.status==='Aktif'&&!groups.some(g=>g.id===row.groupId))
-  add('Program · Tanımsız grup','Grup: '+row.groupId,manager('schedule'),'Programı incele →');
+  add('Program · Tanımsız grup','Grup: '+row.groupId,'./index.html#gruplar','Programı incele →');
  for(const student of tracking?.students||[]){
   if(!activeIds.has(student.groupId)||!student.id||!issueName(student.name))continue;
   add('Öğrenci adı · '+student.name,'Ad-soyad alanında eksik isim veya CRM notu var.',link('student',student.groupId,student.id),'Öğrenci adını düzelt →');
@@ -61,6 +61,11 @@ async function update(){
  if(!tracking)add('Öğrenci takip verileri alınamadı','Bağlantıyı kontrol etmek için ayrıntılı panele geçin.',manager('health'),'Kontrol ekranını aç →');
  if(!reminders)add('Eksik rapor kontrolü yanıt vermedi','Google bağlantısını veya son Apps Script dağıtımını inceleyin.',manager('health'),'Kontrol ekranını aç →');
  if(!root.children.length)root.append(make('p','Kontrol edilen alanlarda sorun bulunmadı.'));
+ const issueCount=root.querySelectorAll('.ayda-shared-health-item').length;
+ const link=document.getElementById('aydaAdminHealthShow');
+ if(link)link.textContent=issueCount?'Tüm '+issueCount+' uyarıyı incele →':'Sistem Sağlığını aç →';
+ const tab=document.querySelector('#adminNav button[data-target="health"]');
+ if(tab)tab.textContent=issueCount?'✚ Sistem Sağlığı · '+issueCount:'✚ Sistem Sağlığı';
 }
 window.addEventListener('ayda:login',update);
 window.addEventListener('ayda:logout',()=>{requestId++;root.replaceChildren(make('p','Yönetici girişi gerekli.'));});
