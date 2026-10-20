@@ -6,6 +6,7 @@
  const $=id=>document.getElementById(id);
  const main=[
   {id:'academic',label:'📊 Genel Bakış'},
+  {id:'health',label:'🩺 Sistem Sağlığı'},
   {id:'students',label:'👥 Öğrenci Takibi'},
   {id:'money',label:'🗓️ Ders ve Muhasebe'},
   {id:'settings',label:'⚙️ Ayarlar'}
@@ -36,7 +37,8 @@
    const title=child.querySelector('h2')?.textContent?.trim();
    if(map[title])section=map[title];
   }
-  if(child.id==='adminNav'||child.id==='aydaAdminHealth'||child.classList.contains('adminQuick'))continue;
+  if(child.id==='adminNav'||child.classList.contains('adminQuick'))continue;
+  if(child.id==='aydaAdminHealth'){child.dataset.adminTab='health';continue;}
   child.dataset.adminTab=section;
  }
  const sub=document.createElement('nav');sub.id='adminSettingsNav';sub.className='admin-settings-nav';
@@ -59,7 +61,7 @@
   if(settingItems.some(x=>x.id===subTab))settingsTab=subTab;
   sub.hidden=current!=='settings';
   for(const child of area.querySelectorAll(':scope > [data-admin-tab]')){
-   child.hidden=child.dataset.adminTab!==(current==='settings'?settingsTab:current);
+   child.hidden=child.dataset.adminTab==='health'?!['academic','health'].includes(current):child.dataset.adminTab!==(current==='settings'?settingsTab:current);
   }
   for(const b of nav.querySelectorAll(':scope > button')){
    const active=b.dataset.target===current;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));
@@ -78,7 +80,8 @@
  const hash=()=>String(location.hash||'').replace(/^#/,'').toLocaleLowerCase('tr-TR');
  function applyHash(){
   if(!document.body.classList.contains('ayda-is-admin'))return;
-  if(['ayarlar','settings'].includes(hash()))select('settings');
+  if(['saglik','sağlık','health','sistem-sagligi'].includes(hash()))select('health');
+  else if(['ayarlar','settings'].includes(hash()))select('settings');
   else if(['grup-islemleri','gruplar'].includes(hash()))select('settings','groups');
   else if(['ogretmenler','hesaplar'].includes(hash()))select('settings','teachers');
   else if(['duzenle'].includes(hash()))select('settings','update');
