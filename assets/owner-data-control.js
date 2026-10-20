@@ -23,7 +23,7 @@
  const target=document.getElementById('ownerHealthIssues');
  if(target)target.insertAdjacentElement('beforebegin',card);else host.prepend(card);
  const bridge=()=>window.AYDA_OWNER_BRIDGE;
- const refreshPermissions=()=>{const canManage=bridge()?.canManage?.()===true;backup.hidden=!canManage;details.textContent=canManage?'Kontrol canlı kayıtları değiştirmez. Yedekleme ayrı bir Drive kopyası oluşturur.':'Akademik kayıt bütünlüğü ve son yedekleme durumu salt okunur olarak gösterilir.';};
+ const refreshPermissions=()=>{backup.hidden=true;details.textContent='Akademik kayıt bütünlüğü ve son yedekleme durumu salt okunur. Yedekleme kurulumu yalnızca Admin Panelinde yapılır.';};
  window.addEventListener('ayda:owner-role',refreshPermissions);
  window.addEventListener('ayda:owner-logout',refreshPermissions);
  refreshPermissions();
