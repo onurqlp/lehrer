@@ -256,13 +256,6 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   const head=add(box,'div','owner-student-head'),identity=add(head,'div');
   add(identity,'h3','',s.name);add(identity,'small','',gName(s.groupId)+' · '+tName(g?.teacherId));
   head.append(pill(formats[status(s)],status(s)));
-  if(false&&status(s)==='danger'){
-   const state=add(box,'div','owner-student-recent');add(state,'span','','İlgilenme durumu: '+(s.followupStatus||'Yeni'));
-   for(const option of ['Takipte','Çözüldü']){
-    const b=quick(option,async()=>{b.disabled=true;try{const out=await api('setFollowup',token,{payload:payload64(JSON.stringify({studentId:s.id,status:option}))});if(!out.saved)throw Error('Kayıt onayı alınamadı.');tracking=await api('trackingSummary',token);renderAll();}catch(e){alert('Takip güncellenemedi: '+e.message);}finally{b.disabled=false;}});
-    state.append(b);
-   }
-  }
   const stats=add(box,'div','owner-student-stats');
   for(const [label,value] of [['Katılım',s.attendanceRate===null?'—':s.attendanceRate+'%'],['Geldi',s.present||0],['Gelmedi',s.absent||0],['Mazeretli',s.excused||0],['Ödev yaptı',s.homeworkDone||0],['Ödev eksik',s.homeworkMissing||0]]){
    const cell=add(stats,'div');add(cell,'span','',label);add(cell,'strong','',value);
