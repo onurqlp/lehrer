@@ -61,7 +61,7 @@
   try{
    const result=await jsonp('trackingSummary');
    if(id!==request)return;
-   if(result.scope!=='own')throw Error('Güncel Apps Script sürümü gerekli. Kod.gs dosyasını güncelleyip yeni sürüm dağıtın.');
+   if(result.scope!=='own')throw Error('Öğretmen öğrenci takibi yanıtında yetki kapsamı doğrulanamadı. Oturumu yenileyin.');
    info=result;$('teacherTrackingStatus').textContent='';render();
   }catch(e){if(id===request){info=null;$('teacherTrackingKpis').replaceChildren();$('teacherTrackingStudents').replaceChildren(node('div','teacher-track-empty','Öğrenci takibi yüklenemedi.'));$('teacherTrackingStatus').textContent=e.message;}}
   finally{if(id===request)$('teacherTrackingRefresh').disabled=false;}
