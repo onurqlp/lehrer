@@ -1,0 +1,19 @@
+/* AYDA Yönetici paneli: 20.10.2026 düzeni */
+:root{--ayda-ink:#163251;--ayda-deep:#102b48;--ayda-soft:#eff6fc;--ayda-line:#dce9f3;--ayda-accent:#147f9c}
+#ownerApp .owner-heading{padding:22px 26px;background:linear-gradient(120deg,#102c4c,#146179);border-radius:20px;color:#fff;display:flex;justify-content:space-between;gap:18px;align-items:center;margin-bottom:16px}
+#ownerApp .owner-heading h1,#ownerApp .owner-heading p,#ownerApp .owner-heading .eyebrow{color:#fff}
+#ownerApp .owner-heading a,#ownerApp .owner-heading button{border-radius:12px}
+#ownerNav.owner-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;background:transparent;padding:0;border:0;overflow:visible;margin:18px 0 22px}
+#ownerNav .ayda-nav-section{border:1px solid var(--ayda-line);background:#f9fcff;border-radius:16px;padding:12px;min-width:0}
+#ownerNav .ayda-nav-heading{display:block;font-size:11px;letter-spacing:.09em;font-weight:800;color:#59748c;margin:0 0 9px 4px}
+#ownerNav .ayda-nav-items{display:flex;flex-wrap:wrap;gap:7px}
+#ownerNav .ayda-nav-items>button{margin:0!important;border-radius:10px;border:1px solid #d8e5ee;background:white;color:#264461;padding:10px 12px;font-size:13px;line-height:1.3;font-weight:650;min-height:40px;flex:1 1 auto}
+#ownerNav .ayda-nav-items>button.active{background:#136782;color:white;border-color:#136782;box-shadow:0 4px 13px #0e607122}
+#ownerApp .owner-panel:not([hidden]){animation:aydaEntry .15s ease-out}
+#ownerApp .owner-kpi,#ownerApp .note-card{border-radius:14px}
+#ownerApp .owner-section-title{border-bottom:1px solid #e7eff5;padding-bottom:10px;margin-bottom:13px}
+#owner-health .note-card.warn{border-left:4px solid #d18b25;background:#fff9ec}
+#owner-health .owner-empty{border:1px solid #c9e8d8;background:#f1fbf5;border-radius:12px;padding:16px}
+@keyframes aydaEntry{from{opacity:.65;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media(max-width:950px){#ownerNav.owner-tabs{grid-template-columns:1fr}#ownerApp .owner-heading{align-items:flex-start;flex-direction:column}#ownerNav .ayda-nav-items>button{flex:1 1 36%}}
+@media(max-width:520px){#ownerApp .owner-heading{padding:17px}#ownerNav .ayda-nav-section{padding:10px}#ownerNav .ayda-nav-items>button{font-size:12px;padding:9px 8px}#ownerApp .owner-controls{width:100%;display:flex;gap:7px;flex-wrap:wrap}}
