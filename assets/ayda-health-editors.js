@@ -98,8 +98,8 @@
   const state=currentData();if(!state)return;
   const valid=new Set(['teacher','schedule','status','count','student','account','program']);
   if(!valid.has(focusType))return;
-  const action=focusType==='student'?'groups':'update';
-  window.AYDA_ADMIN_MENU?.open('settings',action);
+  const action=focusType==='student'?'students':focusType==='account'?'teachers':'groups';
+  window.AYDA_ADMIN_MENU?.open(action);
   const gid=(state.groups||[]).some(g=>g.id===focusGroup)?focusGroup:'';
   let target=null;
   if(focusType==='teacher'){
