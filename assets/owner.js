@@ -386,12 +386,12 @@
    const group=byId.get(entry.groupId);if(!group)continue;
    for(let day=1;day<=totalDays;day++){
     const date=month+'-'+String(day).padStart(2,'0');
-    if(group.start&&date<group.start||group.end&&date>group.end)continue;
+    if(date<'2026-10-20'||(group.start&&date<group.start)||(group.end&&date>group.end))continue;
     if(entry.day!==weekdays[new Date(Date.UTC(year,mon-1,day)).getUTCDay()])continue;
     planned.add(entry.groupId+'|'+date+'|'+entry.start);
    }
   }
-  const completedThisMonth=(overview?.history||[]).filter(r=>r.date?.startsWith(month)&&r.status==='İşlendi').length;
+  const completedThisMonth=(overview?.history||[]).filter(r=>r.date>='2026-10-20'&&r.date?.startsWith(month)&&r.status==='İşlendi').length;
   for(const [label,value] of [['Bu ay planlanan grup dersi',planned.size],['Bu ay işlenen grup dersi',completedThisMonth],['Bekleyen akademik kayıt',reminders?.total??'—'],['Öncelikli öğrenci',tracking?.alerts?.length??'—']]){
    const box=add(root,'div','note-card');add(box,'strong','',value);add(box,'p','',label);
   }
@@ -422,14 +422,24 @@
   root.replaceChildren();summary.replaceChildren();
   const groups=overview.groups||[],teachers=overview.teachers||[],schedule=overview.schedule||[],issues=[];
   const validTeachers=new Set(teachers.map(t=>t.id));
+  const activeTeachers=new Set(teachers.filter(t=>t.status==='Aktif').map(t=>t.id));
   const validGroups=new Set(groups.map(g=>g.id));
+  const rosterGroups=new Map((tracking?.groups||[]).map(g=>[g.id,g]));
   const warn=(title,detail)=>issues.push({title,detail});
   for(const g of groups){
    if(g.status!=='Aktif')continue;
-   if(!g.teacherId||!validTeachers.has(g.teacherId))warn(g.name+' · Öğretmen atanmadı','Öğretmen ID: '+(g.teacherId||'boş'));
-   if(!schedule.some(r=>r.groupId===g.id&&r.status==='Aktif'))warn(g.name+' · Haftalık program yok','Bu sınıfın aktif ders günü ve saati bulunamadı.');
-   if(!Number(g.students))warn(g.name+' · Öğrenci sayısı sıfır','Sınıf öğrenci sayısı ile kayıtlı öğrenci listesini kontrol edin.');
+   if(!g.teacherId||!validTeachers.has(g.teacherId))warn(g.name+' · Öğretmen atanmadı','Öğretmen seçilmeden ders ve yoklama kaydedilemez.');
+   else if(!activeTeachers.has(g.teacherId))warn(g.name+' · Öğretmen hesabı pasif','Öğretmeni veya hesap durumunu kontrol edin: '+tName(g.teacherId));
+   const plans=schedule.filter(r=>r.groupId===g.id);
+   if(!plans.length)warn(g.name+' · Haftalık program yok','Ders günü ile başlangıç/bitiş saati girilmeli.');
+   else if(plans.some(p=>p.status!=='Aktif'||!p.start||!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(String(p.end||''))))warn(g.name+' · Ders saati eksik','Programdaki başlangıç veya bitiş saatlerini tamamlayın.');
+   if(!Number(g.students))warn(g.name+' · Öğrenci sayısı sıfır','Sınıf öğrenci listesini kontrol edin.');
+   const actual=rosterGroups.get(g.id)?.students;
+   if(Number.isFinite(Number(actual))&&Number(actual)!==Number(g.students))warn(g.name+' · Öğrenci sayıları uyuşmuyor','Grup kartı: '+g.students+' / Öğrenci listesi: '+actual+'. Kimlikleri kontrol edin.');
+   if(g.end&&g.end<'2026-10-20')warn(g.name+' · Önceki dönem grubu hâlâ aktif','Kurs tamamlandıysa geçmişe taşıyın; kayıtları silmeyin.');
   }
+  const duplicates=new Map();for(const t of teachers)duplicates.set(t.id,(duplicates.get(t.id)||0)+1);
+  for(const [id,count] of duplicates)if(id&&count>1)warn('Hesaplarda ortak öğretmen ID','Öğretmen ID: '+id+' · '+count+' hesap aynı gruplara erişebilir; eşleşmeleri doğrulayın.');
   for(const t of teachers.filter(t=>t.status==='Aktif'&&!groups.some(g=>g.teacherId===t.id)))warn(t.name+' · Sınıf eşleşmesi yok','Özel ders öğretmeniyse bu durum normal olabilir.');
   for(const r of schedule)if(r.status==='Aktif'&&!validGroups.has(r.groupId))warn('Program · Tanımsız sınıf','Grup ID: '+r.groupId);
   for(const row of (reminders?.items||[]).filter(x=>String(x.date||'')>='2026-10-20'))warn((row.type==='attendance'?'Eksik yoklama':'Eksik ders raporu')+' · '+(row.group||'Sınıf'),fmt(row.date)+' · '+tName(row.teacherId));
