@@ -4,7 +4,24 @@
  const embedded=params.get('aydaEmbed')==='1';
  const owner=document.body.classList.contains('ayda-manager');
  const isAdmin=()=>owner?!!window.AYDA_OWNER_BRIDGE?.ready?.():typeof data!=='undefined'&&data?.user?.role==='admin';
- if(embedded){document.body.classList.add('ayda-workspace-embedded');return;}
+ if(embedded){
+  document.body.classList.add('ayda-workspace-embedded');
+  // İç panelden diğer yönetici ekranına link verilirse çerçeveyi değiştirmek yerine
+  // dıştaki çalışma alanında ilgili sekmeyi aç.
+  document.addEventListener('click',event=>{
+   const link=event.target.closest('a[href]');if(!link)return;
+   let url;try{url=new URL(link.href,location.href)}catch{return;}
+   if(url.origin!==location.origin)return;
+   const name=url.pathname.split('/').pop();
+   if(name==='yonetici.html'||name==='index.html'){
+    event.preventDefault();
+    const view=name==='yonetici.html'?'tracking':'admin';
+    const context=view==='tracking'?{tab:(url.hash||'#overview').slice(1)}:{hash:(url.hash||'#ayarlar').slice(1)};
+    window.parent.postMessage({aydaWorkspace:1,view,context},location.origin);
+   }
+  });
+  return;
+ }
  const $=id=>document.getElementById(id);
  let modal=null,frame=null,title=null,closeBtn=null,previousFocus=null,currentView='',previousScroll=0;
  function create(){
