@@ -23,6 +23,8 @@
   'Yeni Öğretmen Ekle':'teachers',
   'Yeni Grup Aç ve Programını Belirle':'groups',
   'Mevcut Grup Bilgilerini Düzenle':'update',
+  'Grup Eksiklerini Tamamla':'update',
+  'Öğrenci Kayıt İşlemleri':'groups',
   'Öğretmen Hesapları ve Anahtar Arşivi':'teachers',
   'Kolay Parola Yönetimi':'teachers',
   'Giriş Anahtarı Yönetimi':'teachers',
