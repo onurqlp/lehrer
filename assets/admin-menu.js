@@ -36,7 +36,7 @@
    const title=child.querySelector('h2')?.textContent?.trim();
    if(map[title])section=map[title];
   }
-  if(child.id==='adminNav'||child.classList.contains('adminQuick'))continue;
+  if(child.id==='adminNav'||child.id==='aydaAdminHealth'||child.classList.contains('adminQuick'))continue;
   child.dataset.adminTab=section;
  }
  const sub=document.createElement('nav');sub.id='adminSettingsNav';sub.className='admin-settings-nav';
