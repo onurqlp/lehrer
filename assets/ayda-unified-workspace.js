@@ -13,7 +13,7 @@
    let url;try{url=new URL(link.href,location.href)}catch{return;}
    if(url.origin!==location.origin)return;
    const name=url.pathname.split('/').pop();
-   if(name==='yonetici.html'||name==='index.html'){
+   if((owner&&name==='index.html')||(!owner&&name==='yonetici.html')){
     event.preventDefault();
     const view=name==='yonetici.html'?'tracking':'admin';
     const context=view==='tracking'?{tab:(url.hash||'#overview').slice(1)}:{hash:(url.hash||'#ayarlar').slice(1)};
