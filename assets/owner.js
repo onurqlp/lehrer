@@ -3,14 +3,19 @@
 const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.stringify({key,expires:Date.now()+8*3600000}));}catch(_){}},read(){try{const x=JSON.parse(localStorage.getItem('aydaAdminSession')||'null');if(x?.key&&x.expires>Date.now())return x.key;localStorage.removeItem('aydaAdminSession');}catch(_){}return '';},clear(){try{localStorage.removeItem('aydaAdminSession')}catch(_){}}};
 
 (()=>{
+ const viewerSession={save(key){try{localStorage.setItem('aydaViewerSession',JSON.stringify({key,expires:Date.now()+8*3600000}));}catch(_){}},read(){try{const x=JSON.parse(localStorage.getItem('aydaViewerSession')||'null');if(x?.key&&x.expires>Date.now())return x.key;localStorage.removeItem('aydaViewerSession');}catch(_){}return '';},clear(){try{localStorage.removeItem('aydaViewerSession')}catch(_){}}};
  const $=id=>document.getElementById(id);
+ const isMonitor=()=>['admin','viewer'].includes(overview?.user?.role);
+ const isAdmin=()=>overview?.user?.role==='admin';
  const payload64=s=>{const b=new TextEncoder().encode(s);let a='';for(const c of b)a+=String.fromCharCode(c);return btoa(a).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
  window.AYDA_OWNER_BRIDGE={
-  api:(action,params={})=>{if(!token||overview?.user?.role!=='admin')throw Error('Yönetici oturumu gerekli.');return api(action,token,params);},
-  overview:()=>token&&overview?.user?.role==='admin'?overview:null,
-  tracking:()=>token&&overview?.user?.role==='admin'?tracking:null,
-  reminders:()=>token&&overview?.user?.role==='admin'?reminders:null,
-  ready:()=>!!token&&overview?.user?.role==='admin',
+  api:(action,params={})=>{if(!token||!isMonitor())throw Error('İzleme oturumu gerekli.');return api(action,token,params);},
+  overview:()=>token&&isMonitor()?overview:null,
+  tracking:()=>token&&isMonitor()?tracking:null,
+  reminders:()=>token&&isMonitor()?reminders:null,
+  ready:()=>!!token&&isMonitor(),
+  canManage:()=>!!token&&isAdmin(),
+  isViewer:()=>!!token&&overview?.user?.role==='viewer',
   openTab:next=>activate(next)
  };
  const node=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=String(value);return e;};
@@ -73,7 +78,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
  const errorMessage=message=>{const target=$('ownerError');if(target)target.textContent=message||'';};
  const setLoading=value=>{loading=value;$('ownerLoginButton').disabled=value;$('ownerRefresh').disabled=value;};
  function activate(next){
-  const name=['overview','students','attendance','groups','health','lessons','teachers','schedule','alerts','messages','accounts'].includes(next)?next:'overview';
+  const name=['overview','students','attendance','groups','health','lessons','teachers','schedule','alerts','messages','accounts'].includes(next)&&!(next==='accounts'&&!isAdmin())?next:'overview';
   tab=name;
   for(const p of document.querySelectorAll('.owner-panel'))p.hidden=p.id!=='owner-'+name;
   for(const b of $('ownerNav').querySelectorAll('button[data-tab]')){b.classList.toggle('active',b.dataset.tab===name);b.setAttribute('aria-current',b.dataset.tab===name?'page':'false');}
@@ -84,9 +89,11 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   setLoading(true);$('ownerLoginError').textContent='';errorMessage('');
   try{
    const result=await api('overview',provided);
-   if(result?.user?.role!=='admin')throw Error('Yalnızca yönetici hesabıyla açılabilir.');
+   if(!['admin','viewer'].includes(result?.user?.role))throw Error('Bu sayfa için yönetim veya izleme hesabı gerekir.');
    token=provided;overview=result;
-   sessionStorage.setItem('aydaKey',token);aydaSession.save(token);
+   if(isAdmin()){sessionStorage.setItem('aydaKey',token);aydaSession.save(token);}
+   else viewerSession.save(token);
+   document.body.classList.toggle('ayda-viewer-mode',!isAdmin());
    $('ownerLogin').hidden=true;$('ownerApp').hidden=false;$('ownerLogout').hidden=false;
    const skip=$('ownerSkip');if(skip){skip.href='#ownerApp';skip.textContent='Ana içeriğe geç';}
    $('ownerKey').value='';
@@ -119,7 +126,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
  }
  async function refresh(){
   if(!token||loading)return;setLoading(true);
-  try{const r=await api('overview',token);if(r?.user?.role!=='admin')throw Error('Yönetici yetkisi doğrulanamadı.');overview=r;await loadTracking();window.dispatchEvent(new Event('ayda:owner-ready'));}
+  try{const r=await api('overview',token);if(!['admin','viewer'].includes(r?.user?.role))throw Error('Akademik izleme yetkisi doğrulanamadı.');overview=r;await loadTracking();window.dispatchEvent(new Event('ayda:owner-ready'));}
   catch(e){errorMessage('Güncelleme başarısız: '+e.message);}
   finally{setLoading(false);}
  }
@@ -246,7 +253,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   const head=add(box,'div','owner-student-head'),identity=add(head,'div');
   add(identity,'h3','',s.name);add(identity,'small','',gName(s.groupId)+' · '+tName(g?.teacherId));
   head.append(pill(formats[status(s)],status(s)));
-  if(status(s)==='danger'){
+  if(status(s)==='danger'&&isAdmin()){
    const state=add(box,'div','owner-student-recent');add(state,'span','','İlgilenme durumu: '+(s.followupStatus||'Yeni'));
    for(const option of ['Takipte','Çözüldü']){
     const b=quick(option,async()=>{b.disabled=true;try{const out=await api('setFollowup',token,{payload:payload64(JSON.stringify({studentId:s.id,status:option}))});if(!out.saved)throw Error('Kayıt onayı alınamadı.');tracking=await api('trackingSummary',token);renderAll();}catch(e){alert('Takip güncellenemedi: '+e.message);}finally{b.disabled=false;}});
@@ -518,7 +525,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    add(card,'strong','',issue.title);add(card,'p','',issue.detail);
    if(issue.actions.length){
     const buttons=add(card,'div','ayda-health-card-actions');
-    for(const item of issue.actions)buttons.append(quick(item.label,()=>runAction(item)));
+    for(const item of issue.actions.filter(x=>isAdmin()||x.compose||x.refresh))buttons.append(quick(item.label,()=>runAction(item)));
    }
   }
  }
@@ -528,14 +535,14 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    ['ownerKpis',renderKpis],['ownerHighlights',renderHighlights],['ownerToday',renderOverview],['ownerWeekly',renderWeekly],
    ['ownerGroupList',renderGroups],['ownerHealthIssues',renderHealth],['ownerStudentList',renderStudents],['ownerAttendanceKpis',renderAttendance],
    ['ownerLessonList',renderLessons],['ownerTeacherTable',renderTeachers],['ownerScheduleList',renderSchedule],
-   ['ownerAlertList',renderAlerts],['ownerAccountsTable',renderAccounts]
+   ['ownerAlertList',renderAlerts],['ownerAccountsTable',isAdmin()?renderAccounts:()=>{}]
   ];
   robust('ownerStudentList',updateGroupSelectors);
   for(const [id,fn] of work)robust(id,fn);
  }
  $('ownerLoginForm').addEventListener('submit',e=>{e.preventDefault();login($('ownerKey').value);});
  $('ownerRefresh').addEventListener('click',refresh);
- $('ownerLogout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');aydaSession.clear();token='';overview=null;tracking=null;reminders=null;contactDirectory=null;lessonHomework=null;activeApi='';$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';const skip=$('ownerSkip');if(skip){skip.href='#ownerLogin';skip.textContent='Giriş bölümüne geç';}window.dispatchEvent(new Event('ayda:owner-logout'));});
+ $('ownerLogout').addEventListener('click',()=>{if(isAdmin()){sessionStorage.removeItem('aydaKey');aydaSession.clear();}else viewerSession.clear();document.body.classList.remove('ayda-viewer-mode');token='';overview=null;tracking=null;reminders=null;contactDirectory=null;lessonHomework=null;activeApi='';$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';const skip=$('ownerSkip');if(skip){skip.href='#ownerLogin';skip.textContent='Giriş bölümüne geç';}window.dispatchEvent(new Event('ayda:owner-logout'));});
  // Yönetici menüsünü görev odaklı üç gruba ayır; mevcut sekme ve erişim davranışı korunur.
  (function organizeOwnerNav(){
   const nav=$('ownerNav');if(!nav||nav.dataset.organized)return;nav.dataset.organized='true';
@@ -575,5 +582,5 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   const csv='\ufeff'+exportRows.map(r=>r.map(esc).join(';')).join('\r\n');
   const u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=u;a.download='AYDA-ogretmen-saatleri-'+$('ownerTeacherMonth').value+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
  });
- const previous=sessionStorage.getItem('aydaKey')||aydaSession.read();if(previous)login(previous);
+ const previous=sessionStorage.getItem('aydaKey')||aydaSession.read()||viewerSession.read();if(previous)login(previous);
 })();
