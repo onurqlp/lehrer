@@ -18,10 +18,10 @@
  /* Teachers can confirm a concise lesson description with one click; no fabricated automatic note. */
  const noteInput=$('note'),actualInput=$('actual');
  if(actualInput){
-  const choices=Array.from({length:12},(_,i)=>{const minutes=(i+1)*30,h=String(Math.floor(minutes/60)).padStart(2,'0');return [h+':'+(minutes%60?'30':'00'),minutes===30?'30 dakika':Math.floor(minutes/60)+' saat'+(minutes%60?' 30 dk':'')];});
+  const choices=Array.from({length:6},(_,i)=>{const hour=i+1;return [String(hour).padStart(2,'0')+':00',hour+' saat'];});
   const previous=actualInput.value;actualInput.replaceChildren();
   for(const [value,label] of choices)actualInput.add(new Option(label,value));
-  actualInput.value=previous||'02:00';
+  actualInput.value=choices.some(([value])=>value===previous)?previous:'02:00';
  }
  if(noteInput){
   const noteShortcuts=el('div','ayda-note-shortcuts');noteShortcuts.append(el('span','', 'Ödevini hızlı yaz:'));
@@ -47,7 +47,7 @@
   const minutes=(+b[1]*60+(+b[2]))-(+a[1]*60+(+a[2]));
   if(minutes<=0||minutes>360)return;
   const value=String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');
-   if(minutes%30!==0)return;
+   if(minutes%60!==0)return;
   if([...actualInput.options].some(opt=>opt.value===value))actualInput.value=value;
  }
  for(const id of ['lessonDate','groupId','lessonType'])$(id)?.addEventListener('change',suggestDuration);
