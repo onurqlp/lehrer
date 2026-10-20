@@ -1245,22 +1245,29 @@ function aydaSetTeacherAccountStatus_(user,p){
  const id=String(p.accountId||'').trim(),active=p.active===true;
  const lock=LockService.getScriptLock();lock.waitLock(20000);
  try{
-  const sh=aydaSheet_('KULLANICILAR'),values=sh.getDataRange().getDisplayValues(),headers=values[0];
-  const idCol=headers.indexOf('Kullanıcı ID'),statusCol=headers.indexOf('Durum'),roleCol=headers.indexOf('Rol');
-  if(idCol<0||statusCol<0||roleCol<0)throw Error('KULLANICILAR sütunları eksik.');
+  const sh=aydaSheet_('KULLANICILAR'),values=sh.getDataRange().getDisplayValues(),headers=values[0]||[];
+  const idCol=headers.indexOf('Kullanıcı ID'),statusCol=headers.indexOf('Durum'),roleCol=headers.indexOf('Rol'),teacherCol=headers.indexOf('Öğretmen ID');
+  if([idCol,statusCol,roleCol,teacherCol].some(i=>i<0))throw Error('KULLANICILAR sütunları eksik.');
   const at=values.findIndex((r,i)=>i>0&&r[idCol]===id&&r[roleCol]==='Öğretmen');
-  if(at<1)throw Error('Öğretmen hesabı bulunamadı.');
-  const teacherCol=headers.indexOf('Öğretmen ID'),teacherId=teacherCol>=0?values[at][teacherCol]:'';
+  if(at<1||values[at][statusCol]==='Silindi')throw Error('Aktif veya pasif öğretmen hesabı bulunamadı.');
+  const teacherId=values[at][teacherCol],next=active?'Aktif':'Pasif',previous=values[at][statusCol];
+  const otherActive=values.some((r,i)=>i>0&&i!==at&&r[roleCol]==='Öğretmen'&&r[teacherCol]===teacherId&&r[statusCol]==='Aktif');
   const teachers=aydaSheet_('OGRETMENLER'),trows=teachers.getDataRange().getDisplayValues(),th=trows[0]||[];
   const tc=th.includes('Öğretmen ID')?th.indexOf('Öğretmen ID'):th.indexOf('ID'),ts=th.indexOf('Durum');
-  if(teacherId&&(tc<0||ts<0))throw Error('Öğretmen tablosu sütunları eksik.');
-  const tindex=teacherId?trows.findIndex((r,i)=>i>0&&r[tc]===teacherId):-1;
-  if(teacherId&&tindex<1)throw Error('Öğretmen kaydı eşleşmiyor.');
-  const next=active?'Aktif':'Pasif',previous=values[at][statusCol];
-  sh.getRange(at+1,statusCol+1).setValue(next);
-  try{if(tindex>0)teachers.getRange(tindex+1,ts+1).setValue(next);SpreadsheetApp.flush();}
-  catch(e){sh.getRange(at+1,statusCol+1).setValue(previous);throw e;}
-  return {accountId:id,status:active?'Aktif':'Pasif'};
+  // Ortak öğretmen ID başka aktif hesapta varsa OGRETMENLER satırlarını değiştirme.
+  const updates=tc>=0&&ts>=0&&!otherActive?trows.map((r,i)=>i>0&&r[tc]===teacherId?{row:i+1,old:r[ts]}:null).filter(Boolean):[];
+  const cell=sh.getRange(at+1,statusCol+1),written=[];
+  try{
+   cell.setValue(next);
+   for(const item of updates){teachers.getRange(item.row,ts+1).setValue(next);written.push(item);}
+   SpreadsheetApp.flush();
+   if(cell.getDisplayValue()!==next)throw Error('Hesap durumu doğrulanamadı.');
+  }catch(e){
+   try{cell.setValue(previous);}catch(re){Logger.log(re.message);}
+   for(const item of written)try{teachers.getRange(item.row,ts+1).setValue(item.old);}catch(re){Logger.log(re.message);}
+   throw e;
+  }
+  return {accountId:id,status:next};
  }finally{lock.releaseLock();}
 }
 /** Öğretmen hesabını geçmiş dersleri silmeden sistemden kaldırır. */
