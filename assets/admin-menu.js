@@ -18,6 +18,7 @@
   'Akademik Planlama · 24 Ünite + 2 Sınav Hazırlığı':'academic',
   'Öğrenci Takibi · Devamsızlık ve Ödev':'students',
   'CRM CSV Karşılaştırması · İsteğe Bağlı':'students',
+  'Öğretmenleri Yönet':'teachers',
   'Yeni Öğretmen Ekle':'teachers',
   'Öğretmenlerin Sınıflarını Değiştir':'teachers',
   'Öğrenci Kayıt İşlemleri':'students',
