@@ -16,3 +16,10 @@ body.ayda-is-admin.ayda-admin-overview #aydaAdminHealth .ayda-shared-health-item
 body.ayda-is-admin.ayda-admin-overview #aydaAdminHealth .ayda-shared-health-list{max-height:370px;overflow:hidden}
 body.ayda-is-admin.ayda-admin-health-page #aydaAdminHealth .ayda-shared-health-list{max-height:none;overflow:visible}
 @media(max-width:720px){body.ayda-is-admin #adminNav{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}body.ayda-is-admin #adminNav button{min-width:0;font-size:12px}body.ayda-is-admin #aydaAdminQuickActions button{flex:1 1 44%}}
+
+/* System Health uses the same problem cards as Academic Monitoring, with Admin-only edit buttons. */
+#aydaAdminHealthIssues .ayda-shared-health-item{display:flex;flex-direction:column;gap:9px;align-items:flex-start;padding:14px 16px;border-radius:12px;background:#fff;border:1px solid #dfebf0;border-left:4px solid #d39a45}
+#aydaAdminHealthIssues .ayda-shared-health-item>strong{color:#173b51;font-size:14px}
+#aydaAdminHealthIssues .ayda-shared-health-item>small{color:#5a7180;line-height:1.5}
+#aydaAdminHealthIssues .ayda-health-fix-button{display:inline-flex;align-items:center;justify-content:center;border:1px solid #add3e0;background:#e8f5fa;color:#115d79;border-radius:9px;min-height:38px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer}
+#aydaAdminHealthIssues .ayda-health-fix-button:hover,#aydaAdminHealthIssues .ayda-health-fix-button:focus-visible{background:#146681;color:#fff}
