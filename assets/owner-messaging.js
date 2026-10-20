@@ -2,6 +2,7 @@
 /* AYDA private message center. No phone/name ever ships in public GitHub source or publicDashboard. */
 (()=>{
  const root=document.getElementById('owner-messages');if(!root)return;
+ const monitoring=document.body.classList.contains('ayda-manager');
  const $=id=>document.getElementById(id);
  const bridge=()=>window.AYDA_OWNER_BRIDGE;
  const node=(tag,cls,text)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(text!==undefined)x.textContent=String(text);return x;};
@@ -28,7 +29,7 @@
  }
  function messageTeacher(){
   const t=currentTeacher(),item=(bridge()?.reminders()?.items||[]).find(i=>i.groupId+'|'+i.date+'|'+i.type===dateSelect.value);
-  if(!t){teacherText.value='';teacherStatus.textContent='Öğretmen seçin.';return;}
+  if(!t){teacherText.value='';teacherStatus.textContent=monitoring?'Eksik raporu bulunan öğretmeni seçin.':'Öğretmen seçin.';return;}
   const a=t.name.split(/ +/)[0].toLocaleLowerCase('tr-TR');
   const name=a.slice(0,1).toLocaleUpperCase('tr-TR')+a.slice(1);
   const intro='Merhaba '+name+' Hocam, ';
@@ -50,7 +51,8 @@
  }
  function messageStudent(){
   const s=currentStudent(),tracking=bridge()?.tracking()?.students?.find(x=>x.id===s?.id);
-  if(!s){studentText.value='';studentStatus.textContent='Öğrenci seçin.';return;}
+  if(!s){studentText.value='';studentStatus.textContent=monitoring?'Takip gerektiren bir öğrenci seçin.':'Öğrenci seçin.';return;}
+  if(monitoring&&!['danger','watch'].includes(tracking?.riskLevel)){studentText.value='';studentStatus.textContent='Bu öğrenci öncelikli takip listesinde değil.';return;}
   const first=s.name.split(/\s+/)[0];
   let body='Merhaba '+first+', AYDA Dil Akademisi olarak '+s.group+' grubundaki süreciniz hakkında sizinle iletişime geçiyoruz. ';
   if(studentType.value==='absence'){
@@ -78,7 +80,8 @@
  function fillStudent(){
   const prev=students.value,query=studentSearch.value.toLocaleLowerCase('tr-TR').trim();
   students.replaceChildren();appendOption(students,'','Öğrenci seçin');
-  const selected=roster().filter(s=>(!group.value||s.groupId===group.value)&&(!query||s.name.toLocaleLowerCase('tr-TR').includes(query))).sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+  const atRisk=new Set((bridge()?.tracking()?.students||[]).filter(s=>['danger','watch'].includes(s.riskLevel)).map(s=>s.id));
+  const selected=roster().filter(s=>(!monitoring||atRisk.has(s.id))&&(!group.value||s.groupId===group.value)&&(!query||s.name.toLocaleLowerCase('tr-TR').includes(query))).sort((a,b)=>a.name.localeCompare(b.name,'tr'));
   for(const s of selected)appendOption(students,s.id,s.name+' · '+s.group);
   if([...students.options].some(o=>o.value===prev))students.value=prev;
   messageStudent();
@@ -86,7 +89,8 @@
  function fill(){
   const prevTeacher=teachers.value;
   teachers.replaceChildren();appendOption(teachers,'','Öğretmen seçin');
-  for(const t of rows().sort((a,b)=>a.name.localeCompare(b.name,'tr')))
+  const pendingIds=new Set((bridge()?.reminders()?.items||[]).map(x=>x.teacherId));
+  for(const t of rows().filter(t=>!monitoring||pendingIds.has(t.teacherId)).sort((a,b)=>a.name.localeCompare(b.name,'tr')))
    appendOption(teachers,t.id,t.name+(t.phone?'':' · Telefon eksik')+(t.teacherId?'':' · Giriş hesabı eşleşmemiş'));
   if([...teachers.options].some(o=>o.value===prevTeacher))teachers.value=prevTeacher;
   const prevGroup=group.value;group.replaceChildren();appendOption(group,'','Tüm gruplar');
@@ -94,10 +98,11 @@
   for(const [id,name] of m)appendOption(group,id,name);
   group.value=prevGroup&&m.has(prevGroup)?prevGroup:'';
   fillMissing();fillStudent();messageTeacher();
-  $('aydaMsgContactMeta').textContent=rows().length+' öğretmen profili · '+roster().length+' öğrenci. Telefon bilgileri yalnızca yönetici girişiyle getirilir.';
+  $('aydaMsgContactMeta').textContent=monitoring?'Yalnızca eksik raporu olan öğretmenlere ve akademik takibi gereken öğrencilere WhatsApp hatırlatması hazırlanır. Mesajı siz gönderirsiniz.':rows().length+' öğretmen profili · '+roster().length+' öğrenci.';
  }
 
  function paintInboxOverview(){
+  if(monitoring)return;
   const preview=$('ownerInboxPreview');if(!preview)return;
   preview.replaceChildren();
   if(!inbox)return;
@@ -113,6 +118,7 @@
  function showInbox(){
   paintInboxOverview();
   feedbacks.replaceChildren();
+  if(monitoring){feedbackStatus.textContent='Öğretmen geri bildirimlerine yanıt ve kayıt değişiklikleri yalnızca Admin Panelindedir.';return;}
   if(!inbox){feedbacks.append(node('p','ayda-auto-subtle','Öğretmen geri bildirimi servisi için Apps Script güncellenmelidir.'));return;}
   const list=inbox.rows||[];const unopened=list.filter(m=>m.status==='Yeni').length;
   const badge=$('aydaMsgBadge');if(badge)badge.textContent=unopened?' ('+unopened+' yeni)':'';
@@ -148,7 +154,7 @@
   if(!bridge()?.ready())return;
   const n=++loadNo;
   $('aydaMsgContactMeta').textContent='İletişim rehberi yükleniyor…';
-  const [directory,feedback]=await Promise.allSettled([bridge().api('contactDirectory'),bridge().api('feedbackInbox')]);
+  const [directory,feedback]=await Promise.allSettled([bridge().api('contactDirectory'),monitoring?Promise.resolve(null):bridge().api('feedbackInbox')]);
   if(n!==loadNo)return;
   contacts=directory.status==='fulfilled'?directory.value:null;
   inbox=feedback.status==='fulfilled'?feedback.value:null;
