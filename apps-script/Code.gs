@@ -271,7 +271,7 @@ function aydaAdminStudentSave_(user,p){
  if(!aydaGroups_(user).some(g=>g.id===groupId&&g.status==='Aktif'))throw Error('Aktif sınıf seçin.');
  const lock=LockService.getScriptLock();lock.waitLock(20000);
  try{
-  const sh=aydaSheet_('OGRENCILER'),v=sh.getDataRange().getDisplayValues(),h=v[0],idc=h.indexOf('OGRENCI_ID'),nc=h.indexOf('AD_SOYAD'),gc=h.indexOf('GRUP_ID');
+  const sh=aydaSheet_('OGRENCILER');let h=sh.getRange(1,1,1,sh.getLastColumn()).getDisplayValues()[0];for(const field of ['TELEFON','VELI_TELEFON','EPOSTA','NOT'])if(!h.includes(field)){sh.getRange(1,h.length+1).setValue(field);h.push(field);}const v=sh.getDataRange().getDisplayValues(),idc=h.indexOf('OGRENCI_ID'),nc=h.indexOf('AD_SOYAD'),gc=h.indexOf('GRUP_ID');
   if(idc<0||nc<0||gc<0)throw Error('OGRENCILER başlıkları bulunamadı.');
   const ix=id?v.findIndex((row,i)=>i>0&&row[idc]===id):-1;
   if(id&&ix<1)throw Error('Öğrenci bulunamadı; otomatik yeni öğrenci oluşturulmadı.');
