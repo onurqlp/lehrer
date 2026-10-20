@@ -3,6 +3,7 @@ const AYDA_DB_ID = '1FDLlugevKNHLP83M1uZGjjf4MNz0NV91KkxdZ6yJheg';
 const AYDA_TZ = 'Europe/Istanbul';
 // Sıfırdan başlayan sistem için eski dersleri eksik kayda dahil etme.
 const AYDA_TRACKING_START = '2026-10-20';
+const AYDA_API_VERSION = '2026-10-20.2';
 
 function aydaDb_(){ return SpreadsheetApp.openById(AYDA_DB_ID); }
 function aydaSheet_(name){ const s=aydaDb_().getSheetByName(name); if(!s) throw Error('Tablo bulunamadı: '+name); return s; }
@@ -22,10 +23,10 @@ function aydaAuth_(key){
 }
 function aydaGroups_(user){return aydaRead_('GRUPLAR').filter(g=>user.role==='admin'||(g['Öğretmen ID']===user.id&&g['Durum']==='Aktif')).map(g=>({id:g['ID'],name:g['Grup'],level:g['Seviye'],teacherId:g['Öğretmen ID'],start:aydaDate_(g['Başlangıç']),end:aydaDate_(g['Planlanan Bitiş']),students:g['Öğrenci'],completed:Number(g['Son Tamamlanan Ünite'])||0,total:Number(g['Toplam Ünite'])||0,status:g['Durum'],whatsapp:String(g['WhatsApp']||'').trim()}));}
 function aydaSchedule_(groups){const ids=new Set(groups.map(g=>g.id)),map=Object.fromEntries(groups.map(g=>[g.id,g]));return aydaRead_('HAFTALIK_PROGRAM').filter(p=>ids.has(p['Grup ID'])&&(p['Durum']==='Aktif'||p['Durum']==='Eksik saat')).map(p=>({groupId:p['Grup ID'],group:map[p['Grup ID']].name,day:p['Gün'],start:p['Başlangıç'],end:p['Bitiş']||'Belirtilmemiş',status:p['Durum']}));}
-function aydaHistory_(user,groups){const ids=new Set(groups.map(g=>g.id));return aydaRead_('DERS_KAYITLARI').filter(r=>ids.has(r['Grup ID'])&&(user.role==='admin'||r['Öğretmen ID']===user.id)).map(r=>({id:r['Kayıt ID'],date:aydaDate_(r['Tarih']),groupId:r['Grup ID'],teacherId:r['Öğretmen ID'],plannedStart:r['Planlanan Başlangıç'],plannedEnd:r['Planlanan Bitiş'],actual:r['Gerçekleşen Ders Saati'],status:r['Durum'],unit:r['İşlenen Ünite'],completed:r['Tamamlanan Ünite'],topic:r['İşlenen Konu'],note:r['Öğretmen Notu']})).sort((a,b)=>b.date.localeCompare(a.date));}
+function aydaHistory_(user,groups){const ids=new Set(groups.map(g=>g.id));return aydaRead_('DERS_KAYITLARI').filter(r=>ids.has(r['Grup ID'])&&aydaDate_(r['Tarih'])>=AYDA_TRACKING_START&&(user.role==='admin'||r['Öğretmen ID']===user.id)).map(r=>({id:r['Kayıt ID'],date:aydaDate_(r['Tarih']),groupId:r['Grup ID'],teacherId:r['Öğretmen ID'],plannedStart:r['Planlanan Başlangıç'],plannedEnd:r['Planlanan Bitiş'],actual:r['Gerçekleşen Ders Saati'],status:r['Durum'],unit:r['İşlenen Ünite'],completed:r['Tamamlanan Ünite'],topic:r['İşlenen Konu'],note:r['Öğretmen Notu']})).sort((a,b)=>b.date.localeCompare(a.date));}
 function aydaPrivateSheet_(){const db=aydaDb_();let s=db.getSheetByName('AYDA_OZEL_DERS_CIZELGESI');if(!s){s=db.insertSheet('AYDA_OZEL_DERS_CIZELGESI');s.appendRow(['Kayıt ID','Tarih','Öğretmen ID','Öğrenci','Gerçekleşen Ders Saati','Durum','İşlenen Ünite','Tamamlanan Ünite','İşlenen Konu','Öğretmen Notu','Kayıt Zamanı']);}return s;}
-function aydaPrivateHistory_(user){const s=aydaDb_().getSheetByName('AYDA_OZEL_DERS_CIZELGESI');if(!s||s.getLastRow()<2)return [];const v=s.getDataRange().getDisplayValues(),h=v.shift().map(String);return v.filter(r=>user.role==='admin'||r[h.indexOf('Öğretmen ID')]===user.id).map(r=>{const x=Object.fromEntries(h.map((k,i)=>[k,r[i]]));return {id:x['Kayıt ID'],date:aydaDate_(x['Tarih']),teacherId:x['Öğretmen ID'],student:x['Öğrenci'],groupId:'',actual:x['Gerçekleşen Ders Saati'],status:x['Durum'],unit:x['İşlenen Ünite'],completed:x['Tamamlanan Ünite'],topic:x['İşlenen Konu'],note:x['Öğretmen Notu']};}).sort((a,b)=>b.date.localeCompare(a.date));}
-function aydaPrivateSave_(user,p){if(user.role!=='teacher')throw Error('Özel ders kaydı için öğretmen girişi gerekir.');const date=String(p.date||''),student=String(p.student||'').trim(),topic=String(p.topic||'').trim(),note=String(p.note||'').trim(),actual=String(p.actual||''),status=String(p.status||'İşlendi');if(!aydaValidateDate_(date)||date>aydaToday_())throw Error('Geçersiz tarih.');if(!student||student.length>120||topic.length>300||note.length<3||note.length>2000)throw Error('Öğrenci adı veya not geçersiz.');if(!/^(?:00:30|0[1-5]:(?:00|30)|06:00)$/.test(actual))throw Error('Özel ders süresi 30 dakika ile 6 saat arasında, 30 dakikalık aralıklarla olmalı.');if(!['İşlendi','İptal','Ertelendi'].includes(status))throw Error('Geçersiz durum.');const unit=Number(p.unit||0),completed=Number(p.completed||0);if(!Number.isInteger(unit)||unit<0||unit>100||!Number.isInteger(completed)||completed<0||completed>unit)throw Error('Ünite bilgisi geçersiz.');const lock=LockService.getScriptLock();lock.waitLock(20000);try{const s=aydaPrivateSheet_();const v=s.getDataRange().getDisplayValues();if(v.slice(1).some(r=>aydaDate_(r[1])===date&&r[2]===user.id&&r[3]===student))throw Error('Bu öğrenci için aynı gün kayıt var.');const id='OD-'+Utilities.getUuid();s.appendRow([id,date,user.id,student,actual,status,unit,completed,topic,note,new Date()]);return {saved:true,id};}finally{lock.releaseLock();}}
+function aydaPrivateHistory_(user){const s=aydaDb_().getSheetByName('AYDA_OZEL_DERS_CIZELGESI');if(!s||s.getLastRow()<2)return [];const v=s.getDataRange().getDisplayValues(),h=v.shift().map(String);return v.filter(r=>aydaDate_(r[h.indexOf('Tarih')])>=AYDA_TRACKING_START&&(user.role==='admin'||r[h.indexOf('Öğretmen ID')]===user.id)).map(r=>{const x=Object.fromEntries(h.map((k,i)=>[k,r[i]]));return {id:x['Kayıt ID'],date:aydaDate_(x['Tarih']),teacherId:x['Öğretmen ID'],student:x['Öğrenci'],groupId:'',actual:x['Gerçekleşen Ders Saati'],status:x['Durum'],unit:x['İşlenen Ünite'],completed:x['Tamamlanan Ünite'],topic:x['İşlenen Konu'],note:x['Öğretmen Notu']};}).sort((a,b)=>b.date.localeCompare(a.date));}
+function aydaPrivateSave_(user,p){if(user.role!=='teacher')throw Error('Özel ders kaydı için öğretmen girişi gerekir.');const date=String(p.date||''),student=String(p.student||'').trim(),topic=String(p.topic||'').trim(),note=String(p.note||'').trim(),actual=String(p.actual||''),status=String(p.status||'İşlendi');if(!aydaValidateDate_(date)||date<AYDA_TRACKING_START||date>aydaToday_())throw Error('Ders tarihi 20.10.2026 öncesinde olamaz.');if(!student||student.length>120||topic.length>300||note.length<3||note.length>2000)throw Error('Öğrenci adı veya not geçersiz.');if(!/^(?:00:30|0[1-5]:(?:00|30)|06:00)$/.test(actual))throw Error('Özel ders süresi 30 dakika ile 6 saat arasında, 30 dakikalık aralıklarla olmalı.');if(!['İşlendi','İptal','Ertelendi'].includes(status))throw Error('Geçersiz durum.');const unit=Number(p.unit||0),completed=Number(p.completed||0);if(!Number.isInteger(unit)||unit<0||unit>100||!Number.isInteger(completed)||completed<0||completed>unit)throw Error('Ünite bilgisi geçersiz.');const lock=LockService.getScriptLock();lock.waitLock(20000);try{const s=aydaPrivateSheet_();const v=s.getDataRange().getDisplayValues();if(v.slice(1).some(r=>aydaDate_(r[1])===date&&r[2]===user.id&&r[3]===student))throw Error('Bu öğrenci için aynı gün kayıt var.');const id='OD-'+Utilities.getUuid();s.appendRow([id,date,user.id,student,actual,status,unit,completed,topic,note,new Date()]);return {saved:true,id};}finally{lock.releaseLock();}}
 function aydaTeachers_(){
  const users=aydaRead_('KULLANICILAR').filter(x=>x['Rol']==='Öğretmen');
  return users.map(u=>({id:u['Öğretmen ID'],userId:u['Kullanıcı ID'],name:u['Kullanıcı Adı'],status:u['Durum'],teacherType:PropertiesService.getScriptProperties().getProperty('AYDA_OGRETMEN_TURU_'+u['Öğretmen ID'])||'kurs'}));
@@ -132,7 +133,7 @@ function aydaOverview_(user){const groups=aydaGroups_(user),schedule=aydaSchedul
 function aydaSave_(user,p){
   if(!p||typeof p!=='object')throw Error('Rapor bilgileri eksik.');
   const groupId=String(p.groupId||'').trim(),date=String(p.date||'').trim(),topic=String(p.topic||'').trim(),note=String(p.note||'').trim(),unit=Number(p.unit),completed=Number(p.completed),actual=String(p.actual||'').trim(),status=String(p.status||'İşlendi');
-  if(!aydaValidateDate_(date)||date>aydaToday_())throw Error('Geçerli bir geçmiş veya bugünkü tarih girin.');
+  if(!aydaValidateDate_(date)||date<AYDA_TRACKING_START||date>aydaToday_())throw Error('Yalnızca 20.10.2026 ve sonrasına ders kaydedilebilir.');
   if(!Number.isInteger(unit)||unit<0||unit>100||!Number.isInteger(completed)||completed<0||completed>unit)throw Error('Ünite değerlerini kontrol edin.');
   if(topic.length>300||note.length<3||note.length>2000)throw Error('Konu veya not uzunluğu geçersiz.');
   if(!/^(?:00:30|0[1-5]:(?:00|30)|06:00)$/.test(actual))throw Error('Ders süresi 30 dakika ile 6 saat arasında, 30 dakikalık aralıklarla olmalı.');
@@ -758,7 +759,7 @@ function aydaTeacherMonthly_(user,p){
  if(user.role!=='teacher')throw Error('Öğretmen oturumu gerekir.');
  const month=String((p||{}).month||aydaToday_().slice(0,7));
  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))throw Error('Ay biçimi geçersiz.');
- const from=month+'-01',monthDate=new Date(month+'-01T00:00:00Z');
+ const from=month+'-01'<AYDA_TRACKING_START?AYDA_TRACKING_START:month+'-01',monthDate=new Date(month+'-01T00:00:00Z');
  const last=new Date(Date.UTC(monthDate.getUTCFullYear(),monthDate.getUTCMonth()+1,0));
  const to=last.toISOString().slice(0,10);
  const weekday=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
@@ -769,7 +770,7 @@ function aydaTeacherMonthly_(user,p){
    const d=new Date(Date.UTC(monthDate.getUTCFullYear(),monthDate.getUTCMonth(),day));
    if(weekday[d.getUTCDay()]!==item.day)continue;
    const date=d.toISOString().slice(0,10);
-   if(g.start&&date<g.start||g.end&&date>g.end)continue;
+   if(date<AYDA_TRACKING_START||(g.start&&date<g.start)||(g.end&&date>g.end))continue;
    const key=g.id+'|'+date+'|'+item.start;if(seen.has(key))continue;seen.add(key);
    plannedByGroup.set(g.id,(plannedByGroup.get(g.id)||0)+1);
   }
@@ -794,7 +795,7 @@ function aydaMakeupList_(user){
  if(user.role!=='teacher')throw Error('Öğretmen oturumu gerekir.');
  const groups=aydaGroups_(user).filter(g=>g.status==='Aktif'),groupNames=new Map(groups.map(g=>[g.id,g.name]));
  const today=aydaToday_(),cutoff=new Date(today+'T00:00:00Z');
- cutoff.setUTCDate(cutoff.getUTCDate()-45);const min=cutoff.toISOString().slice(0,10);
+ cutoff.setUTCDate(cutoff.getUTCDate()-45);const min=cutoff.toISOString().slice(0,10)<AYDA_TRACKING_START?AYDA_TRACKING_START:cutoff.toISOString().slice(0,10);
  const lessons=aydaRead_('DERS_KAYITLARI').filter(r=>groupNames.has(r['Grup ID'])&&r['Durum']==='İşlendi'&&aydaDate_(r['Tarih'])>=min&&aydaDate_(r['Tarih'])<=today);
  const attendance=aydaRead_('YOKLAMA'),homeworks=aydaRead_('ODEV_TAKIBI');
  const byLesson=new Map();for(const r of attendance){const key=r['GRUP_ID']+'|'+aydaDate_(r['TARIH']);if(!byLesson.has(key))byLesson.set(key,[]);byLesson.get(key).push(r);}
@@ -1000,7 +1001,7 @@ function aydaHealthCheck(){
   const required=['GRUPLAR','KULLANICILAR','DERS_KAYITLARI','OGRENCILER','YOKLAMA','ODEV_TAKIBI','ODEV_GOREVLERI','ODEV_GOREV_GECMISI','DERS_ODEVLERI','OGRETMEN_GERI_BILDIRIM'];
   const missing=required.filter(name=>!db.getSheetByName(name));
   if(missing.length)throw Error('Eksik Google Sheets sekmeleri: '+missing.join(', '));
-  const result={ok:true,version:'2026-10-19.8',sheetCount:db.getSheets().length,groups:Math.max(0,db.getSheetByName('GRUPLAR').getLastRow()-1),students:Math.max(0,db.getSheetByName('OGRENCILER').getLastRow()-1)};
+  const result={ok:true,version:AYDA_API_VERSION,trackingStart:AYDA_TRACKING_START,sheetCount:db.getSheets().length,groups:Math.max(0,db.getSheetByName('GRUPLAR').getLastRow()-1),students:Math.max(0,db.getSheetByName('OGRENCILER').getLastRow()-1)};
   Logger.log(JSON.stringify(result));
   return result;
 }
@@ -1157,7 +1158,7 @@ function doGet(e){
   let out;
   try{
     const action=String(p.action||'overview');
-    if(action==='ping'){out={ok:true,data:{status:'ok',version:'2026-10-19.8'}};}
+    if(action==='ping'){out={ok:true,data:{status:'ok',version:AYDA_API_VERSION,trackingStart:AYDA_TRACKING_START}};}
     else if(action==='surveyOptions'){out={ok:true,data:aydaSurveyOptions_()};}
     else if(action==='submitSurvey'){const raw=Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8');if(raw.length>16000)throw Error('Anket çok uzun.');out={ok:true,data:aydaSurveySubmit_(JSON.parse(raw))};}
     else if(action==='publicDashboard'){out={ok:true,data:aydaPublicDashboard_()};}
