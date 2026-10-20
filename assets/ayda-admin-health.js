@@ -20,7 +20,9 @@ const manager=tab=>'#'+(tab==='messages'||tab==='alerts'?'mesajlar':tab==='healt
 let requestId=0;
 async function update(){
  if(typeof data==='undefined'||data?.user?.role!=='admin')return;
- const ticket=++requestId;root.replaceChildren(make('p','Sistem Sağlığı kontrol ediliyor…'));
+ const ticket=++requestId;
+ const initialGroups=data.groups||[];
+ root.replaceChildren(make('p','Sistem Sağlığı açık · '+initialGroups.filter(g=>g.status==='Aktif').length+' aktif grup kontrol ediliyor. Ayrıntılı uyarılar yükleniyor…'));
  const current=data,groups=current.groups||[],schedule=current.schedule||[],teachers=current.teachers||[];
  const active=groups.filter(g=>g.status==='Aktif'),activeIds=new Set(active.map(g=>g.id));
  // Temel grup/öğretmen kontrollerini Google ayrıntı sorgularını bekletmeden göster.
