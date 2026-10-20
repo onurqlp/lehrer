@@ -8,7 +8,7 @@
  const fmt=x=>/^\d{4}-\d{2}-\d{2}$/.test(String(x||''))?x.slice(8,10)+'.'+x.slice(5,7)+'.'+x.slice(0,4):(String(x||'')||'—');
  const hours=x=>{if(typeof x==='number')return x;const m=/^(\d{1,2}):(\d{2})/.exec(String(x||''));return m?Number(m[1])+Number(m[2])/60:0;};
  const slug=s=>String(s||'grup').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9_-]/g,'-').slice(0,48);
- const state={key:'',overview:null,tracking:null,homeworks:null,tasks:null,reminders:null,surveys:null,errors:[],id:'',busy:false,loadedAt:''};
+ const state={key:'',overview:null,tracking:null,homeworks:null,tasks:null,reminders:null,surveys:null,errors:[],id:'',busy:false,loadedAt:'',preloaded:false};
  const sourceNames={trackingSummary:'Öğrenci takibi',lessonHomework:'Ders ödevleri',homeworkTasks:'Ödev görevleri',reminders:'Eksik ders kontrolü',surveySummary:'Memnuniyet anketleri'};
  let serial=0;
  function sessionKeys(){
@@ -297,7 +297,7 @@
   state.busy=true;status('Veriler yenileniyor…');$('archiveRefresh').disabled=true;
   state.errors=[];
   try{
-   const over=await request('overview',state.key);
+   const over=state.preloaded?state.overview:await request('overview',state.key);state.preloaded=false;
    if(!['admin','viewer','teacher'].includes(over?.user?.role))throw Error('Akademik arşiv için yetkili kullanıcı gerekir.');
    state.overview=over;
    const calls=['trackingSummary','lessonHomework','homeworkTasks','reminders'];
@@ -322,7 +322,7 @@
   let found=null,err=null;
   for(const k of keys){try{const o=await request('overview',k);if(['teacher','admin','viewer'].includes(o?.user?.role)){found={key:k,overview:o};break;}}catch(e){err=e;}}
   if(!found){showAuth('Oturum doğrulanamadı.','Yetkili bir AYDA hesabıyla tekrar giriş yapın. '+(err?.message||''));return;}
-  state.key=found.key;state.overview=found.overview;
+  state.key=found.key;state.overview=found.overview;state.preloaded=true;
   $('archiveAuth').hidden=true;$('archiveWorkspace').hidden=false;status('Arşiv verileri yükleniyor…');
   await refresh();
  }
