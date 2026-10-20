@@ -2,7 +2,7 @@
 const AYDA_DB_ID = '1FDLlugevKNHLP83M1uZGjjf4MNz0NV91KkxdZ6yJheg';
 const AYDA_TZ = 'Europe/Istanbul';
 // Sıfırdan başlayan sistem için eski dersleri eksik kayda dahil etme.
-const AYDA_TRACKING_START = '2026-10-19';
+const AYDA_TRACKING_START = '2026-10-20';
 
 function aydaDb_(){ return SpreadsheetApp.openById(AYDA_DB_ID); }
 function aydaSheet_(name){ const s=aydaDb_().getSheetByName(name); if(!s) throw Error('Tablo bulunamadı: '+name); return s; }
@@ -364,7 +364,7 @@ function aydaTrackingSummary_(user){
   }
   for(const r of aydaRead_('YOKLAMA')){
     const s=byStudent.get(String(r['OGRENCI_ID']||'').trim());
-    if(!s||s.groupId!==r['GRUP_ID'])continue;
+    if(!s||s.groupId!==r['GRUP_ID']||aydaDate_(r['TARIH'])<AYDA_TRACKING_START)continue;
     const group=byGroup.get(s.groupId);
     const status=r['KATILIM'],excused=r['MAZERETLI']==='Evet',date=aydaDate_(r['TARIH']);
     if(status==='Geldi'){s.present++;group.present++;}
@@ -374,7 +374,7 @@ function aydaTrackingSummary_(user){
   }
   for(const r of aydaRead_('ODEV_TAKIBI')){
     const s=byStudent.get(String(r['OGRENCI_ID']||'').trim());
-    if(!s||s.groupId!==r['GRUP_ID'])continue;
+    if(!s||s.groupId!==r['GRUP_ID']||aydaDate_(r['TARIH'])<AYDA_TRACKING_START)continue;
     const group=byGroup.get(s.groupId),status=r['ODEV_DURUMU'],date=aydaDate_(r['TARIH']);
     if(status==='Yaptı'){s.homeworkDone++;group.homeworkDone++;}
     else if(status==='Yapmadı'){s.homeworkMissing++;group.homeworkMissing++;}
@@ -431,7 +431,7 @@ function aydaLessonHomework_(user){
  if(user.role!=='teacher'&&user.role!=='admin')throw Error('Yetkili giriş gerekir.');
  const groups=aydaGroups_(user),allowed=new Map(groups.map(g=>[g.id,g.name]));
  const list=aydaRead_('DERS_ODEVLERI')
-  .filter(r=>allowed.has(r['GRUP_ID']))
+  .filter(r=>allowed.has(r['GRUP_ID'])&&aydaDate_(r['TARIH'])>=AYDA_TRACKING_START)
   .map(r=>({id:r['ODEV_ID'],lessonId:r['DERS_KAYIT_ID'],date:aydaDate_(r['TARIH']),
     groupId:r['GRUP_ID'],group:allowed.get(r['GRUP_ID']),teacherId:r['OGRETMEN_ID'],text:r['VERILEN_ODEV'],
     shareStatus:r['PAYLASIM_DURUMU']||'Eski kayıt',sharedAt:r['PAYLASIM_ZAMANI']||'',sharedBy:r['PAYLASAN_OGRETMEN_ID']||''}))
