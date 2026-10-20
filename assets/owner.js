@@ -426,29 +426,76 @@
   const activeTeachers=new Set(teachers.filter(t=>t.status==='Aktif').map(t=>t.id));
   const validGroups=new Set(groups.map(g=>g.id));
   const rosterGroups=new Map((tracking?.groups||[]).map(g=>[g.id,g]));
-  const warn=(title,detail)=>issues.push({title,detail});
+  const action=(label,fix,groupId,more={})=>({label,fix,groupId,...more});
+  const panel=(label,tab,focus)=>({label,tab,focus});
+  const warn=(title,detail,actions=[])=>issues.push({title,detail,actions});
   for(const g of groups){
    if(g.status!=='Aktif')continue;
-   if(!g.teacherId||!validTeachers.has(g.teacherId))warn(g.name+' · Öğretmen atanmadı','Öğretmen seçilmeden ders ve yoklama kaydedilemez.');
-   else if(!activeTeachers.has(g.teacherId))warn(g.name+' · Öğretmen hesabı pasif','Öğretmeni veya hesap durumunu kontrol edin: '+tName(g.teacherId));
+   if(!g.teacherId||!validTeachers.has(g.teacherId))
+    warn(g.name+' · Öğretmen atanmadı','Öğretmen seçilmeden ders ve yoklama kaydedilemez.',[action('Öğretmen ata →','teacher',g.id)]);
+   else if(!activeTeachers.has(g.teacherId))
+    warn(g.name+' · Öğretmen hesabı pasif','Öğretmeni veya hesap durumunu kontrol edin: '+tName(g.teacherId),[
+     panel('Hesabı etkinleştir →','accounts','aydaTeacherManage'),action('Öğretmen değiştir →','teacher',g.id)
+    ]);
    const plans=schedule.filter(r=>r.groupId===g.id);
-   if(!plans.length)warn(g.name+' · Haftalık program yok','Ders günü ile başlangıç/bitiş saati girilmeli.');
-   else if(plans.some(p=>p.status!=='Aktif'||!p.start||!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(p.end||''))))warn(g.name+' · Ders saati eksik','Programdaki başlangıç veya bitiş saatlerini tamamlayın.');
-   if(!Number(g.students))warn(g.name+' · Öğrenci sayısı sıfır','Sınıf öğrenci listesini kontrol edin.');
+   if(!plans.length)
+    warn(g.name+' · Haftalık program yok','Ders günü ile başlangıç/bitiş saati girilmeli.',[action('Programı oluştur →','schedule',g.id)]);
+   else if(plans.some(p=>p.status!=='Aktif'||!p.start||!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(p.end||''))))
+    warn(g.name+' · Ders saati eksik','Programdaki başlangıç veya bitiş saatlerini tamamlayın.',[action('Ders saatlerini düzenle →','schedule',g.id)]);
+   if(!Number(g.students))
+    warn(g.name+' · Öğrenci sayısı sıfır','Sınıf öğrenci listesini kontrol edin.',[action('Öğrenci ekle →','student',g.id)]);
    const actual=rosterGroups.get(g.id)?.students;
-   if(Number.isFinite(Number(actual))&&Number(actual)!==Number(g.students))warn(g.name+' · Öğrenci sayıları uyuşmuyor','Grup kartı: '+g.students+' / Öğrenci listesi: '+actual+'. Kimlikleri kontrol edin.');
-   if(g.end&&g.end<'2026-10-20')warn(g.name+' · Önceki dönem grubu hâlâ aktif','Kurs tamamlandıysa geçmişe taşıyın; kayıtları silmeyin.');
+   if(Number.isFinite(Number(actual))&&Number(actual)!==Number(g.students))
+    warn(g.name+' · Öğrenci sayıları uyuşmuyor','Grup kartı: '+g.students+' / Öğrenci listesi: '+actual+'. Kimlikleri kontrol edin.',[
+     action('Grup sayısını düzelt →','count',g.id),action('Öğrencileri düzenle →','student',g.id)
+    ]);
+   if(g.end&&g.end<'2026-10-20')
+    warn(g.name+' · Önceki dönem grubu hâlâ aktif','Kurs tamamlandıysa geçmişe taşıyın; kayıtları silmeyin.',[action('Grubu tamamlandı yap →','status',g.id)]);
   }
   const duplicates=new Map();for(const t of teachers)duplicates.set(t.id,(duplicates.get(t.id)||0)+1);
-  for(const [id,count] of duplicates)if(id&&count>1)warn('Hesaplarda ortak öğretmen ID','Öğretmen ID: '+id+' · '+count+' hesap aynı gruplara erişebilir; eşleşmeleri doğrulayın.');
-  for(const t of teachers.filter(t=>t.status==='Aktif'&&!groups.some(g=>g.teacherId===t.id)))warn(t.name+' · Sınıf eşleşmesi yok','Özel ders öğretmeniyse bu durum normal olabilir.');
-  for(const r of schedule)if(r.status==='Aktif'&&!validGroups.has(r.groupId))warn('Program · Tanımsız sınıf','Grup ID: '+r.groupId);
-  for(const row of (reminders?.items||[]).filter(x=>String(x.date||'')>='2026-10-20'))warn((row.type==='attendance'?'Eksik yoklama':'Eksik ders raporu')+' · '+(row.group||'Sınıf'),fmt(row.date)+' · '+tName(row.teacherId));
-  if(contactDirectory?.missingStudentPhones)warn('Öğrenci iletişim bilgileri eksik',contactDirectory.missingStudentPhones+' öğrencinin kayıtlı veya geçerli telefonu yok.');
-  if(!reminders)warn('Eksik rapor kontrolü kullanılamıyor','Google Apps Script bağlantısını ve güncel dağıtımı kontrol edin.');
+  for(const [id,count] of duplicates)if(id&&count>1)
+   warn('Hesaplarda ortak öğretmen ID','Öğretmen ID: '+id+' · '+count+' hesap aynı gruplara erişebilir; eşleşmeleri doğrulayın.',[panel('Hesapları incele →','accounts','ownerAccountsTable')]);
+  for(const t of teachers.filter(t=>t.status==='Aktif'&&!groups.some(g=>g.teacherId===t.id)))
+   warn(t.name+' · Sınıf eşleşmesi yok','Özel ders öğretmeniyse bu durum normal olabilir.',[action('Sınıfa öğretmen ata →','teacher','',{teacherId:t.id})]);
+  for(const r of schedule)if(r.status==='Aktif'&&!validGroups.has(r.groupId))
+   warn('Program · Tanımsız sınıf','Grup ID: '+r.groupId,[panel('Programı incele →','schedule','ownerScheduleList')]);
+  for(const row of (reminders?.items||[]).filter(x=>String(x.date||'')>='2026-10-20'))
+   warn((row.type==='attendance'?'Eksik yoklama':'Eksik ders raporu')+' · '+(row.group||'Sınıf'),fmt(row.date)+' · '+tName(row.teacherId),[
+    {label:'Öğretmene hatırlat →',compose:{teacherId:row.teacherId,groupId:row.groupId,date:row.date,type:row.type}}
+   ]);
+  if(contactDirectory?.missingStudentPhones)
+   warn('Öğrenci iletişim bilgileri eksik',contactDirectory.missingStudentPhones+' öğrencinin kayıtlı veya geçerli telefonu yok.',[panel('Telefonları düzenle →','messages','aydaMsgStudentSearch')]);
+  if(!reminders)
+   warn('Eksik rapor kontrolü kullanılamıyor','Google Apps Script bağlantısını ve güncel dağıtımı kontrol edin.',[{label:'Verileri yenile →',refresh:true}]);
   summary.append(kpi('Aktif sınıf',groups.filter(g=>g.status==='Aktif').length),kpi('Aktif öğretmen',teachers.filter(t=>t.status==='Aktif').length),kpi('Kontrol gerektiren',issues.length),kpi('Eksik kayıt',reminders?.items?.length??'—'));
   if(!issues.length){showEmpty('ownerHealthIssues',reminders?'Kontrol edilen alanlarda eksiklik bulunamadı.':'Temel sınıf kontrolleri tamam. Eksik kayıt hizmetinden henüz yanıt alınmadı.');return;}
-  for(const issue of issues){const card=add(root,'article','note-card warn');add(card,'strong','',issue.title);add(card,'p','',issue.detail);}
+  function navigate(fix){
+   const url=new URL('./index.html',location.href);
+   url.searchParams.set('aydaFix',fix.fix);
+   if(fix.groupId)url.searchParams.set('groupId',fix.groupId);
+   if(fix.teacherId)url.searchParams.set('teacherId',fix.teacherId);
+   url.hash=fix.fix==='student'?'grup-islemleri':fix.fix==='account'?'ogretmenler':'duzenle';
+   location.assign(url.href);
+  }
+  function runAction(item){
+   if(item.fix){navigate(item);return;}
+   if(item.tab){
+    activate(item.tab);
+    const target=item.focus&&$(item.focus);
+    if(target)requestAnimationFrame(()=>{target.scrollIntoView({behavior:'smooth',block:'center'});});
+    return;
+   }
+   if(item.compose){activate('messages');window.dispatchEvent(new CustomEvent('ayda:compose-teacher',{detail:item.compose}));return;}
+   if(item.refresh)refresh();
+  }
+  for(const issue of issues){
+   const card=add(root,'article','note-card warn ayda-health-issue-card');
+   add(card,'strong','',issue.title);add(card,'p','',issue.detail);
+   if(issue.actions.length){
+    const buttons=add(card,'div','ayda-health-card-actions');
+    for(const item of issue.actions)buttons.append(quick(item.label,()=>runAction(item)));
+   }
+  }
  }
  function renderAll(){
   if(!overview)return;
