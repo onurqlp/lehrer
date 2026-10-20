@@ -56,6 +56,8 @@
  }
  function open(tab,scroll){
   active=normalize(tab);
+  document.body.classList.toggle('ayda-admin-overview',active==='academic');
+  document.body.classList.toggle('ayda-admin-health-page',active==='health');
   for(const child of area.querySelectorAll(':scope > [data-admin-tab]')){
    child.hidden=child.dataset.adminTab==='health'
     ?!['academic','health'].includes(active)
