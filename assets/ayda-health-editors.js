@@ -6,6 +6,7 @@
  const days=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
  const url=new URLSearchParams(location.search);
  const focusType=url.get('aydaFix')||'',focusGroup=url.get('groupId')||'',focusTeacher=url.get('teacherId')||'';
+ const focusStudent=url.get('studentId')||'';
  const formatGroup=g=>g.name+' · '+g.id;
  function currentData(){return typeof data!=='undefined'&&data?.user?.role==='admin'?data:null;}
  function options(id,values,label,selected){
@@ -113,7 +114,9 @@
    const select=$('editGroupId');if(select&&[...select.options].some(x=>x.value===gid)){select.value=gid;select.dispatchEvent(new Event('change'));}
    target=$('groupUpdateForm');
   }else if(focusType==='student'){
-   chooseGroup('adminStudentGroup',gid);target=$('adminStudentForm');
+   chooseGroup('adminStudentGroup',gid);
+   if(focusStudent){const pick=$('adminStudentPick');if(pick&&[...pick.options].some(o=>o.value===focusStudent)){pick.value=focusStudent;pick.dispatchEvent(new Event('change'));}}
+   target=$('adminStudentForm');
   }else if(focusType==='account'){window.AYDA_ADMIN_MENU?.open('settings','teachers');target=$('accountList');}
   if(target){
    $('aydaFixContext').textContent=gid?'Düzenlenecek grup: '+(state.groups.find(g=>g.id===gid)?.name||gid):'İlgili yönetim alanı açıldı.';
@@ -121,5 +124,6 @@
   }
  }
  window.addEventListener('ayda:login',()=>{setup();focusContext();});
+ window.addEventListener('ayda:students-loaded',()=>{if(focusType==='student'&&focusStudent)focusContext();});
  if(currentData()){setup();focusContext();}
 })();
