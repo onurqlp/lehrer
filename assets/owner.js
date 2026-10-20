@@ -106,6 +106,7 @@
   const t=results[0];
   tracking=t.status==='fulfilled'&&t.value?.scope==='all'?t.value:null;
   reminders=results[1].status==='fulfilled'?results[1].value:null;
+  if(reminders){const items=(reminders.items||[]).filter(x=>String(x.date||'')>='2026-10-20');reminders={...reminders,items,total:items.length,reports:items.filter(x=>x.type==='report').length,attendance:items.filter(x=>x.type==='attendance').length};}
   contactDirectory=results[2].status==='fulfilled'?results[2].value:null;
   lessonHomework=results[3].status==='fulfilled'?results[3].value:null;
   if(!tracking)errorMessage('Öğrenci takip verileri henüz yüklenemedi. Diğer bilgiler kullanılabilir.');
