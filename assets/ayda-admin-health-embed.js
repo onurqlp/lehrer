@@ -9,11 +9,18 @@
   window.AYDA_ADMIN_MENU?.open(tab);
   if(focus)requestAnimationFrame(()=>document.getElementById(focus)?.scrollIntoView({behavior:'smooth',block:'center'}));
  }
+ function sendExistingSession(){
+  if(!isAdmin()||typeof authKey!=='string'||!authKey)return;
+  frame.contentWindow?.postMessage({aydaHealthEmbed:1,action:'authorize',key:authKey},location.origin);
+ }
  // The academic health view is read-only. Editing always takes place in this Admin document.
  window.addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==frame.contentWindow||!isAdmin())return;
   const request=event.data;
   if(!request||request.aydaHealthEmbed!==1)return;
+  if(request.action==='ready'){sendExistingSession();return;}
+  if(request.action==='authenticated'){status.textContent='';return;}
+  if(request.action==='auth-error'){status.textContent='Sistem Sağlığı mevcut yönetici oturumuyla açılamadı. Ana paneli yenileyin.';return;}
   if(request.action==='fix'){
    const ctx=request.context||{};
    const allowed=['teacher','schedule','status','count','student','account'];
@@ -31,12 +38,14 @@
   if(!loaded){frame.src=url.href;loaded=true;status.textContent='Akademik Sistem Sağlığı yükleniyor…';}
   else{
    try{frame.contentWindow?.AYDA_OWNER_BRIDGE?.openTab?.('health');}catch(_){}
+   sendExistingSession();
   }
  }
  frame.addEventListener('load',()=>{
   if(!frame.src||frame.src==='about:blank')return;
   status.textContent='';
   try{frame.contentWindow?.AYDA_OWNER_BRIDGE?.openTab?.('health');}catch(_){}
+  sendExistingSession();
  });
  document.getElementById('aydaAdminHealth')?.addEventListener('click',e=>{
   const btn=e.target.closest('[data-fix-tab]');if(!btn)return;
