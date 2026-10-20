@@ -73,10 +73,29 @@
   currentView=view;closeBtn.focus({preventScroll:true});
  }
  // Alt sayfada aynı UI açılmaz; tüm geçişler tek ana panelin penceresinde kalır.
+ function openAdmin(context={}){
+  if(!owner&&isAdmin()){
+   close();
+   if(context.fix&&window.AYDA_HEALTH_EDITORS?.open){window.AYDA_HEALTH_EDITORS.open(context);return;}
+   const tab=(context.hash||'ayarlar').replace(/^#/,'');
+   const sub=['ogretmenler','hesaplar'].includes(tab)?'teachers':tab==='duzenle'?'update':'groups';
+   window.AYDA_ADMIN_MENU?.open('settings',sub);
+   document.getElementById('adminArea')?.scrollIntoView({behavior:'smooth',block:'start'});
+   return;
+  }
+  show('admin',context);
+ }
+ function openTracking(context={}){
+  if(owner&&isAdmin()){
+   close();
+   window.AYDA_OWNER_BRIDGE?.openTab?.(context.tab||'overview');
+   document.getElementById('ownerApp')?.scrollIntoView({behavior:'smooth',block:'start'});
+   return;
+  }
+  show('tracking',context);
+ }
  window.AYDA_UNIFIED_WORKSPACE={
-  openAdmin(context={}){show('admin',context);},
-  openTracking(context={}){show('tracking',context);},
-  close,
+  openAdmin,openTracking,close,
   isOpen(){return Boolean(modal&&!modal.hidden);}
  };
  const toolbar=owner?document.querySelector('.owner-controls'):document.querySelector('.ayda-admin-priority-links');
@@ -114,8 +133,8 @@
   if(event.origin!==location.origin||event.source!==frame?.contentWindow)return;
   const request=event.data;
   if(!request||request.aydaWorkspace!==1)return;
-  if(request.view==='admin')show('admin',request.context||{});
-  else if(request.view==='tracking')show('tracking',request.context||{});
+  if(request.view==='admin')openAdmin(request.context||{});
+  else if(request.view==='tracking')openTracking(request.context||{});
   else if(request.view==='close')close();
  });
 })();
