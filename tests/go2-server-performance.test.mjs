@@ -89,7 +89,7 @@ test('GO2 marker identifies deployment while preserving teacher-phone compatibil
  const ping=readResponse('ping');
  assert.equal(ping.data.version,'2026-10-21.9');
  assert.equal(ping.data.performance,'GO2-request-read-memo-v1');
- assert.equal(ping.data.trackingStart,'2026-10-20');
+ assert.equal(ping.data.trackingStart,'2026-10-21');
 });
 
 test('read memo is allowed only for explicitly listed read actions',()=>{
