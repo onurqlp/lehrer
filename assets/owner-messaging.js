@@ -230,6 +230,11 @@
  };
  window.addEventListener('ayda:owner-ready',loadWhenNeeded);
  window.addEventListener('ayda:messages-open',loadWhenNeeded);
+ // Missing-report data may finish after the overview. Repaint from the local
+ // directory without another Google contact request.
+ window.addEventListener('ayda:owner-data-ready',()=>{
+  if(!root.hidden&&contacts)fill();
+ });
  window.addEventListener('ayda:owner-logout',()=>{
   loadNo++;lastContactRequest=0;contacts=null;inbox=null;students.replaceChildren();teachers.replaceChildren();dateSelect.replaceChildren();feedbacks.replaceChildren();$('ownerInboxPreview')?.replaceChildren();
   teacherText.value='';studentText.value='';studentSearch.value='';$('aydaMsgContactMeta').textContent='Giriş yapın.';feedbackStatus.textContent='';
