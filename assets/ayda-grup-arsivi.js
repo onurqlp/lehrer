@@ -163,6 +163,7 @@
   }
  }
  function renderStudents(){
+  if(state.overview?.user?.role==='teacher')return empty($('archiveStudents'),'Öğrenci ayrıntıları yalnızca yönetici ekranında görüntülenir.');
   const root=$('archiveStudents');root.replaceChildren();
   const students=groupStudents(),grp=groupAttendance(),g=current();
   if(!state.tracking){return empty(root,'Öğrenci takip verileri şu anda yüklenemedi. Veri yok sonucu olarak değerlendirilmez.');}
@@ -330,8 +331,9 @@
    state.id=groups.some(g=>g.id===preferred)?preferred:groups[0].id;select.value=state.id;
    state.tracking=null;state.homeworks=null;state.tasks=null;state.reminders=null;state.surveys=null;
    state.loadedAt='';render();status('Grup özeti hazır · ayrıntılar yükleniyor…');
-   const calls=['trackingSummary','lessonHomework','homeworkTasks','reminders'];
-   if(over.user.role!=='teacher')calls.push('surveySummary');
+   const calls=over.user.role==='teacher'?['lessonHomework','homeworkTasks','reminders']:['trackingSummary','lessonHomework','homeworkTasks','reminders','surveySummary'];
+   const studentTab=document.querySelector('[data-archive-tab="students"]');if(studentTab)studentTab.hidden=over.user.role==='teacher';
+   if(over.user.role==='teacher'&&activeTab==='students')tab('overview',false);
    const results=await Promise.allSettled(calls.map(x=>request(x,state.key)));
    calls.forEach((name,i)=>{const key={trackingSummary:'tracking',lessonHomework:'homeworks',homeworkTasks:'tasks',reminders:'reminders',surveySummary:'surveys'}[name];const r=results[i];state[key]=r.status==='fulfilled'?r.value:null;if(r.status==='rejected')state.errors.push((sourceNames[name]||name)+': '+String(r.reason?.message||'hata'));});
    state.detailsReady=true;state.loadedAt=new Date().toLocaleString('tr-TR');render();
