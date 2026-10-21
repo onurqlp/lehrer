@@ -169,7 +169,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
  }
  async function refresh(){
   if(!token||loading)return;setLoading(true);
-  try{const key=token,r=await api('overview',key);if(!token||token!==key)return;if(!['admin','viewer'].includes(r?.user?.role))throw Error('Akademik izleme yetkisi doğrulanamadı.');overview=r;await loadTracking();if(token===key)window.dispatchEvent(new Event('ayda:owner-ready'));}
+  try{const key=token,r=await api('overview',key);if(!token||token!==key)return;if(!['admin','viewer'].includes(r?.user?.role))throw Error('Akademik izleme yetkisi doğrulanamadı.');overview=r;const applied=await loadTracking();if(applied&&token===key)window.dispatchEvent(new Event('ayda:owner-ready'));}
   catch(e){errorMessage('Güncelleme başarısız: '+e.message);}
   finally{setLoading(false);}
  }
@@ -737,8 +737,8 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   const key=token,latest=await api('overview',key);
   if(!token||token!==key)return;
   if(!['admin','viewer'].includes(latest?.user?.role))throw Error('Yönetim oturumu doğrulanamadı.');
-  overview=latest;await loadTracking();
-  if(token===key)window.dispatchEvent(new Event('ayda:owner-ready'));
+  overview=latest;const applied=await loadTracking();
+  if(applied&&token===key)window.dispatchEvent(new Event('ayda:owner-ready'));
  });
  // URL anahtarı ile özel bağlantı girişi kaldırıldı; yalnızca parola ve mevcut oturum kullanılır.
  if(embeddedHealth){
