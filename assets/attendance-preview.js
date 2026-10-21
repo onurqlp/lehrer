@@ -6,6 +6,8 @@
  const attendanceBox=byId('attendancePreview');
  if(!attendanceBox)return;
  let roster=new Map(),rows=new Map(),demo=false,homeworkEnabled=false,activeGroup='',activeDate='',liveRoster=false,rosterLoading=false,rosterError='';
+ // GO5: no teacher roster request until the lesson page is opened.
+ let rosterRequest=0,rosterFlight=null,rosterFetchedThisLogin=false;
  const examples=[{id:'sample-1',name:'Örnek Öğrenci 1'},{id:'sample-2',name:'Örnek Öğrenci 2'},{id:'sample-3',name:'Örnek Öğrenci 3'},{id:'sample-4',name:'Örnek Öğrenci 4'}];
  const normalize=s=>String(s||'').trim().toLocaleLowerCase('tr-TR').replace(/\s+/g,' ').replace(/[‐‑–—]/g,'-');
  const statusAvailable=()=>byId('lessonType').value==='group'&&byId('status').value==='İşlendi';
@@ -175,28 +177,48 @@
    renderRoster();
   });
  }
- async function syncRoster(preserveMarked=false){
+ function syncRoster(preserveMarked=false){
   const signed=typeof data!=='undefined'&&data&&data.user;
-  if(!signed)return;
-  const savedMarks=preserveMarked?new Map(rows):null;
-  liveRoster=false;rosterLoading=true;rosterError='';roster=new Map();
-  if(!preserveMarked)rows.clear();
-  demo=false;
-  const review=byId('attendanceReviewed');if(review)review.checked=false;
-  renderRoster();
-  try{
-   const result=await jsonp('studentRoster');
-   if(!result||!Array.isArray(result.students))throw Error('Öğrenci listesi yanıtı geçersiz.');
-   for(const student of result.students){
-    const id=String(student.groupId||''),studentId=String(student.id||''),name=String(student.name||'');
-    if(!id||!studentId||!name)continue;
-    if(!roster.has(id))roster.set(id,[]);
-    roster.get(id).push({id:studentId,name});
+  if(!signed)return Promise.resolve();
+  if(rosterFlight)return rosterFlight;
+  const generation=++rosterRequest;
+  const task=(async()=>{
+   const savedMarks=preserveMarked?new Map(rows):null;
+   liveRoster=false;rosterLoading=true;rosterError='';roster=new Map();
+   if(!preserveMarked)rows.clear();
+   demo=false;
+   const review=byId('attendanceReviewed');if(review)review.checked=false;
+   renderRoster();
+   try{
+    const result=await jsonp('studentRoster');
+    if(generation!==rosterRequest)return;
+    if(!result||!Array.isArray(result.students))throw Error('Öğrenci listesi yanıtı geçersiz.');
+    // Build an independent snapshot: a late response must never leak across logins.
+    const nextRoster=new Map();
+    for(const student of result.students){
+     const id=String(student.groupId||''),studentId=String(student.id||''),name=String(student.name||'');
+     if(!id||!studentId||!name)continue;
+     if(!nextRoster.has(id))nextRoster.set(id,[]);
+     nextRoster.get(id).push({id:studentId,name});
+    }
+    roster=nextRoster;
+    liveRoster=true;rosterFetchedThisLogin=true;
+    if(savedMarks)rows=savedMarks;
+   }catch(err){
+    if(generation!==rosterRequest)return;
+    rosterError=String(err.message||err);
+    rosterFetchedThisLogin=false;
+   }finally{
+    if(generation===rosterRequest){rosterLoading=false;renderRoster();}
    }
-   liveRoster=true;
-   if(savedMarks)rows=savedMarks;
-  }catch(err){rosterError=String(err.message||err);}
-  rosterLoading=false;renderRoster();
+  })();
+  rosterFlight=task;
+  return task.finally(()=>{if(rosterFlight===task)rosterFlight=null;});
+ }
+ function loadTeacherRosterWhenNeeded(){
+  if(typeof data==='undefined'||data?.user?.role!=='teacher')return;
+  if(document.body.dataset.aydaTeacherView!=='daily')return;
+  if(!rosterFetchedThisLogin&&!rosterLoading)void syncRoster();
  }
  window.AYDA_ATTENDANCE={
   collect(){
@@ -220,7 +242,18 @@
   isConnected(){return liveRoster;},
   refreshRoster(){return syncRoster(true);}
  };
- window.addEventListener('ayda:login',syncRoster);
- window.addEventListener('ayda:logout',()=>{roster=new Map();rows.clear();liveRoster=false;rosterLoading=false;rosterError='';demo=false;renderRoster();});
+ window.addEventListener('ayda:teacher-page-open',event=>{
+  if(event.detail?.page==='daily')loadTeacherRosterWhenNeeded();
+ });
+ window.addEventListener('ayda:login',()=>{
+  rosterFetchedThisLogin=false;
+  // Admin remains eager: the same screen also manages roster and quick student entry.
+  if(data?.user?.role==='admin')void syncRoster();
+  else loadTeacherRosterWhenNeeded();
+ });
+ window.addEventListener('ayda:logout',()=>{
+  rosterRequest++;rosterFlight=null;rosterFetchedThisLogin=false;
+  roster=new Map();rows.clear();liveRoster=false;rosterLoading=false;rosterError='';demo=false;renderRoster();
+ });
  renderRoster();
 })();
