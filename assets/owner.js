@@ -663,10 +663,25 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
  $('ownerNav').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)activate(b.dataset.tab);});
  window.addEventListener('hashchange',()=>{const n=location.hash.slice(1);if(['overview','messages','alerts','attendance','students','groups','health','lessons','teachers','schedule'].includes(n)&&token)activate(n);});
  for(const b of document.querySelectorAll('[data-jump]'))b.addEventListener('click',()=>activate(b.dataset.jump));
- for(const id of ['ownerStudentSearch','ownerStudentGroup','ownerStudentStatus','ownerStudentSort'])$(id).addEventListener(id==='ownerStudentSearch'?'input':'change',renderStudents);
- for(const id of ['ownerGroupSearch','ownerGroupLevel','ownerGroupStatus'])$(id).addEventListener(id==='ownerGroupSearch'?'input':'change',renderGroups);
+ // Search inputs can produce hundreds of cards; paint at most once after a short pause.
+ // Select changes remain synchronous so users always see their chosen filters.
+ const delayedSearches=[];
+ const searchInput=(id,paint)=>{
+  let timer=null;
+  const flush=()=>{if(timer!==null)clearTimeout(timer);timer=null;if(overview)paint();};
+  $(id).addEventListener('input',()=>{if(timer!==null)clearTimeout(timer);timer=setTimeout(flush,120);});
+  $(id).addEventListener('change',flush);
+  delayedSearches.push(()=>{if(timer!==null)clearTimeout(timer);timer=null;});
+ };
+ searchInput('ownerStudentSearch',renderStudents);
+ for(const id of ['ownerStudentGroup','ownerStudentStatus','ownerStudentSort'])$(id).addEventListener('change',renderStudents);
+ searchInput('ownerGroupSearch',renderGroups);
+ for(const id of ['ownerGroupLevel','ownerGroupStatus'])$(id).addEventListener('change',renderGroups);
  $('ownerAttendanceFilter').addEventListener('change',renderAttendance);
- for(const id of ['ownerLessonSearch','ownerLessonMonth','ownerLessonType','ownerLessonStatus'])$(id).addEventListener(id==='ownerLessonSearch'?'input':'change',()=>{lessonLimit=40;renderLessons();});
+ const repaintLessons=()=>{lessonLimit=40;renderLessons();};
+ searchInput('ownerLessonSearch',repaintLessons);
+ for(const id of ['ownerLessonMonth','ownerLessonType','ownerLessonStatus'])$(id).addEventListener('change',repaintLessons);
+ window.addEventListener('ayda:owner-logout',()=>delayedSearches.forEach(cancel=>cancel()));
  $('ownerShowMoreLessons').addEventListener('click',()=>{lessonLimit+=40;renderLessons();});
  $('ownerTeacherMonth').addEventListener('change',renderTeachers);
  $('ownerScheduleDay').addEventListener('change',renderSchedule);
