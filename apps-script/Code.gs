@@ -634,7 +634,7 @@ function aydaTrackingRows_(prepared,date,groupId,teacherId,lessonId,homeworkEnab
 }
 function aydaTrackingSummary_(user){
   // Öğretmen sadece kendi aktif gruplarını görür. Yönetici tüm aktif grupları görür.
-  if(!aydaIsMonitor_(user)&&user.role!=='teacher')throw Error('Öğrenci takibi için oturum açın.');
+  if(!aydaIsMonitor_(user))throw Error('Ayrıntılı öğrenci takibi yönetici hesabına özeldir.');
   const groups=aydaGroups_(user).filter(g=>g.status==='Aktif');
   const roster=aydaStudentRoster_(user);
   const byGroup=new Map(groups.map(g=>[g.id,{
@@ -859,6 +859,7 @@ function aydaStudentNotesSheet_(create){
  return sh;
 }
 function aydaStudentNotes_(user,p){
+  if(!aydaIsMonitor_(user))throw Error('Öğrenci gözlemleri yönetim hesabına özeldir.');
  const studentId=String((p||{}).studentId||'').trim();
  const student=aydaStudentRoster_(user).find(s=>s.id===studentId);
  if(!student)throw Error('Bu öğrencinin notlarına erişim yetkiniz yok.');
@@ -872,6 +873,7 @@ function aydaStudentNotes_(user,p){
  return {studentId,notes};
 }
 function aydaSaveStudentNote_(user,p){
+  if(user.role!=='admin')throw Error('Öğrenci gözlemi yalnızca yönetici tarafından yazılabilir.');
  if(!p||typeof p!=='object')throw Error('Gözlem bilgisi eksik.');
  const studentId=String(p.studentId||'').trim(),note=String(p.note||'').trim();
  if(note.length<3||note.length>700)throw Error('Not 3–700 karakter olmalı.');
