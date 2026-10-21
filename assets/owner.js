@@ -70,7 +70,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    script.src=u.toString();document.head.append(script);
   });
  }
- async function api(action,key,params={}){
+ async function aydaOwnerApiNetwork(action,key,params={}){
   const activity=window.AYDA_ACTIVITY?.start(action);
   let activitySuccess=false;
   try{
@@ -79,6 +79,19 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   throw err||Error('Google Apps Script bağlantısı kurulamadı.');
   }finally{window.AYDA_ACTIVITY?.finish(activity,activitySuccess);}
  }
+/* GO1: Coalesce pending identical read-only requests; never cache completed reads or writes. */
+ const activeReads=new Map();
+ const readActions=new Set(['overview','trackingSummary','reminders','integrityStatus','backupStatus','studentNotes','vaultExport','feedbackInbox','contactDirectory','homeworkTasks','lessonHomework']);
+ function api(action,key,params={}){
+  if(!readActions.has(action))return aydaOwnerApiNetwork(action,key,params);
+  const identity=JSON.stringify([key,action,params]);
+  const pending=activeReads.get(identity);if(pending)return pending;
+  const promise=aydaOwnerApiNetwork(action,key,params);
+  activeReads.set(identity,promise);
+  const finish=()=>{if(activeReads.get(identity)===promise)activeReads.delete(identity);};
+  promise.then(finish,finish);
+  return promise;
+ }
  const errorMessage=message=>{const target=$('ownerError');if(target)target.textContent=message||'';};
  const setLoading=value=>{loading=value;$('ownerLoginButton').disabled=value;$('ownerRefresh').disabled=value;};
  function activate(next){
@@ -86,6 +99,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   tab=name;
   for(const p of document.querySelectorAll('.owner-panel'))p.hidden=p.id!=='owner-'+name;
   for(const b of $('ownerNav').querySelectorAll('button[data-tab]')){b.classList.toggle('active',b.dataset.tab===name);b.setAttribute('aria-current',b.dataset.tab===name?'page':'false');}
+  if(overview)renderAll();
   if(name==='messages'&&token)window.dispatchEvent(new Event('ayda:messages-open'));
   try{sessionStorage.setItem('aydaOwnerTab',name);}catch(_){}
  }
@@ -108,10 +122,9 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    if(!$('ownerTeacherMonth').value)$('ownerTeacherMonth').value=today().slice(0,7);
    if(!$('ownerLessonMonth').value)$('ownerLessonMonth').value=today().slice(0,7);
    // Genel bakış hazır olur olmaz göster; akademik ayrıntılar paralel yüklenir.
-   renderAll();
    activate(['messages','alerts','attendance','students','groups','health','lessons','teachers','schedule','accounts'].includes(location.hash.slice(1))?location.hash.slice(1):(sessionStorage.getItem('aydaOwnerTab')||'overview'));
    window.dispatchEvent(new Event('ayda:owner-ready'));
-   loadTracking().then(()=>window.dispatchEvent(new Event('ayda:owner-ready'))).catch(e=>errorMessage('Takip yüklenemedi: '+e.message));
+   loadTracking().then(()=>window.dispatchEvent(new Event('ayda:owner-data-ready'))).catch(e=>errorMessage('Takip yüklenemedi: '+e.message));
 
   }catch(e){if(viewerSession.read()===provided)viewerSession.clear();if(aydaSession.read()===provided)aydaSession.clear();token='';overview=null;document.body.classList.remove('ayda-viewer-mode');$('ownerLogin').hidden=embeddedHealth;$('ownerApp').hidden=true;if(embeddedHealth)window.parent.postMessage({aydaHealthEmbed:1,action:'auth-error'},location.origin);$('ownerLogout').hidden=true;$('ownerLoginError').textContent=e.message;}
   finally{setLoading(false);}
@@ -604,17 +617,24 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   }
  }
  function renderAll(){
-  if(!overview)return;
-  const work=[
-   ['ownerKpis',renderKpis],['ownerHighlights',renderHighlights],['ownerToday',renderOverview],['ownerWeekly',renderWeekly],
-   ['ownerGroupList',renderGroups],['ownerHealthIssues',renderHealth],['ownerStudentList',renderStudents],['ownerAttendanceKpis',renderAttendance],
-   ['ownerLessonList',renderLessons],['ownerTeacherTable',renderTeachers],['ownerScheduleList',renderSchedule],
-   ['ownerAlertList',renderAlerts],['ownerAccountsTable',isAdmin()?renderAccounts:()=>{}]
-  ];
-  robust('ownerStudentList',updateGroupSelectors);
-  for(const [id,fn] of work)robust(id,fn);
- }
- // Yönetici içindeki Sistem Sağlığı penceresi ikinci şifre istemez.
+   if(!overview)return;
+   // Hidden sections are painted on demand; IDs and original render functions remain unchanged.
+   const views={
+    overview:[['ownerKpis',renderKpis],['ownerHighlights',renderHighlights],['ownerToday',renderOverview],['ownerWeekly',renderWeekly]],
+    groups:[['ownerGroupList',renderGroups]],
+    health:[['ownerHealthIssues',renderHealth]],
+    students:[['ownerStudentList',renderStudents]],
+    attendance:[['ownerAttendanceKpis',renderAttendance]],
+    lessons:[['ownerLessonList',renderLessons]],
+    teachers:[['ownerTeacherTable',renderTeachers],['ownerAccountsTable',isAdmin()?renderAccounts:()=>{}]],
+    schedule:[['ownerScheduleList',renderSchedule]],
+    alerts:[['ownerAlertList',renderAlerts]],
+    messages:[]
+   };
+   if(['students','attendance','schedule','groups'].includes(tab))robust('ownerStudentList',updateGroupSelectors);
+   for(const [id,paint] of views[tab]||views.overview)robust(id,paint);
+  }
+  // Yönetici içindeki Sistem Sağlığı penceresi ikinci şifre istemez.
  const embeddedHealth=new URLSearchParams(location.search).get('aydaEmbed')==='1'&&window.parent!==window;
  if(embeddedHealth){
   $('ownerLogin').hidden=true;
