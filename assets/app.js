@@ -436,7 +436,15 @@ function renderAcademic(){
 for(const id of ['academicLevel','academicStatus','academicSearch'])$(id).addEventListener(id==='academicSearch'?'input':'change',renderAcademic);
 
 async function adminAction(action,payload,output,button){button.disabled=true;clear(output);try{const r=await jsonp(action,{payload:utf8Base64Url(JSON.stringify(payload))});if(r.key){const groupCount=action==='createTeacher'?(payload.groupIds||[]).length:0;const confirmed=action!=='createTeacher'||(r.teacherType===payload.teacherType&&Number(r.assignedGroups)===groupCount);const msg=$el('div','message '+(confirmed?'success':'error'),'Yeni öğretmen '+r.name+' ('+r.teacherId+') oluşturuldu. '+(confirmed?'Giriş anahtarı yalnızca burada gösterilir.':'Google Apps Script sürümü güncel değil: öğretmen türü / grup atamaları doğrulanamadı. Yönetici hesabından kayıtları kontrol edin; aynı öğretmeni tekrar oluşturmayın.'));const area=$el('textarea');area.value=r.key;area.readOnly=true;area.rows=3;$(output).append(msg,area);}else message(output,(r.name||r.id||'Kayıt')+' başarıyla kaydedildi.','success');data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));}catch(e){message(output,e.message);}finally{button.disabled=false;}}
-$('teacherCreateForm').addEventListener('submit',e=>{e.preventDefault();adminAction('createTeacher',{name:$('newTeacherName').value.trim(),teacherType:$('newTeacherType').value,groupIds:[...$('newTeacherGroups').querySelectorAll('input:checked')].map(x=>x.value)},'teacherCreateResult',e.submitter||$('teacherCreateForm').querySelector('button'));});
+$('teacherCreateForm').addEventListener('submit',async e=>{
+ e.preventDefault();const button=e.submitter||$('teacherCreateForm').querySelector('button');
+ button.disabled=true;
+ try{
+  const status=await jsonp('ping');
+  if(String(status.version||'')!=='2026-10-21.9')throw Error('Google Apps Script Code.gs 2026-10-21.9 sürümünü dağıtmanız gerekiyor. Telefon kaybolmaması için kayıt başlatılmadı.');
+  await adminAction('createTeacher',{name:$('newTeacherName').value.trim(),phone:$('newTeacherPhone').value.trim(),teacherType:$('newTeacherType').value,groupIds:[...$('newTeacherGroups').querySelectorAll('input:checked')].map(x=>x.value)},'teacherCreateResult',button);
+ }catch(err){message('teacherCreateResult',err.message);}finally{button.disabled=false;}
+});
 $('groupCreateForm').addEventListener('submit',e=>{e.preventDefault();const days=[...$('newGroupDays').querySelectorAll('input:checked')].map(x=>x.value);if(!days.length){message('groupCreateResult','En az bir ders günü seçin.');return;}adminAction('createGroup',{name:$('newGroupName').value.trim(),level:$('newGroupLevel').value,teacherId:$('newGroupTeacher').value,start:$('newGroupStart').value,students:Number($('newGroupStudents').value),total:Number($('newGroupTotal').value),completed:0,days,time:$('newGroupTime').value,end:$('newGroupEnd').value},'groupCreateResult',e.submitter||$('groupCreateForm').querySelector('button'));});
 $('groupUpdateForm').addEventListener('submit',e=>{e.preventDefault();adminAction('updateGroup',{id:$('editGroupId').value,completed:Number($('editCompleted').value),students:Number($('editStudents').value),whatsapp:$('editGroupWhatsapp').value.trim()},'groupUpdateResult',e.submitter||$('groupUpdateForm').querySelector('button'));});
 
@@ -552,7 +560,7 @@ async function aydaLoadAdminStudents(){
 }
 function aydaPickStudent(){
  const row=aydaAdminStudents.find(s=>s.id===$('adminStudentPick').value);
- for(const [id,value] of [['adminStudentName',row?.name],['adminStudentGroup',row?.groupId],['adminStudentPhone',row?.phone],['adminStudentParentPhone',row?.parentPhone],['adminStudentEmail',row?.email],['adminStudentNote',row?.note]])$(id).value=value||'';
+ for(const [id,value] of [['adminStudentName',row?.name],['adminStudentGroup',row?.groupId],['adminStudentEmail',row?.email],['adminStudentNote',row?.note]])$(id).value=value||'';
  $('adminStudentSave').textContent=row?'Öğrenci Bilgilerini Güncelle':'Yeni Öğrenci Ekle';
 }
 $('assignTeacher').addEventListener('change',aydaTeacherAssignments);
@@ -570,14 +578,18 @@ $('adminStudentPick').addEventListener('change',aydaPickStudent);
 $('adminStudentReload').addEventListener('click',aydaLoadAdminStudents);
 $('adminStudentForm').addEventListener('submit',async e=>{
  e.preventDefault();const b=$('adminStudentSave');b.disabled=true;
- const payload={id:$('adminStudentPick').value,name:$('adminStudentName').value.trim(),groupId:$('adminStudentGroup').value,phone:$('adminStudentPhone').value.trim(),parentPhone:$('adminStudentParentPhone').value.trim(),email:$('adminStudentEmail').value.trim(),note:$('adminStudentNote').value.trim()};
+ const payload={id:$('adminStudentPick').value,name:$('adminStudentName').value.trim(),groupId:$('adminStudentGroup').value,email:$('adminStudentEmail').value.trim(),note:$('adminStudentNote').value.trim()};
  try{const result=await jsonp('saveStudent',{payload:utf8Base64Url(JSON.stringify(payload))});
   if(!result.id)throw Error('Sunucu öğrenci kimliğini doğrulamadı. Tekrar kaydetmeden önce listeyi yenileyin.');
   data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));await aydaLoadAdminStudents();$('adminStudentPick').value=result.id;aydaPickStudent();
   message('adminStudentResult','Öğrenci '+(result.created?'eklendi':'güncellendi')+' · '+result.id,'success');
  }catch(err){message('adminStudentResult',err.message);}finally{b.disabled=false;}
 });
-window.addEventListener('ayda:login',()=>{aydaAdminEditOptions();aydaLoadAdminStudents();});
+// Öğrenci listesi yönetici formu kullanılmadıkça indirilmez.
+let aydaStudentsLoaded=false;
+window.addEventListener('ayda:login',()=>{aydaAdminEditOptions();aydaStudentsLoaded=false;});
+$('adminStudentPick').addEventListener('focus',()=>{if(!aydaStudentsLoaded){aydaStudentsLoaded=true;aydaLoadAdminStudents();}});
+$('adminStudentReload').addEventListener('click',()=>{aydaStudentsLoaded=true;});
 
 // Ana panel yenilemesi form alanlarını korur; Google'a yeni kayıt göndermez.
 window.AYDA_ACTIVITY?.bindRefresh(async()=>{
