@@ -25,19 +25,19 @@
   const valid=statusAvailable()&&!!group;
   byId('attendanceInputs').hidden=!valid;
   const quickAdd=byId('attendanceQuickAdd');if(quickAdd)quickAdd.hidden=!valid||!liveRoster;
-  const badge=attendanceBox.querySelector('.attendance-preview-tag');if(badge)badge.textContent=liveRoster?'CANLI':'ÖNİZLEME';
+  const badge=attendanceBox.querySelector('.attendance-preview-tag');if(badge)badge.textContent=rosterLoading?'YÜKLENİYOR':liveRoster?'CANLI':'BEKLENİYOR';
   const saveButton=byId('saveBtn');if(saveButton&&!saveButton.disabled)saveButton.textContent=valid?'Yoklama + ödev + dersi kaydet':'Ders durumunu kaydet';
-  if(!valid){const banner=attendanceBox.querySelector('.attendance-caution');if(banner)banner.textContent=liveRoster?'Canlı kayıt hazır. İşlenen bir grup dersini seçerek yoklama alın.':'ÖNİZLEME: Apps Script güncellenene kadar yoklama/ödev kaydedilmez.';empty.textContent=byId('lessonType').value==='private'?'Öğrenci yoklaması grup dersleri için tasarlandı.':!group?'Önce bir grup seçin.':'İptal veya ertelenen derslerde yoklama alınmaz.';empty.hidden=false;counter.textContent='';demoBtn.hidden=true;return;}
+  if(!valid){const banner=attendanceBox.querySelector('.attendance-caution');if(banner)banner.textContent=rosterLoading?'Google öğrenci listesi yükleniyor…':liveRoster?'Canlı kayıt hazır. İşlenen bir grup dersini seçerek yoklama alın.':rosterError?'Öğrenci listesi alınamadı: '+rosterError:'Ders Kaydı ekranında öğrenci listesi otomatik yüklenir.';empty.textContent=byId('lessonType').value==='private'?'Öğrenci yoklaması grup dersleri için tasarlandı.':!group?'Önce bir grup seçin.':'İptal veya ertelenen derslerde yoklama alınmaz.';empty.hidden=false;counter.textContent='';demoBtn.hidden=true;return;}
   const actual=roster.get(groupId)||[],students=actual.length?actual:(demo?examples:[]);
   demoBtn.hidden=liveRoster||actual.length>0;
   if(allButton)allButton.hidden=!liveRoster||!actual.length;
   demoBtn.textContent=demo?'Örnek listeyi kapat':'4 örnek öğrenciyle ekranı dene';
   empty.hidden=students.length>0;
-  empty.textContent=liveRoster?'Bu grubun öğrenci listesi bulunamadı. Yönetici öğrencileri gruba bağlayana kadar işlenen ders raporu kaydedilemez.':('Bu grubun öğrenci listesi henüz bağlı değil. '+(rosterError?'Apps Script: '+rosterError+' · ':'')+'Yoklama şimdilik önizleme modunda.');
+  empty.textContent=rosterLoading?'Google öğrenci listesi yükleniyor… Lütfen bekleyin.':liveRoster?'Bu grubun öğrenci listesi bulunamadı. Yönetici öğrencileri gruba bağlayana kadar işlenen ders raporu kaydedilemez.':('Öğrenci listesi henüz hazır değil. '+(rosterError?'Bağlantı hatası: '+rosterError+' · ':'' )+'Yoklama, canlı liste gelmeden kaydedilemez.');
   byId('attendanceGroupName').textContent=group.name+' · '+(actual.length?actual.length+' öğrenci'+(liveRoster?' (canlı yoklama)':' (CSV önizleme)'):'öğrenci listesi bekleniyor');
   const review=byId('attendanceReview');if(review)review.hidden=true; // İşaretli liste için ek onay tıklaması gerekmez.
-  const caution=attendanceBox.querySelector('.attendance-caution');if(caution)caution.textContent=liveRoster?(actual.length?'Önce tüm öğrencilerin yoklamasını işaretleyin. Günlük verilen ödevi aşağıya yazın; rapor tek tuşla kaydedilir.':'Bu grupta öğrenci kaydı yok; yöneticiye bilgi verin.'):'ÖNİZLEME: Yoklama ve ödev bu aşamada kaydedilmez. Dersi Kaydet yalnızca mevcut ders raporunu kaydeder. '+(rosterError?'Sunucu mesajı: '+rosterError:'');
-  const tag=attendanceBox.querySelector('.attendance-preview-tag');if(tag)tag.textContent=liveRoster?'CANLI':'ÖNİZLEME';
+  const caution=attendanceBox.querySelector('.attendance-caution');if(caution)caution.textContent=rosterLoading?'Öğrenci listesi yükleniyor. Lütfen işlem tamamlanana kadar bekleyin.':liveRoster?(actual.length?'Önce tüm öğrencilerin yoklamasını işaretleyin. Günlük verilen ödevi aşağıya yazın; rapor tek tuşla kaydedilir.':'Bu grupta öğrenci kaydı yok; yöneticiye bilgi verin.'):'Canlı öğrenci listesi alınamadı; yoklama kaydı başlatılmaz. '+(rosterError?'Sunucu mesajı: '+rosterError:'');
+  const tag=attendanceBox.querySelector('.attendance-preview-tag');if(tag)tag.textContent=rosterLoading?'YÜKLENİYOR':liveRoster?'CANLI':'BEKLENİYOR';
   byId('attendanceHomeworkPanel').hidden=!homeworkEnabled;
   for(const student of students){
    const s=stateFor(student.id),row=make('div','attendance-student');
