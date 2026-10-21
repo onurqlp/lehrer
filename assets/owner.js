@@ -24,6 +24,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
  const formats={danger:'Öncelikli',watch:'Takip edilmeli',regular:'Düzenli',untracked:'Henüz veri yok'};
  const days=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
  let token='',overview=null,tracking=null,reminders=null,contactDirectory=null,lessonHomework=null,activeApi='',loading=false,requestIndex=0,lessonLimit=40,tab='overview',exportRows=[];
+ let ownerDataGeneration=0,homeworkState='idle';
  const API=String(window.AYDA_API_URL||'').trim();
  const fmt=x=>/^\d{4}-\d{2}-\d{2}$/.test(String(x||''))?x.slice(8,10)+'.'+x.slice(5,7)+'.'+x.slice(0,4):(x||'—');
  const round=(n,d)=>d?Math.round(n/d*100)+'%':'—';
@@ -109,7 +110,8 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   try{
    const result=await api('overview',provided);
    if(!['admin','viewer'].includes(result?.user?.role))throw Error('Bu sayfa için yönetim veya izleme hesabı gerekir.');
-   token=provided;overview=result;
+   ++ownerDataGeneration;token=provided;overview=result;
+   tracking=null;reminders=null;lessonHomework=null;contactDirectory=null;homeworkState='idle';
    if(isAdmin()){sessionStorage.setItem('aydaKey',token);aydaSession.save(token);}
    else viewerSession.save(token);
    document.body.classList.toggle('ayda-viewer-mode',!isAdmin());
@@ -124,30 +126,50 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    // Genel bakış hazır olur olmaz göster; akademik ayrıntılar paralel yüklenir.
    activate(['messages','alerts','attendance','students','groups','health','lessons','teachers','schedule','accounts'].includes(location.hash.slice(1))?location.hash.slice(1):(sessionStorage.getItem('aydaOwnerTab')||'overview'));
    window.dispatchEvent(new Event('ayda:owner-ready'));
-   loadTracking().then(()=>window.dispatchEvent(new Event('ayda:owner-data-ready'))).catch(e=>errorMessage('Takip yüklenemedi: '+e.message));
+   loadTracking().catch(e=>errorMessage('Takip yüklenemedi: '+e.message));
 
   }catch(e){if(viewerSession.read()===provided)viewerSession.clear();if(aydaSession.read()===provided)aydaSession.clear();token='';overview=null;document.body.classList.remove('ayda-viewer-mode');$('ownerLogin').hidden=embeddedHealth;$('ownerApp').hidden=true;if(embeddedHealth)window.parent.postMessage({aydaHealthEmbed:1,action:'auth-error'},location.origin);$('ownerLogout').hidden=true;$('ownerLoginError').textContent=e.message;}
   finally{setLoading(false);}
  }
  async function loadTracking(){
-  // Birbirinden bağımsız salt-okunur istekleri art arda değil, aynı anda yükle.
+  // GO4: Start all requests together; paint warnings without waiting for homework.
+  const requestedKey=token,generation=++ownerDataGeneration;
+  const isCurrent=()=>!!token&&token===requestedKey&&generation===ownerDataGeneration;
+  let coreApplied=false;
+  tracking=null;reminders=null;lessonHomework=null;homeworkState='loading';
+  // Attach both handlers immediately; no unhandled rejection on slow Google reads.
+  const homeworkRead=api('lessonHomework',requestedKey).then(
+   value=>{
+    if(!isCurrent())return;
+    lessonHomework=value;homeworkState='ready';
+    if(coreApplied){renderAll();window.dispatchEvent(new Event('ayda:owner-details-ready'));}
+   },
+   ()=>{
+    if(!isCurrent())return;
+    lessonHomework=null;homeworkState='error';
+    if(coreApplied){renderAll();window.dispatchEvent(new Event('ayda:owner-details-ready'));}
+   }
+  );
   const results=await Promise.allSettled([
-   api('trackingSummary',token),api('reminders',token),
-   api('lessonHomework',token)
+   api('trackingSummary',requestedKey),api('reminders',requestedKey)
   ]);
+  if(!isCurrent())return false;
   const t=results[0];
   tracking=t.status==='fulfilled'&&t.value?.scope==='all'?t.value:null;
   reminders=results[1].status==='fulfilled'?results[1].value:null;
   if(reminders){const items=(reminders.items||[]).filter(x=>String(x.date||'')>='2026-10-20');reminders={...reminders,items,total:items.length,reports:items.filter(x=>x.type==='report').length,attendance:items.filter(x=>x.type==='attendance').length};}
   contactDirectory={teachers:(overview?.teachers||[]).filter(t=>t.phone).map(t=>({id:t.id,teacherId:t.id,phone:t.phone,status:t.status})),students:[]};
-  lessonHomework=results[2].status==='fulfilled'?results[2].value:null;
   if(!tracking)errorMessage('Öğrenci takip verileri henüz yüklenemedi. Diğer bilgiler kullanılabilir.');
   else errorMessage('');
+  coreApplied=true;
   renderAll();
+  window.dispatchEvent(new Event('ayda:owner-data-ready'));
+  void homeworkRead;
+  return true;
  }
  async function refresh(){
   if(!token||loading)return;setLoading(true);
-  try{const r=await api('overview',token);if(!['admin','viewer'].includes(r?.user?.role))throw Error('Akademik izleme yetkisi doğrulanamadı.');overview=r;await loadTracking();window.dispatchEvent(new Event('ayda:owner-ready'));}
+  try{const key=token,r=await api('overview',key);if(!token||token!==key)return;if(!['admin','viewer'].includes(r?.user?.role))throw Error('Akademik izleme yetkisi doğrulanamadı.');overview=r;const applied=await loadTracking();if(applied&&token===key)window.dispatchEvent(new Event('ayda:owner-ready'));}
   catch(e){errorMessage('Güncelleme başarısız: '+e.message);}
   finally{setLoading(false);}
  }
@@ -304,6 +326,8 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   add(body,'p','','Son ünite tahmini: '+estimate.unit+' · 2 sınav hazırlık dersinden sonra: '+estimate.exam);
   add(body,'p','','Grup ID: '+g.id+' · Öğretmen ID: '+(g.teacherId||'—'));
   const homework=(lessonHomework?.items||[]).filter(x=>x.groupId===g.id).slice(0,6);
+  if(homeworkState==='loading')add(body,'p','owner-note','Ders ödevleri yükleniyor…');
+  else if(homeworkState==='error')add(body,'p','owner-note','Ders ödevlerine erişilemedi. Yenileyerek tekrar deneyin.');
   if(homework.length){
    const wrap=add(body,'details','ayda-group-homework-detail');
    const pending=homework.filter(x=>x.shareStatus==='Bekliyor').length;
@@ -652,7 +676,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
  }
  $('ownerLoginForm').addEventListener('submit',e=>{e.preventDefault();login($('ownerKey').value);});
  $('ownerRefresh').addEventListener('click',refresh);
- $('ownerLogout').addEventListener('click',()=>{if(isAdmin()){sessionStorage.removeItem('aydaKey');aydaSession.clear();}else viewerSession.clear();document.body.classList.remove('ayda-viewer-mode');token='';overview=null;tracking=null;reminders=null;contactDirectory=null;lessonHomework=null;activeApi='';$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';const skip=$('ownerSkip');if(skip){skip.href='#ownerLogin';skip.textContent='Giriş bölümüne geç';}window.AYDA_ACTIVITY?.clear();window.dispatchEvent(new Event('ayda:owner-logout'));});
+ $('ownerLogout').addEventListener('click',()=>{ownerDataGeneration++;homeworkState='idle';if(isAdmin()){sessionStorage.removeItem('aydaKey');aydaSession.clear();}else viewerSession.clear();document.body.classList.remove('ayda-viewer-mode');token='';overview=null;tracking=null;reminders=null;contactDirectory=null;lessonHomework=null;activeApi='';$('ownerVaultSecrets').replaceChildren();$('ownerVaultSecrets').hidden=true;$('ownerVaultReveal').hidden=false;$('ownerVaultHide').hidden=true;$('ownerApp').hidden=true;$('ownerLogin').hidden=false;$('ownerLogout').hidden=true;errorMessage('');$('ownerLoginError').textContent='';const skip=$('ownerSkip');if(skip){skip.href='#ownerLogin';skip.textContent='Giriş bölümüne geç';}window.AYDA_ACTIVITY?.clear();window.dispatchEvent(new Event('ayda:owner-logout'));});
  // Yönetici menüsünü görev odaklı üç gruba ayır; mevcut sekme ve erişim davranışı korunur.
  (function organizeOwnerNav(){
   const nav=$('ownerNav');if(!nav||nav.dataset.organized)return;nav.dataset.organized='true';
@@ -710,10 +734,11 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
  // Yönetim verilerini güncelle: rapor veya öğrenci kaydı oluşturmaz.
  window.AYDA_ACTIVITY?.bindRefresh(async()=>{
   if(!token||loading)return;
-  const latest=await api('overview',token);
+  const key=token,latest=await api('overview',key);
+  if(!token||token!==key)return;
   if(!['admin','viewer'].includes(latest?.user?.role))throw Error('Yönetim oturumu doğrulanamadı.');
-  overview=latest;await loadTracking();
-  window.dispatchEvent(new Event('ayda:owner-ready'));
+  overview=latest;const applied=await loadTracking();
+  if(applied&&token===key)window.dispatchEvent(new Event('ayda:owner-ready'));
  });
  // URL anahtarı ile özel bağlantı girişi kaldırıldı; yalnızca parola ve mevcut oturum kullanılır.
  if(embeddedHealth){
