@@ -103,14 +103,14 @@ function aydaAdminDashboardOrder_(admin){
  }else if($('adminOperationalTitle'))$('adminOperationalTitle').hidden=true;
 }
 
-function render(preserveDraft=false){const priorGroup=preserveDraft?$('groupId').value:'',priorDate=preserveDraft?$('lessonDate').value:'';const u=data.user,admin=u.role==='admin',groups=data.groups,schedule=data.schedule,history=data.history;aydaAdminDashboardOrder_(admin);$('roleChip').textContent=admin?'Yönetici Paneli':'Öğretmen Paneli';$('welcome').textContent='Merhaba, '+u.name;$('dateLine').textContent='Bugün: '+data.today;$('groupTitle').textContent=admin?'Tüm Gruplar':'Gruplarım';$('groupCount').textContent=groups.length;$('todayCount').textContent=data.todayLessons.length;$('reportCount').textContent=history.length;$('studentCount').textContent=groups.reduce((n,g)=>n+(Number(g.students)||0),0);$('lessonDate').value=priorDate&&priorDate<=data.today?priorDate:data.today; $('monthFilter').value=data.today.slice(0,7);$('lessonDate').max=data.today;
+function render(preserveDraft=false){if(data){data.history=(data.history||[]).filter(r=>String(r.date||'')>='2026-10-21');data.privateHistory=(data.privateHistory||[]).filter(r=>String(r.date||'')>='2026-10-21');}const priorGroup=preserveDraft?$('groupId').value:'',priorDate=preserveDraft?$('lessonDate').value:'';const u=data.user,admin=u.role==='admin',groups=data.groups,schedule=data.schedule,history=data.history;aydaAdminDashboardOrder_(admin);$('roleChip').textContent=admin?'Yönetici Paneli':'Öğretmen Paneli';$('welcome').textContent='Merhaba, '+u.name;$('dateLine').textContent='Bugün: '+data.today;$('groupTitle').textContent=admin?'Tüm Gruplar':'Gruplarım';$('groupCount').textContent=groups.length;$('todayCount').textContent=data.todayLessons.length;$('reportCount').textContent=history.length;$('studentCount').textContent=groups.reduce((n,g)=>n+(Number(g.students)||0),0);$('lessonDate').value=priorDate&&priorDate<=data.today?priorDate:data.today; $('monthFilter').value=data.today.slice(0,7);$('lessonDate').max=data.today;
  clear('todayLessons');if(!data.todayLessons.length)$('todayLessons').append($el('div','card empty','Bugün planlanan ders bulunmuyor.'));for(const p of data.todayLessons)$('todayLessons').append(rowcard(p.group,p.day,p.start+' – '+p.end));
- clear('groups');for(const g of groups){const card=$el('div','card');card.append($el('span','tag',g.level),$el('h3','',g.name),$el('div','muted','Öğrenci: '+g.students+' · Öğretmen ID: '+g.teacherId),$el('div','muted','Tamamlanan ünite: '+g.completed+' / '+g.total));const progress=$el('div','progress'),fill=$el('div');fill.style.width=(g.total?Math.min(100,100*g.completed/g.total):0)+'%';progress.append(fill);card.append(progress);const archiveLink=$el('a','ayda-group-archive-link','▤ Grup arşivi ve değerlendirme ↗');archiveLink.href='./grup-arsivi.html?group='+encodeURIComponent(g.id);card.append(archiveLink);const wa=safeWhatsappLink(g.whatsapp);if(wa){const link=$el('a','ayda-group-link','💬 Grup WhatsApp ↗');link.href=wa;link.target='_blank';link.rel='noopener noreferrer';card.append(link);}$('groups').append(card);}if(!groups.length)$('groups').append($el('div','card empty','Aktif grup bulunamadı.'));
+ clear('groups');for(const g of groups){const card=$el('div','card');card.append($el('span','tag',g.level),$el('h3','',g.name),$el('div','muted','Öğrenci: '+g.students+' · Öğretmen ID: '+g.teacherId),$el('div','muted','Tamamlanan ünite: '+g.completed+' / '+g.total));const progress=$el('div','progress'),fill=$el('div');fill.style.width=(g.total?Math.min(100,100*g.completed/g.total):0)+'%';progress.append(fill);card.append(progress);const archiveLink=$el('a','ayda-group-archive-link','▤ Grup arşivi ve değerlendirme ↗');archiveLink.href='./grup-arsivi.html?group='+encodeURIComponent(g.id);archiveLink.target='_blank';archiveLink.rel='noopener noreferrer';card.append(archiveLink);const wa=safeWhatsappLink(g.whatsapp);if(wa){const link=$el('a','ayda-group-link','💬 Grup WhatsApp ↗');link.href=wa;link.target='_blank';link.rel='noopener noreferrer';card.append(link);}$('groups').append(card);}if(!groups.length)$('groups').append($el('div','card empty','Aktif grup bulunamadı.'));
  clear('schedule');for(const p of schedule)$('schedule').append(rowcard(p.day+' · '+p.group,p.status,p.start+' – '+p.end));if(!schedule.length)$('schedule').append($el('div','card empty','Haftalık program bulunamadı.'));
  clear('groupId');$('groupId').append(new Option('Grup seçin',''));clear('historyFilter');$('historyFilter').append(new Option('Tüm gruplar',''));for(const g of groups){$('groupId').append(new Option(g.name,g.id));$('historyFilter').append(new Option(g.name,g.id));}if(groups.length){const today=data.todayLessons||[],preferred=priorGroup&&groups.some(g=>g.id===priorGroup)?priorGroup:today.find(x=>groups.some(g=>g.id===x.groupId))?.groupId||groups[0].id;$('groupId').value=preferred;$('groupId').dispatchEvent(new Event('change'));}renderHistory();aydaPrivateStudentSuggestions();renderAdmin();renderTeacherGroupChoices();aydaAdminEditOptions();}
 function hours(s){if(typeof s==='number')return s;const m=String(s||'').match(/^(\d{1,2}):(\d{2})$/);return m?Number(m[1])+Number(m[2])/60:0;}
 function allEntries(){return [...data.history.map(x=>({...x,type:'Grup',student:'',group:data.groups.find(g=>g.id===x.groupId)?.name||x.groupId})),...(data.privateHistory||[]).map(x=>({...x,type:'Özel',group:x.student||'Özel ders'}))];}
-function renderAdmin(){const admin=data.user.role==='admin';$('adminArea').classList.toggle('hidden',!admin);if(!admin)return;const sel=$('teacherFilter'),old=sel.value;sel.replaceChildren(new Option('Tüm öğretmenler',''));const ids=[...new Set([...data.groups.map(g=>g.teacherId),...allEntries().map(x=>x.teacherId)])].filter(Boolean);for(const id of ids){const t=(data.teachers||[]).find(t=>t.id===id);sel.add(new Option(t?.name||id,id));}sel.value=old;fillAdminSelectors();fillPasswordTargets();const keySel=$('keyTarget');keySel.replaceChildren(new Option('Yönetici','ADMIN'));for(const account of (data.accounts||[]).filter(x=>x.status==='Aktif'))keySel.add(new Option((account.name||account.id)+' · '+account.id,account.id));renderMonth();renderAcademic();renderAccounts();const el=$('adminGroups');el.replaceChildren();for(const g of data.groups){const last=data.history.filter(x=>x.groupId===g.id&&x.status==='İşlendi').sort((a,b)=>b.date.localeCompare(a.date))[0];const t=(data.teachers||[]).find(t=>t.id===g.teacherId);const c=$el('div','card');c.append($el('strong','',g.name+' · '+g.level),$el('p','muted','Öğretmen: '+(t?.name||g.teacherId)+' · Öğrenci: '+g.students),$el('p','','İlerleme: '+g.completed+' / '+g.total+' ünite'),$el('p','muted',last?'Son ders: '+last.date+' · '+(last.note||last.topic||'Bilgi belirtilmemiş'):'Henüz ders raporu yok'));el.append(c);}}
+function renderAdmin(){const admin=data.user.role==='admin';$('adminArea').classList.toggle('hidden',!admin);if(!admin)return;const sel=$('teacherFilter'),old=sel.value;sel.replaceChildren(new Option('Tüm öğretmenler',''));const ids=[...new Set([...data.groups.map(g=>g.teacherId),...allEntries().map(x=>x.teacherId)])].filter(Boolean);for(const id of ids){const t=(data.teachers||[]).find(t=>t.id===id);sel.add(new Option(t?.name||id,id));}sel.value=old;fillAdminSelectors();aydaSharedTeacherOptions();fillPasswordTargets();const keySel=$('keyTarget');keySel.replaceChildren(new Option('Yönetici','ADMIN'));for(const account of (data.accounts||[]).filter(x=>x.status==='Aktif'))keySel.add(new Option((account.name||account.id)+' · '+account.id,account.id));renderMonth();renderAcademic();renderAccounts();const el=$('adminGroups');el.replaceChildren();for(const g of data.groups){const last=data.history.filter(x=>x.groupId===g.id&&x.status==='İşlendi').sort((a,b)=>b.date.localeCompare(a.date))[0];const t=(data.teachers||[]).find(t=>t.id===g.teacherId);const c=$el('div','card');c.append($el('strong','',g.name+' · '+g.level),$el('p','muted','Öğretmen: '+(t?.name||g.teacherId)+' · Öğrenci: '+g.students),$el('p','','İlerleme: '+g.completed+' / '+g.total+' ünite'),$el('p','muted',last?'Son ders: '+last.date+' · '+(last.note||last.topic||'Bilgi belirtilmemiş'):'Henüz ders raporu yok'));const archive=$el('a','ayda-group-archive-link','▤ Bu grubun ayrıntılı raporunu aç ↗');archive.href='./grup-arsivi.html?group='+encodeURIComponent(g.id);archive.target='_blank';archive.rel='noopener noreferrer';c.append(archive);el.append(c);}}
 function renderMonth(){if(!data||data.user.role!=='admin')return;const month=$('monthFilter').value,teacher=$('teacherFilter').value,items=allEntries().filter(x=>(!month||x.date.startsWith(month))&&(!teacher||x.teacherId===teacher));const totals=new Map();for(const x of items){const key=x.teacherId||'—',v=totals.get(key)||{count:0,hours:0,group:0,private:0,cancel:0,postponed:0};if(x.status==='İşlendi'){v.count++;v.hours+=hours(x.actual);v[x.type==='Özel'?'private':'group']++;}else if(x.status==='İptal')v.cancel++;else if(x.status==='Ertelendi')v.postponed++;totals.set(key,v);}const box=$('monthSummary');box.replaceChildren();const table=$el('table','data-table'),head=$el('tr');for(const label of ['Öğretmen','Ders','Grup','Özel','Saat','İptal','Ertelenen'])head.append($el('th','',label));table.append(head);for(const [id,v] of totals){const tr=$el('tr'),t=(data.teachers||[]).find(t=>t.id===id);for(const x of [t?.name||id,v.count,v.group,v.private,v.hours.toLocaleString('tr-TR',{maximumFractionDigits:2}),v.cancel,v.postponed])tr.append($el('td','',x));table.append(tr);}box.append(table);if(!totals.size)box.append($el('p','muted','Bu ay için kayıt bulunmuyor.'));}
 $('rotateBtn').addEventListener('click',async()=>{const target=$('keyTarget').value;if(!confirm((target==='ADMIN'?'Yönetici':target)+' anahtarı yenilensin mi? Eski anahtar hemen geçersiz olacak.'))return;const btn=$('rotateBtn');btn.disabled=true;clear('rotateResult');try{const result=await jsonp('rotateKey',{target});const box=$('rotateResult');const info=$el('p','muted','Yeni anahtar (yalnızca bir kez gösterilir). Güvenli bir yere kaydedin:');const field=$el('textarea');field.readOnly=true;field.rows=3;field.value=result.key;const copy=$el('button','primary','Anahtarı Kopyala');copy.type='button';copy.addEventListener('click',()=>navigator.clipboard.writeText(result.key));box.append(info,field,copy);if(target==='ADMIN'){authKey=result.key;sessionStorage.setItem('aydaKey',authKey);}}catch(err){message('rotateResult',err.message);}finally{btn.disabled=false;}});
 
@@ -233,7 +233,7 @@ function renderHistory(){clear('history');const filter=$('historyFilter').value;
   edit.append(area,duration,button,feedback);card.append(edit);
  }
  $('history').append(card);}if(!list.length)$('history').append($el('div','card empty','Henüz rapor bulunmuyor.'));}
-$('groupId').addEventListener('change',()=>{const g=data?.groups.find(x=>x.id===$('groupId').value);if(g)$('completed').value=g.completed||0;});
+$('groupId').addEventListener('change',()=>{const g=data?.groups.find(x=>x.id===$('groupId').value);if(g){$('completed').max=String(Number(g.total)||24);$('completed').value=String(Math.min(Number(g.total)||24,Math.max(0,Number(g.completed)||0)+1));}});
 $('historyFilter').addEventListener('change',renderHistory);
 $('loginForm').addEventListener('submit',e=>{e.preventDefault();login($('key').value);});
 $('logout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');aydaSession.clear();authKey='';data=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');$('logout').classList.add('hidden');$('key').value='';$('roleChip').textContent='Öğretmen ve Yönetici';document.body.classList.remove('ayda-is-admin');history.replaceState(null,'',location.pathname);lastSharedHomework=null;shareBackendChecked=false;$('sendHomeworkToGroup').hidden=true;$('aydaShareHint').hidden=true;window.dispatchEvent(new Event('ayda:logout'));});
@@ -413,9 +413,9 @@ function parseISO(s){return new Date(s+'T12:00:00Z');}
 function futureLessons(g,count){
  const names=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
  const days=new Set(data.schedule.filter(x=>x.groupId===g.id&&x.status==='Aktif').map(x=>x.day));
- if(!days.size||!g.start)return null;
- const base=g.completed>0?data.today:(g.start>data.today?g.start:data.today),d=parseISO(base),out=[];
- for(let i=0;i<900&&out.length<count;i++){const day=dateISO(d);if(day>=g.start&&days.has(names[d.getUTCDay()]))out.push(day);d.setUTCDate(d.getUTCDate()+1);}
+ if(!days.size)return null;
+ const base=data.today>='2026-10-21'?data.today:'2026-10-21',d=parseISO(base),out=[];
+ for(let i=0;i<900&&out.length<count;i++){const day=dateISO(d);if(day>='2026-10-21'&&days.has(names[d.getUTCDay()]))out.push(day);d.setUTCDate(d.getUTCDate()+1);}
  return out.length===count?out:null;
 }
 function plan(g){const total=Number(g.total)||24,remaining=Math.max(0,total-Number(g.completed||0)),dates=futureLessons(g,remaining+2);if(!dates)return {unit:'Program eksik',exam:'Program eksik',remaining};return {unit:remaining?dates[remaining-1]:'Tamamlandı',exam:dates[remaining+1],remaining};}
@@ -427,6 +427,42 @@ function renderTeacherGroupChoices(){
  if(!rows.length){root.append($el('p','muted','Aktif sınıf bulunamadı. Öğretmeni şimdi ekleyip sınıfı sonra açabilirsiniz.'));return;}
  for(const g of rows){const label=$el('label','ayda-group-check'),check=document.createElement('input');check.type='checkbox';check.value=g.id;check.checked=chosen.has(g.id);label.append(check,document.createTextNode(' '+g.name+' · '+g.level));root.append(label);}
 }
+function aydaSharedTeacherOptions(){
+ const select=$('aydaSeparateTeacherPick'),groupRoot=$('aydaSeparateTeacherGroups');
+ if(!select||!groupRoot||data?.user?.role!=='admin')return;
+ const current=select.value,accounts=(data.accounts||[]).filter(x=>x.status==='Aktif'),counts=new Map();
+ for(const a of accounts)if(a.teacherId)counts.set(a.teacherId,(counts.get(a.teacherId)||0)+1);
+ select.replaceChildren(new Option('Öğretmen hesabını seçin',''));
+ for(const a of accounts.filter(x=>x.teacherId&&counts.get(x.teacherId)>1))
+  select.add(new Option(a.name+' · '+a.id+' · '+a.teacherId,a.id));
+ if([...select.options].some(o=>o.value===current))select.value=current;
+ const item=accounts.find(x=>x.id===select.value);
+ groupRoot.replaceChildren();
+ if(!item){groupRoot.append($el('p','muted',select.options.length<=1?'Ortak ID bulunan aktif hesap yok.':'Öğretmen seçildiğinde sınıfları burada görürsünüz.'));return;}
+ for(const group of (data.groups||[]).filter(g=>g.teacherId===item.teacherId&&g.status==='Aktif')){
+  const label=$el('label','ayda-group-check'),cb=document.createElement('input');cb.type='checkbox';cb.value=group.id;
+  label.append(cb,document.createTextNode(' '+group.name+' · '+group.level));groupRoot.append(label);
+ }
+ if(!groupRoot.children.length)groupRoot.append($el('p','muted','Bu ortak ID üzerinde aktarılabilecek aktif sınıf bulunmuyor.'));
+}
+$('aydaSeparateTeacherPick')?.addEventListener('change',aydaSharedTeacherOptions);
+$('aydaSeparateTeacherForm')?.addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(data?.user?.role!=='admin')return;
+ const accountId=$('aydaSeparateTeacherPick').value,account=(data.accounts||[]).find(x=>x.id===accountId);
+ const groupIds=[...$('aydaSeparateTeacherGroups').querySelectorAll('input:checked')].map(x=>x.value);
+ if(!account)return;
+ if(!confirm(account.name+' ('+account.id+') hesabına yeni öğretmen ID verilecek. '+groupIds.length+' grup bu hesaba devredilecek. Diğer hesapların eski öğretmen ID erişimi korunacak. Onaylıyor musunuz?'))return;
+ const button=$('aydaSeparateTeacherSave');button.disabled=true;
+ try{
+  const capability=await jsonp('ping');if(capability.studentRemoval!=='soft-delete-v1')throw Error('Ortak ID onarımı için Google Apps Script güncellemesi gerekiyor.');
+  const r=await jsonp('separateTeacherAccount',{payload:utf8Base64Url(JSON.stringify({accountId,groupIds}))});
+  if(!r.saved||r.accountId!==accountId||r.transferredGroups!==groupIds.length)throw Error('Google ID/grup ayrımı onaylanmadı. Yeniden denemeden önce KULLANICILAR tablosunu kontrol edin.');
+  data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
+  message('aydaSeparateTeacherStatus',account.name+' için '+r.teacherId+' oluşturuldu. '+r.transferredGroups+' grup devredildi. Eski raporlar korundu.','success');
+ }catch(e){message('aydaSeparateTeacherStatus','İşlem doğrulanamadı: '+e.message+'. Tekrarlamadan önce Google kayıtlarını denetleyin.');}
+ finally{button.disabled=false;}
+});
 function fillAdminSelectors(){const ts=$('newGroupTeacher'),old=ts.value;ts.replaceChildren(new Option('Öğretmen seçin',''));for(const t of data.teachers||[])if(t.status==='Aktif')ts.add(new Option(t.name+' ('+t.id+')',t.id));ts.value=old;const es=$('editGroupId'),prev=es.value;es.replaceChildren(new Option('Grup seçin',''));for(const g of data.groups)es.add(new Option(g.name+' · '+g.level,g.id));es.value=prev;syncEditGroup();if(!$('newGroupStart').value)$('newGroupStart').value=data.today;}
 function syncEditGroup(){const g=data?.groups.find(x=>x.id===$('editGroupId').value);$('editCompleted').value=g?g.completed:'';$('editStudents').value=g?g.students:'';if($('editGroupWhatsapp'))$('editGroupWhatsapp').value=g?.whatsapp||'';}
 $('editGroupId').addEventListener('change',syncEditGroup);
@@ -577,6 +613,7 @@ function aydaPickStudent(){
  const row=aydaAdminStudents.find(s=>s.id===$('adminStudentPick').value);
  for(const [id,value] of [['adminStudentName',row?.name],['adminStudentGroup',row?.groupId],['adminStudentEmail',row?.email],['adminStudentNote',row?.note]])$(id).value=value||'';
  $('adminStudentSave').textContent=row?'Öğrenci Bilgilerini Güncelle':'Yeni Öğrenci Ekle';
+ $('adminStudentRemove').hidden=!row;
 }
 $('assignTeacher').addEventListener('change',aydaTeacherAssignments);
 $('teacherGroupsForm').addEventListener('submit',async e=>{
@@ -588,6 +625,22 @@ $('teacherGroupsForm').addEventListener('submit',async e=>{
   if(result.teacherId!==teacherId||result.assigned!==groupIds.length)throw Error('Google yanıtı beklenen eşleştirmeyi doğrulamıyor.');
   data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));message('teacherGroupsResult','Sınıf atamaları kaydedildi: '+result.assigned+' sınıf.','success');
  }catch(err){message('teacherGroupsResult',err.message);}finally{button.disabled=false;}
+});
+$('adminStudentRemove').addEventListener('click',async()=>{
+ if(data?.user?.role!=='admin')return;
+ const id=$('adminStudentPick').value,student=aydaAdminStudents.find(x=>x.id===id);
+ if(!student)return message('adminStudentResult','Önce kaldırılacak öğrenciyi seçin.');
+ if(!confirm(student.name+' adlı öğrenciyi aktif listeden çıkarmak istiyor musunuz? Geçmiş yoklama ve ödevler korunacaktır.'))return;
+ const button=$('adminStudentRemove');button.disabled=true;
+ try{
+  const capability=await jsonp('ping');if(capability.studentRemoval!=='soft-delete-v1')throw Error('Öğrenci kaldırmak için güncel Google Apps Script sürümünü dağıtmanız gerekiyor.');
+  const result=await jsonp('removeStudent',{payload:utf8Base64Url(JSON.stringify({id}))});
+  if(result?.removed!==true||result.id!==id)throw Error('Google öğrenci kaldırmayı doğrulamadı.');
+  await aydaLoadAdminStudents();
+  data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
+  message('adminStudentResult',student.name+' aktif listeden çıkarıldı. Geçmiş kayıtları korundu.','success');
+ }catch(error){message('adminStudentResult','Öğrenci kaldırma doğrulanamadı: '+error.message+'. Yeniden basmadan önce listeyi yenileyin.');}
+ finally{button.disabled=false;}
 });
 $('adminStudentPick').addEventListener('change',aydaPickStudent);
 $('adminStudentReload').addEventListener('click',aydaLoadAdminStudents);

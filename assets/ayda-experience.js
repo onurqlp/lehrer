@@ -9,12 +9,12 @@
  const destinations=isOwner?[
   ['overview','Genel Bakış','⌂'],['students','Öğrenciler','♙'],['groups','Gruplar','▦'],['messages','Mesajlar','✉']
  ]:[
-  ['todayLessons','Bugün','⌂'],['daily','Ders Kaydı','＋'],['groups','Gruplar','▦'],['teacherTracking','Öğrenciler','♙']
+  ['todayLessons','Bugün','⌂'],['daily','Ders Kaydı','＋'],['groups','Gruplar','▦'],['schedule','Program','◷']
  ];
  const full=isOwner?[
   ['overview','Genel Bakış'],['students','Öğrenciler'],['attendance','Yoklama ve Ödev'],['groups','Gruplar'],['lessons','Ders Kayıtları'],['teachers','Öğretmenler ve Saat'],['schedule','Ders Programı'],['alerts','Uyarılar'],['messages','Mesaj Merkezi'],['accounts','Hesaplar']
  ]:[
-  ['todayLessons','Ana Sayfa'],['daily','Ders Kaydı ve Yoklama'],['groups','Gruplarım'],['teacherTracking','Öğrenciler'],['schedule','Ders Programı'],['history','Ders Geçmişim'],['aydaTeacherFeedback','Öneri ve Sorun Bildirimi'],['selfPassword','Parolamı Değiştir']
+  ['todayLessons','Ana Sayfa'],['daily','Ders Kaydı ve Yoklama'],['groups','Gruplarım'],['schedule','Ders Programı'],['history','Ders Geçmişim'],['aydaTeacherFeedback','Öneri ve Sorun Bildirimi'],['selfPassword','Parolamı Değiştir']
  ];
  if(!isOwner){
   const rail=el('aside','ayda-teacher-rail');rail.id='aydaTeacherRail';rail.setAttribute('aria-label','Öğretmen hızlı erişim');

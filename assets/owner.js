@@ -35,7 +35,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
  const gName=id=>(overview?.groups||[]).find(g=>g.id===id)?.name||id||'—';
  const tName=id=>(overview?.teachers||[]).find(t=>t.id===id)?.name||id||'—';
  const activeGroups=()=>overview?.groups?.filter(g=>g.status==='Aktif')||[];
- const lessons=()=>[...(overview?.history||[]).filter(r=>String(r.date||'')>='2026-10-20').map(r=>({...r,type:'Grup',groupName:gName(r.groupId)})),...(overview?.privateHistory||[]).filter(r=>String(r.date||'')>='2026-10-20').map(r=>({...r,type:'Özel',groupName:r.student||'Özel ders'}))].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ const lessons=()=>[...(overview?.history||[]).filter(r=>String(r.date||'')>='2026-10-21').map(r=>({...r,type:'Grup',groupName:gName(r.groupId)})),...(overview?.privateHistory||[]).filter(r=>String(r.date||'')>='2026-10-21').map(r=>({...r,type:'Özel',groupName:r.student||'Özel ders'}))].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
  const hours=value=>{const s=String(value||'').trim(),m=s.match(/^(\d{1,3}):(\d{2})$/);return m?(+m[1]+(+m[2])/60):Number(s)||0;};
  const hoursText=n=>Number(n||0).toLocaleString('tr-TR',{maximumFractionDigits:2});
  const difference=(a,b)=>{const x=Date.parse(a+'T00:00:00Z'),y=Date.parse(b+'T00:00:00Z');return Number.isFinite(x)&&Number.isFinite(y)?Math.round((x-y)/86400000):Infinity;};
@@ -44,7 +44,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   const set=new Set((overview.schedule||[]).filter(r=>r.groupId===group.id).map(r=>r.day));
   if(!set.size)return {unit:'Program eksik',exam:'Program eksik'};
   const w=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
-  const start=group.start&&group.start>today()?group.start:today();
+  const start=today();
   const d=new Date(start+'T00:00:00Z'),matches=[];
   if(!Number.isFinite(d.getTime()))return {unit:'Program eksik',exam:'Program eksik'};
   for(let i=0;i<800&&matches.length<rest+2;i++){if(set.has(w[d.getUTCDay()]))matches.push(d.toISOString().slice(0,10));d.setUTCDate(d.getUTCDate()+1);}
@@ -157,7 +157,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   const t=results[0];
   tracking=t.status==='fulfilled'&&t.value?.scope==='all'?t.value:null;
   reminders=results[1].status==='fulfilled'?results[1].value:null;
-  if(reminders){const items=(reminders.items||[]).filter(x=>String(x.date||'')>='2026-10-20');reminders={...reminders,items,total:items.length,reports:items.filter(x=>x.type==='report').length,attendance:items.filter(x=>x.type==='attendance').length};}
+  if(reminders){const items=(reminders.items||[]).filter(x=>String(x.date||'')>='2026-10-21');reminders={...reminders,items,total:items.length,reports:items.filter(x=>x.type==='report').length,attendance:items.filter(x=>x.type==='attendance').length};}
   contactDirectory={teachers:(overview?.teachers||[]).filter(t=>t.phone).map(t=>({id:t.id,teacherId:t.id,phone:t.phone,status:t.status})),students:[]};
   if(!tracking)errorMessage('Öğrenci takip verileri henüz yüklenemedi. Diğer bilgiler kullanılabilir.');
   else errorMessage('');
@@ -184,8 +184,8 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   const root=document.getElementById('ownerKpis');if(!root)return;
   const safeArray=x=>Array.isArray(x)?x:[];
   const groups=safeArray(overview?.groups),teachers=safeArray(overview?.teachers);
-  const records=safeArray(overview?.history).filter(x=>String(x?.date||'')>='2026-10-20');
-  const privateRecords=safeArray(overview?.privateHistory).filter(x=>String(x?.date||'')>='2026-10-20');
+  const records=safeArray(overview?.history).filter(x=>String(x?.date||'')>='2026-10-21');
+  const privateRecords=safeArray(overview?.privateHistory).filter(x=>String(x?.date||'')>='2026-10-21');
   const currentMonth=String(overview?.today||new Date().toISOString().slice(0,10)).slice(0,7);
   const totalHours=[...records,...privateRecords].filter(x=>String(x.date||'').startsWith(currentMonth)&&x.status==='İşlendi').reduce((sum,x)=>sum+hours(x.actual),0);
   const result=[
@@ -268,7 +268,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   });
  }
  function groupLatest(id){
-  return (overview.history||[]).filter(r=>r.groupId===id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]||null;
+  return (overview.history||[]).filter(r=>r.groupId===id&&String(r.date||'')>='2026-10-21').sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]||null;
  }
  function groupProgram(id){return (overview.schedule||[]).filter(r=>r.groupId===id);}
  function groupProgramComplete(g){
@@ -314,7 +314,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    add(last,'strong','',fmt(latest.date)+' · '+latest.status+(latest.actual?' · '+latest.actual+' saat':''));
    if(latest.status==='İşlendi'&&latest.completed!==undefined&&latest.completed!=='')add(last,'span','','Son rapordaki ünite: '+latest.completed);
    if(latest.note)add(last,'p','',String(latest.note).slice(0,145)+(String(latest.note).length>145?'…':''));
-  }else add(last,'strong','','20.10.2026 tarihinden sonra rapor yok');
+  }else add(last,'strong','','21.10.2026 tarihinden sonra rapor yok');
   add(box,'p','ayda-partner-program','Haftalık program: '+(program.map(p=>p.day+' '+(p.start||'—')+'–'+(p.end||'saat eksik')).join(' · ')||'Girilmeyen program'));
   const stats=add(box,'div','owner-group-stats');
   for(const value of [stat?'Katılım '+round(stat.present,stat.present+stat.absent):'Yoklama verisi yüklenmedi',
@@ -334,7 +334,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    add(wrap,'summary','','Verilen ödevler · '+homework.length+(pending?' · '+pending+' paylaşılmamış':''));
    for(const h of homework)add(wrap,'p','',fmt(h.date)+' · '+h.text+' · '+(h.shareStatus||'Paylaşım bilgisi yok'));
   }
-  const archiveLink=node('a','ayda-group-archive-link','▤ Grup arşivi ve değerlendirme ↗');archiveLink.href='./grup-arsivi.html?group='+encodeURIComponent(g.id);box.append(archiveLink);
+  const archiveLink=node('a','ayda-group-archive-link','▤ Grup arşivi ve değerlendirme ↗');archiveLink.href='./grup-arsivi.html?group='+encodeURIComponent(g.id);archiveLink.target='_blank';archiveLink.rel='noopener noreferrer';box.append(archiveLink);
   box.append(quick('Grubun öğrencilerini gör →',()=>{activate('students');$('ownerStudentGroup').value=g.id;renderStudents();}));
   return box;
  }
@@ -491,12 +491,12 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    const group=byId.get(entry.groupId);if(!group)continue;
    for(let day=1;day<=totalDays;day++){
     const date=month+'-'+String(day).padStart(2,'0');
-    if(date<'2026-10-20'||(group.start&&date<group.start)||(group.end&&date>group.end))continue;
+    if(date<'2026-10-21'||(group.start&&date<group.start)||(group.end&&date>group.end))continue;
     if(entry.day!==weekdays[new Date(Date.UTC(year,mon-1,day)).getUTCDay()])continue;
     planned.add(entry.groupId+'|'+date+'|'+entry.start);
    }
   }
-  const completedThisMonth=(overview?.history||[]).filter(r=>r.date>='2026-10-20'&&r.date?.startsWith(month)&&r.status==='İşlendi').length;
+  const completedThisMonth=(overview?.history||[]).filter(r=>r.date>='2026-10-21'&&r.date?.startsWith(month)&&r.status==='İşlendi').length;
   for(const [label,value] of [['Bu ay planlanan grup dersi',planned.size],['Bu ay işlenen grup dersi',completedThisMonth],['Bekleyen akademik kayıt',reminders?.total??'—'],['Öncelikli öğrenci',tracking?.alerts?.length??'—']]){
    const box=add(root,'div','note-card');add(box,'strong','',value);add(box,'p','',label);
   }
@@ -553,7 +553,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
     warn(g.name+' · Öğrenci sayıları uyuşmuyor','Grup kartı: '+g.students+' / Öğrenci listesi: '+actual+'. Kimlikleri kontrol edin.',[
      action('Grup sayısını düzelt →','count',g.id),action('Öğrencileri düzenle →','student',g.id)
     ]);
-   if(g.end&&g.end<'2026-10-20')
+   if(g.end&&g.end>='2026-10-21'&&g.end<today())
     warn(g.name+' · Önceki dönem grubu hâlâ aktif','Kurs tamamlandıysa geçmişe taşıyın; kayıtları silmeyin.',[action('Grubu tamamlandı yap →','status',g.id)]);
   }
   // Sadece bir gruba bağlı öğrenci kayıtları; isim alanındaki CRM notlarını uyarıya çıkar.
@@ -571,14 +571,14 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    const reason=nameIssue(student.name);
    if(reason)warn('Öğrenci adı kontrolü · '+student.name,reason+' · '+gName(student.groupId),[action('Öğrenci adını düzelt →','student',student.groupId,{studentId:student.id})]);
   }
-  const duplicates=new Map();for(const t of teachers)duplicates.set(t.id,(duplicates.get(t.id)||0)+1);
-  for(const [id,count] of duplicates)if(id&&count>1)
-   warn('Hesaplarda ortak öğretmen ID','Öğretmen ID: '+id+' · '+count+' hesap aynı gruplara erişebilir; eşleşmeleri doğrulayın.',[panel('Hesapları incele →','accounts','ownerAccountsTable')]);
+  const duplicates=new Map();for(const t of teachers.filter(t=>t.status==='Aktif')){if(!t.id)continue;const users=duplicates.get(t.id)||new Set();users.add(t.userId||t.name);duplicates.set(t.id,users);}
+  for(const [id,accounts] of duplicates)if(id&&accounts.size>1)
+   warn('Hesaplarda ortak öğretmen ID','Öğretmen ID: '+id+' · '+accounts.size+' aktif hesap aynı gruplara erişiyor. Admin panelinde Ortak Öğretmen ID Ayır alanından hesapları sınıflarına göre ayırın.',[panel('Hesapları incele →','accounts','ownerAccountsTable')]);
   for(const t of teachers.filter(t=>t.status==='Aktif'&&!groups.some(g=>g.teacherId===t.id)))
    warn(t.name+' · Sınıf eşleşmesi yok','Özel ders öğretmeniyse bu durum normal olabilir.',[action('Sınıfa öğretmen ata →','teacher','',{teacherId:t.id})]);
   for(const r of schedule)if(r.status==='Aktif'&&!validGroups.has(r.groupId))
    warn('Program · Tanımsız sınıf','Grup ID: '+r.groupId,[panel('Programı incele →','schedule','ownerScheduleList')]);
-  for(const row of (reminders?.items||[]).filter(x=>String(x.date||'')>='2026-10-20'))
+  for(const row of (reminders?.items||[]).filter(x=>String(x.date||'')>='2026-10-21'))
    warn((row.type==='attendance'?'Eksik yoklama':'Eksik ders raporu')+' · '+(row.group||'Sınıf'),fmt(row.date)+' · '+tName(row.teacherId),[
     {label:'Öğretmene hatırlat →',compose:{teacherId:row.teacherId,groupId:row.groupId,date:row.date,type:row.type}}
    ]);
