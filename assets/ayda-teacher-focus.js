@@ -73,6 +73,7 @@
    const offset=root.getBoundingClientRect().top+window.scrollY-92;
    window.scrollTo({top:Math.max(0,offset),behavior:'instant'});
   }
+  window.dispatchEvent(new CustomEvent('ayda:teacher-page-open',{detail:{page}}));
   return true;
  }
  window.AYDA_TEACHER_VIEWS={open};
