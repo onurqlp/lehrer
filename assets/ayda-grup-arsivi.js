@@ -67,7 +67,7 @@
   if(paint&&current())paintTab(name);
  }
  const current=()=>array(state.overview?.groups).find(g=>g.id===state.id)||null;
- const groupLessons=()=>array(state.overview?.history).filter(r=>r.groupId===state.id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ const groupLessons=()=>array(state.overview?.history).filter(r=>r.groupId===state.id&&String(r.date||'')>='2026-10-21').sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
  const groupStudents=()=>array(state.tracking?.students).filter(s=>s.groupId===state.id).sort((a,b)=>String(a.name).localeCompare(String(b.name),'tr'));
  const groupAttendance=()=>array(state.tracking?.groups).find(g=>g.id===state.id)||null;
  const groupHomework=()=>array(state.homeworks?.items).filter(h=>h.groupId===state.id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
