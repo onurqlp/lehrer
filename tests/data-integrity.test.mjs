@@ -42,6 +42,6 @@ test('aylık ders hesabında ertelenen ders ayrı, 90 dakika 1,5 saat kabul edil
 });
 
 test('eski kayıtlar için geriye dönük alarm başlangıcı sabittir', () => {
-  assert.match(code, /const AYDA_TRACKING_START = '2026-10-20';/);
+  assert.match(code, /const AYDA_TRACKING_START = '2026-10-21';/);
   assert.match(code, /date<AYDA_TRACKING_START/);
 });
