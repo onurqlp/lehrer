@@ -536,7 +536,7 @@ function aydaAdminStudentRemove_(user,p){
   const sh=aydaSheet_('OGRENCILER'),v=sh.getDataRange().getDisplayValues(),h=v[0].map(String);
   const ic=h.indexOf('OGRENCI_ID'),gc=h.indexOf('GRUP_ID');if(ic<0||gc<0)throw Error('Öğrenci sütunları eksik.');
   const index=v.findIndex((r,i)=>i>0&&r[ic]===id);if(index<1)throw Error('Öğrenci bulunamadı. Listeyi yenileyin.');
-  let status=h.indexOf('DURUM');if(status<0){status=h.length;sh.getRange(1,status+1).setValue('DURUM');}
+  let status=h.indexOf('DURUM');if(status<0){status=h.length;if(typeof sh.getMaxColumns==='function'&&sh.getMaxColumns()<status+1)sh.insertColumnsAfter(sh.getMaxColumns(),status+1-sh.getMaxColumns());sh.getRange(1,status+1).setValue('DURUM');}
   if(['Pasif','Silindi'].includes(v[index][status]))return {removed:true,id,unchanged:true};
   const original=v[index][status]||'',groupId=v[index][gc],name=v[index][h.indexOf('AD_SOYAD')];
   sh.getRange(index+1,status+1).setValue('Pasif');SpreadsheetApp.flush();
