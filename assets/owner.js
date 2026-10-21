@@ -44,7 +44,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   const set=new Set((overview.schedule||[]).filter(r=>r.groupId===group.id).map(r=>r.day));
   if(!set.size)return {unit:'Program eksik',exam:'Program eksik'};
   const w=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
-  const start=group.start&&group.start>today()?group.start:today();
+  const start=today();
   const d=new Date(start+'T00:00:00Z'),matches=[];
   if(!Number.isFinite(d.getTime()))return {unit:'Program eksik',exam:'Program eksik'};
   for(let i=0;i<800&&matches.length<rest+2;i++){if(set.has(w[d.getUTCDay()]))matches.push(d.toISOString().slice(0,10));d.setUTCDate(d.getUTCDate()+1);}
@@ -314,7 +314,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    add(last,'strong','',fmt(latest.date)+' · '+latest.status+(latest.actual?' · '+latest.actual+' saat':''));
    if(latest.status==='İşlendi'&&latest.completed!==undefined&&latest.completed!=='')add(last,'span','','Son rapordaki ünite: '+latest.completed);
    if(latest.note)add(last,'p','',String(latest.note).slice(0,145)+(String(latest.note).length>145?'…':''));
-  }else add(last,'strong','','20.10.2026 tarihinden sonra rapor yok');
+  }else add(last,'strong','','21.10.2026 tarihinden sonra rapor yok');
   add(box,'p','ayda-partner-program','Haftalık program: '+(program.map(p=>p.day+' '+(p.start||'—')+'–'+(p.end||'saat eksik')).join(' · ')||'Girilmeyen program'));
   const stats=add(box,'div','owner-group-stats');
   for(const value of [stat?'Katılım '+round(stat.present,stat.present+stat.absent):'Yoklama verisi yüklenmedi',
@@ -553,7 +553,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
     warn(g.name+' · Öğrenci sayıları uyuşmuyor','Grup kartı: '+g.students+' / Öğrenci listesi: '+actual+'. Kimlikleri kontrol edin.',[
      action('Grup sayısını düzelt →','count',g.id),action('Öğrencileri düzenle →','student',g.id)
     ]);
-   if(g.end&&g.end<'2026-10-21')
+   if(g.end&&g.end>='2026-10-21'&&g.end<today())
     warn(g.name+' · Önceki dönem grubu hâlâ aktif','Kurs tamamlandıysa geçmişe taşıyın; kayıtları silmeyin.',[action('Grubu tamamlandı yap →','status',g.id)]);
   }
   // Sadece bir gruba bağlı öğrenci kayıtları; isim alanındaki CRM notlarını uyarıya çıkar.
