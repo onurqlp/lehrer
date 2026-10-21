@@ -5,8 +5,8 @@
  if(!root||!document.body.classList.contains('ayda-teacher'))return;
  const $=id=>document.getElementById(id);
  const teacher=()=>typeof data!=='undefined'&&data?.user?.role==='teacher';
- const route={todayLessons:'home',home:'home',aydaTeacherDashboard:'home',daily:'daily',aydaMakeupCenter:'daily',groups:'groups',teacherResources:'groups',teacherTracking:'students',students:'students',schedule:'schedule',history:'history',aydaMonthOverview:'history',selfPassword:'settings',aydaTeacherFeedback:'support'};
- const meta={home:['Ana Sayfa','Günlük izleme, eksik kayıtlar ve aylık ders özetin.'],daily:['Ders Kaydı','Dersini, yoklamanı ve verdiğin ödevi burada kaydet.'],groups:['Gruplarım','Gruplarına ve ders materyallerine ulaş.'],students:['Öğrenciler','Yoklama, ödev ve bireysel takip bu ayrı bölümde.'],schedule:['Haftalık Program','Haftalık ders saatlerin ve sınıfların.'],history:['Ders Geçmişim','Geçmiş ders raporların ve aylık ders durumun.'],settings:['Hesap Ayarlarım','Giriş parolanı bu bölümden değiştirebilirsin.'],support:['Öneri ve Yardım','Sistemle ilgili görüşünü yönetime ilet.']};
+ const route={todayLessons:'home',home:'home',aydaTeacherDashboard:'home',daily:'daily',aydaMakeupCenter:'daily',groups:'groups',teacherResources:'groups',teacherTracking:'daily',students:'daily',schedule:'schedule',history:'history',aydaMonthOverview:'history',selfPassword:'settings',aydaTeacherFeedback:'support'};
+ const meta={home:['Ana Sayfa','Günlük izleme, eksik kayıtlar ve aylık ders özetin.'],daily:['Ders Kaydı','Dersini, yoklamanı ve verdiğin ödevi burada kaydet.'],groups:['Gruplarım','Gruplarına ve ders materyallerine ulaş.'],schedule:['Haftalık Program','Haftalık ders saatlerin ve sınıfların.'],history:['Ders Geçmişim','Geçmiş ders raporların ve aylık ders durumun.'],settings:['Hesap Ayarlarım','Giriş parolanı bu bölümden değiştirebilirsin.'],support:['Öneri ve Yardım','Sistemle ilgili görüşünü yönetime ilet.']};
  let marked=false;
  const elem=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;};
  const intro=elem('header','ayda-teacher-view-intro');intro.id='aydaTeacherViewIntro';intro.dataset.aydaPage='subview';
@@ -45,7 +45,7 @@
   marked=true;
  }
  function selected(page){
-  const canonical={home:'todayLessons',daily:'daily',groups:'groups',students:'teacherTracking',schedule:'schedule',history:'history',settings:'selfPassword',support:'aydaTeacherFeedback'}[page];
+  const canonical={home:'todayLessons',daily:'daily',groups:'groups',schedule:'schedule',history:'history',settings:'selfPassword',support:'aydaTeacherFeedback'}[page];
   for(const btn of document.querySelectorAll('#aydaMobileDock [data-ux-target],#aydaMobileSheet [data-ux-target]')){
    const active=route[btn.dataset.uxTarget]===page;btn.classList.toggle('active',active);
    if(active)btn.setAttribute('aria-current','page');else btn.removeAttribute('aria-current');
@@ -55,7 +55,7 @@
    if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
   }
   const more=document.querySelector('#aydaMobileDock [data-ux-more]');
-  if(more)more.classList.toggle('active',!['home','daily','groups','students'].includes(page));
+  if(more)more.classList.toggle('active',!['home','daily','groups','schedule'].includes(page));
   if(canonical&&window.history?.replaceState)window.history.replaceState(null,'','#'+canonical);
  }
  function open(target,options={}){
