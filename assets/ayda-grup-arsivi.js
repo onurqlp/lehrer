@@ -56,7 +56,7 @@
   const b=add(a,'div');add(b,'strong','',title);add(b,'p','',detail);
   const link=add(a,'a','','AYDA giriş sayfasına git →');link.href='./index.html';
  }
- function tab(name){
+ function tab(name,paint=true){
   if(!validTabs.has(name))return;
   activeTab=name;
   for(const btn of document.querySelectorAll('[data-archive-tab]')){
@@ -64,7 +64,7 @@
    if(btn.dataset.archiveTab===name)btn.setAttribute('aria-current','page');else btn.removeAttribute('aria-current');
   }
   for(const p of document.querySelectorAll('.archive-panel'))p.hidden=p.id!=='archivePanel-'+name;
-  if(current())paintTab(name);
+  if(paint&&current())paintTab(name);
  }
  const current=()=>array(state.overview?.groups).find(g=>g.id===state.id)||null;
  const groupLessons=()=>array(state.overview?.history).filter(r=>r.groupId===state.id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
@@ -350,7 +350,7 @@
  }
  $('archiveGroup').addEventListener('change',e=>{
   state.id=e.target.value;const u=new URL(location.href);u.searchParams.set('group',state.id);history.replaceState(null,'',u.pathname+u.search);
-  tab('overview');render();
+  tab('overview',false);render();
  });
  $('archiveRefresh').addEventListener('click',refresh);
  $('archiveExport').addEventListener('click',exportJson);
