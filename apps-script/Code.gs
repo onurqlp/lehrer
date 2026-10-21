@@ -217,7 +217,7 @@ function aydaAdminSetGroup_(user,p){
  const lock=LockService.getScriptLock();lock.waitLock(20000);
  try{const sh=aydaSheet_('GRUPLAR'),rows=sh.getDataRange().getDisplayValues(),h=rows[0],ix=rows.findIndex((r,i)=>i>0&&r[h.indexOf('ID')]===id);if(ix<1)throw Error('Grup bulunamadı.');const total=Number(rows[ix][h.indexOf('Toplam Ünite')])||24;if(completed>total)throw Error('Tamamlanan ünite toplamı aşamaz.');sh.getRange(ix+1,h.indexOf('Son Tamamlanan Ünite')+1).setValue(completed);sh.getRange(ix+1,h.indexOf('Öğrenci')+1).setValue(students);if(wantsWhatsapp){const wc=h.indexOf('WhatsApp');if(wc<0)throw Error('GRUPLAR tablosunda WhatsApp sütunu bulunamadı.');sh.getRange(ix+1,wc+1).setValue(whatsapp);}return {id,completed,students};}finally{lock.releaseLock();}
 }
-function aydaOverview_(user){const groups=aydaGroups_(user),schedule=aydaSchedule_(groups),history=aydaHistory_(user,groups),today=aydaToday_(),day=aydaWeekday_(today);return {user,groups,schedule,history,privateHistory:aydaPrivateHistory_(user),today,todayLessons:schedule.filter(p=>{const g=groups.find(x=>x.id===p.groupId);return p.day===day&&g&&(!g.start||g.start<=today)&&(!g.end||g.end>=today);}),accounts:user.role==='admin'?aydaRead_('KULLANICILAR').filter(x=>x['Rol']==='Öğretmen').map(x=>({id:x['Kullanıcı ID'],name:x['Kullanıcı Adı'],status:x['Durum']})):[],teachers:aydaIsMonitor_(user)?aydaTeachers_():[],vaultStatus:user.role==='admin'?aydaVaultStatus_(user):[]};}
+function aydaOverview_(user){const groups=aydaGroups_(user),schedule=aydaSchedule_(groups),history=aydaHistory_(user,groups),today=aydaToday_(),day=aydaWeekday_(today);return {user,groups,schedule,history,privateHistory:aydaPrivateHistory_(user),today,todayLessons:schedule.filter(p=>{const g=groups.find(x=>x.id===p.groupId);return p.day===day&&g&&(!g.start||g.start<=today)&&(!g.end||g.end>=today);}),accounts:user.role==='admin'?aydaRead_('KULLANICILAR').filter(x=>x['Rol']==='Öğretmen').map(x=>({id:x['Kullanıcı ID'],name:x['Kullanıcı Adı'],status:x['Durum'],teacherId:x['Öğretmen ID']})):[],teachers:aydaIsMonitor_(user)?aydaTeachers_():[],vaultStatus:user.role==='admin'?aydaVaultStatus_(user):[]};}
 function aydaSave_(user,p){
   if(!p||typeof p!=='object')throw Error('Rapor bilgileri eksik.');
   const groupId=String(p.groupId||'').trim(),date=String(p.date||'').trim(),topic=String(p.topic||'').trim(),note=String(p.note||'').trim(),unit=Number(p.unit),completed=Number(p.completed),actual=String(p.actual||'').trim(),status=String(p.status||'İşlendi');
@@ -473,6 +473,60 @@ function aydaAdminStudentSave_(user,p){
  }finally{lock.releaseLock();}
 }
 /** Yönetici: öğrenciyi fiziksel silmeden aktif yoklamadan çıkarır; geçmiş ID'ler korunur. */
+/** Explicit admin repair for distinct teacher accounts incorrectly sharing one identity.
+ * Select exactly which active groups move to the separated account; no implicit transfer.
+ */
+function aydaAdminSeparateTeacherAccount_(user,p){
+ if(user.role!=='admin')throw Error('Yalnızca yönetici öğretmen kimliği ayırabilir.');
+ const accountId=String(p.accountId||'').trim();
+ const groupIds=Array.isArray(p.groupIds)?p.groupIds.map(String):[];
+ if(!/^U[0-9]{3,}$/.test(accountId)||groupIds.length!==new Set(groupIds).size)throw Error('Hesap veya grup seçimi geçersiz.');
+ const lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  const users=aydaSheet_('KULLANICILAR'),uv=users.getDataRange().getDisplayValues(),uh=uv[0].map(String);
+  const uid=uh.indexOf('Kullanıcı ID'),tid=uh.indexOf('Öğretmen ID'),nc=uh.indexOf('Kullanıcı Adı'),role=uh.indexOf('Rol'),status=uh.indexOf('Durum');
+  if([uid,tid,nc,role,status].some(i=>i<0))throw Error('KULLANICILAR başlıkları eksik.');
+  const index=uv.findIndex((r,i)=>i>0&&r[uid]===accountId&&r[role]==='Öğretmen'&&r[status]==='Aktif');
+  if(index<1)throw Error('Aktif öğretmen hesabı bulunamadı.');
+  const originalId=uv[index][tid],name=uv[index][nc];
+  const siblings=uv.filter((r,i)=>i>0&&r[role]==='Öğretmen'&&r[status]==='Aktif'&&r[tid]===originalId);
+  if(siblings.length<2)throw Error('Bu öğretmen ID başka aktif hesapla paylaşılmıyor.');
+  const sheet=aydaSheet_('OGRETMENLER'),tv=sheet.getDataRange().getDisplayValues(),th=tv[0].map(String);
+  const teacherIdIndex=th.indexOf('Öğretmen ID')>=0?th.indexOf('Öğretmen ID'):th.indexOf('ID');
+  if(teacherIdIndex<0)throw Error('OGRETMENLER ID başlığı eksik.');
+  const used=[...uv.slice(1).map(r=>r[tid]),...tv.slice(1).map(r=>r[teacherIdIndex])];
+  const max=used.reduce((n,id)=>Math.max(n,/^H\d+$/.test(id)?Number(id.slice(1)):0),0);
+  const newId='H'+String(max+1).padStart(3,'0');
+  const groups=aydaSheet_('GRUPLAR'),gv=groups.getDataRange().getDisplayValues(),gh=gv[0].map(String),
+   gid=gh.indexOf('ID'),gteacher=gh.indexOf('Öğretmen ID'),gstatus=gh.indexOf('Durum');
+  if([gid,gteacher,gstatus].some(i=>i<0))throw Error('GRUPLAR başlıkları eksik.');
+  const selected=groupIds.map(id=>{
+   const ix=gv.findIndex((r,i)=>i>0&&r[gid]===id&&r[gstatus]==='Aktif'&&r[gteacher]===originalId);
+   if(ix<1)throw Error('Seçilen sınıf eski öğretmen ID üzerinde aktif değil: '+id);
+   return {row:ix+1,id};
+  });
+  const before=sheet.getLastRow(),record={};
+  for(const col of th){if(col==='Öğretmen ID'||col==='ID')record[col]=newId;
+   else if(['Öğretmen','Ad Soyad','Ad','Öğretmen Adı'].includes(col))record[col]=name;
+   else if(col==='Durum')record[col]='Aktif';
+  }
+  let accountChanged=false,moved=0,rollbackFailed=false;
+  try{
+   sheet.appendRow(th.map(col=>record[col]||''));
+   users.getRange(index+1,tid+1).setValue(newId);accountChanged=true;
+   for(const g of selected){groups.getRange(g.row,gteacher+1).setValue(newId);moved++;}
+   SpreadsheetApp.flush();
+   if(users.getRange(index+1,tid+1).getDisplayValue()!==newId)throw Error('Yeni hesap öğretmen ID doğrulanmadı.');
+   for(const g of selected)if(groups.getRange(g.row,gteacher+1).getDisplayValue()!==newId)throw Error('Grup ataması doğrulanmadı: '+g.id);
+   return {saved:true,accountId,previousTeacherId:originalId,teacherId:newId,transferredGroups:selected.length,name};
+  }catch(err){
+   for(let i=moved-1;i>=0;i--)try{groups.getRange(selected[i].row,gteacher+1).setValue(originalId);}catch(e){rollbackFailed=true;Logger.log('Grup geri alma: '+e.message);}
+   if(accountChanged)try{users.getRange(index+1,tid+1).setValue(originalId);}catch(e){rollbackFailed=true;Logger.log('Hesap geri alma: '+e.message);}
+   if(sheet.getLastRow()===before+1)try{sheet.deleteRow(before+1);}catch(e){rollbackFailed=true;Logger.log('Profil geri alma: '+e.message);}
+   throw Error(rollbackFailed?'Kimlik ayrımı kısmi kalmış olabilir. Google hesap ve grup satırlarını denetleyin: '+err.message:'Kimlik ayrımı geri alındı: '+err.message);
+  }
+ }finally{lock.releaseLock();}
+}
 function aydaAdminStudentRemove_(user,p){
  if(user.role!=='admin')throw Error('Yalnızca yönetici öğrenci kaldırabilir.');
  const id=String(p.id||'').trim();
@@ -1484,6 +1538,7 @@ function doGet(e){
     else if(action==='vaultExport')out={ok:true,data:{rows:aydaVaultRows_(user)}};
     else if(action==='adminStudents')out={ok:true,data:{students:aydaAdminStudentList_(user)}};
     else if(action==='teacherAddStudent')out={ok:true,data:aydaTeacherAddStudent_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
+     else if(action==='separateTeacherAccount')out={ok:true,data:aydaAdminSeparateTeacherAccount_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
      else if(action==='removeStudent')out={ok:true,data:aydaAdminStudentRemove_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
      else if(action==='saveStudent')out={ok:true,data:aydaAdminStudentSave_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
     else if(action==='assignTeacherGroups')out={ok:true,data:aydaAdminAssignTeacher_(user,JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8')))};
