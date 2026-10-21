@@ -5,7 +5,7 @@
  const get=(id)=>document.getElementById(id);
  const addLink=(parent,id,label,href,first)=>{
   if(!parent||get(id))return;
-  const a=el('a','ayda-archive-shortcut',label);a.id=id;a.href=href;
+  const a=el('a','ayda-archive-shortcut',label);a.id=id;a.href=href;a.target='_blank';a.rel='noopener noreferrer';
   if(first)parent.prepend(a);else parent.append(a);
   return a;
  };
@@ -27,7 +27,7 @@
    const explanation=el('span','','Mevcut Google API, grup kapandıktan sonra bazı öğrenci yoklama/ödev ayrıntılarını artık göstermiyor. Yalnızca mevcut kayıtlardan arşiv dosyası alınabilir.');
    const link=el('a','ayda-group-archive-link','Seçili grubun arşivini aç ↗');
    const picker=get('aydaFixStatusGroup');
-   const syncLink=()=>{link.href='./grup-arsivi.html?group='+encodeURIComponent(picker?.value||'');};
+   const syncLink=()=>{link.href='./grup-arsivi.html?group='+encodeURIComponent(picker?.value||'');link.target='_blank';link.rel='noopener noreferrer';};
    syncLink();picker?.addEventListener('change',syncLink);
    notice.append(title,explanation,link);statusForm.prepend(notice);
   }
