@@ -218,10 +218,21 @@
  window.addEventListener('ayda:compose-teacher',e=>{applyTeacherContext(e.detail||{}).catch(err=>{teacherStatus.textContent=err.message;});});
  window.addEventListener('ayda:compose-student',e=>{applyStudentContext(e.detail||{}).catch(err=>{studentStatus.textContent=err.message;});});
 
- window.addEventListener('ayda:owner-ready',load);
+ // İletişim rehberini ana sayfa açılışında indirme: mesajlar açılınca getir.
+ let lastContactRequest=0;
+ const needed=()=>!root.hidden&&bridge()?.ready();
+ const loadWhenNeeded=()=>{
+  if(!needed())return;
+  // Çift 'owner-ready' olayı aynı rehberi iki kez indirmesin.
+  if(contacts){fill();return;}
+  if(Date.now()-lastContactRequest<10000)return;
+  lastContactRequest=Date.now();load();
+ };
+ window.addEventListener('ayda:owner-ready',loadWhenNeeded);
+ window.addEventListener('ayda:messages-open',loadWhenNeeded);
  window.addEventListener('ayda:owner-logout',()=>{
-  loadNo++;contacts=null;inbox=null;students.replaceChildren();teachers.replaceChildren();dateSelect.replaceChildren();feedbacks.replaceChildren();$('ownerInboxPreview')?.replaceChildren();
+  loadNo++;lastContactRequest=0;contacts=null;inbox=null;students.replaceChildren();teachers.replaceChildren();dateSelect.replaceChildren();feedbacks.replaceChildren();$('ownerInboxPreview')?.replaceChildren();
   teacherText.value='';studentText.value='';studentSearch.value='';$('aydaMsgContactMeta').textContent='Giriş yapın.';feedbackStatus.textContent='';
  });
- if(bridge()?.ready())load();
+ if(needed())loadWhenNeeded();
 })();
