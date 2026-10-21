@@ -413,9 +413,9 @@ function parseISO(s){return new Date(s+'T12:00:00Z');}
 function futureLessons(g,count){
  const names=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
  const days=new Set(data.schedule.filter(x=>x.groupId===g.id&&x.status==='Aktif').map(x=>x.day));
- if(!days.size||!g.start)return null;
- const base=g.completed>0?data.today:(g.start>data.today?g.start:data.today),d=parseISO(base),out=[];
- for(let i=0;i<900&&out.length<count;i++){const day=dateISO(d);if(day>=g.start&&days.has(names[d.getUTCDay()]))out.push(day);d.setUTCDate(d.getUTCDate()+1);}
+ if(!days.size)return null;
+ const base=data.today>='2026-10-21'?data.today:'2026-10-21',d=parseISO(base),out=[];
+ for(let i=0;i<900&&out.length<count;i++){const day=dateISO(d);if(day>='2026-10-21'&&days.has(names[d.getUTCDay()]))out.push(day);d.setUTCDate(d.getUTCDate()+1);}
  return out.length===count?out:null;
 }
 function plan(g){const total=Number(g.total)||24,remaining=Math.max(0,total-Number(g.completed||0)),dates=futureLessons(g,remaining+2);if(!dates)return {unit:'Program eksik',exam:'Program eksik',remaining};return {unit:remaining?dates[remaining-1]:'Tamamlandı',exam:dates[remaining+1],remaining};}
