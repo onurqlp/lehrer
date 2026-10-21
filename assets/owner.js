@@ -680,13 +680,9 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   overview=latest;await loadTracking();
   window.dispatchEvent(new Event('ayda:owner-ready'));
  });
- // Bir kere paylaşılan özel bağlantı cihazı eşleştirir; anahtar adres çubuğunda kalmaz.
- const linkToken=/^#izleme=(IZ-[A-Z0-9]+)$/i.exec(location.hash)?.[1]||'';
+ // URL anahtarı ile özel bağlantı girişi kaldırıldı; yalnızca parola ve mevcut oturum kullanılır.
  if(embeddedHealth){
   window.parent.postMessage({aydaHealthEmbed:1,action:'ready'},location.origin);
- }else if(linkToken){
-  history.replaceState(null,'',location.pathname+location.search+'#overview');
-  login(linkToken);
  }else{
   const previous=sessionStorage.getItem('aydaKey')||aydaSession.read()||viewerSession.read();
   if(previous)login(previous);
