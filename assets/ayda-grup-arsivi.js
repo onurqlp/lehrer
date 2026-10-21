@@ -230,7 +230,7 @@
   addBlock('İncelenmesi önerilen konular',issues,'warning');
   add(root,'p','archive-context','Bu bölüm otomatik sayısal kontrol listesidir. Öğrencilerin başarısı ya da öğretmenin niteliği hakkında kesin yargı değildir.');
   const notes=[
-   'Akademik veri başlangıcı: 20.10.2026. Önceki ders kayıtları bu API çıktısına dahil değildir.',
+   'Akademik veri başlangıcı: 21.10.2026. Önceki ders kayıtları bu API çıktısına dahil değildir.',
    'Grup kaydı ve ders raporları Google Sheets üzerinde tutuluyor; bu sayfa verileri yeniden derliyor, bağımsız bir sunucu arşivi yazmıyor.',
    'Yoklama/ödev ayrıntıları yalnızca aktif öğrenci kayıtları için ve kişi başına son 5 tarihli kontrolle sınırlı; eski tam tarihçe API’de mevcut değil.',
    'Ders ödevleri en fazla 400; teslim tarihli ödev görevleri en fazla 180; eksik kayıtlar en fazla 120 kayıt olarak dönebiliyor.',
@@ -286,7 +286,7 @@
  }
  function createPayload(){
   const g=current();return {
-   archiveFormat:'AYDA_GRUP_ARSIVI_V1',groupId:g.id,generatedAt:new Date().toISOString(),periodStart:'2026-10-20',
+   archiveFormat:'AYDA_GRUP_ARSIVI_V1',groupId:g.id,generatedAt:new Date().toISOString(),periodStart:'2026-10-21',
    disclaimer:'Google API sinirlamalari ve kesilmis listeler mevcut olabilir; bu dosya sunucu tarafinda kaydedilmis arsiv degildir.',
    scope:state.overview.user.role,group:g,teacher:{id:g.teacherId,name:teacher(g.teacherId)},
    activeSchedule:array(state.overview.schedule).filter(x=>x.groupId===g.id),
