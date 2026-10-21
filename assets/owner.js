@@ -268,7 +268,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   });
  }
  function groupLatest(id){
-  return (overview.history||[]).filter(r=>r.groupId===id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]||null;
+  return (overview.history||[]).filter(r=>r.groupId===id&&String(r.date||'')>='2026-10-21').sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]||null;
  }
  function groupProgram(id){return (overview.schedule||[]).filter(r=>r.groupId===id);}
  function groupProgramComplete(g){
