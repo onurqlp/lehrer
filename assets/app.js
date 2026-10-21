@@ -611,4 +611,6 @@ window.AYDA_ACTIVITY?.bindRefresh(async()=>{
  window.dispatchEvent(new Event('ayda:admin-data-updated'));
  await window.AYDA_ATTENDANCE?.refreshRoster?.();
 });
-const qs=new URLSearchParams(location.search),fromLink=qs.get('key')||'';if(fromLink){history.replaceState(null,'',location.pathname);login(fromLink);}else{const previous=sessionStorage.getItem('aydaKey')||aydaSession.read();if(previous)login(previous);}
+// Özel bağlantı ile giriş yok; yalnızca daha önce doğrulanmış tarayıcı oturumu açılabilir.
+const previous=sessionStorage.getItem('aydaKey')||aydaSession.read();
+if(previous)login(previous);
