@@ -122,3 +122,15 @@ test('teacher archive skips detailed student tracking; manager keeps full archiv
  assert.match(backend,/if\(user\.role!=='admin'\)throw Error\('Öğrenci gözlemi yalnızca yönetici/);
  assert.match(backend,/function aydaStudentRoster_\(user\)/);
 });
+
+test('removeStudent can safely create a missing DURUM column without deleting rows',()=>{
+ const pupils=new FakeSheet(['OGRENCI_ID','AD_SOYAD','GRUP_ID'],[['O003','Öğrenci C','G003']]);
+ const groups=new FakeSheet(['ID','Öğrenci'],[['G003',1]]);
+ const ctx=fixture({OGRENCILER:pupils,GRUPLAR:groups});
+ const out=ctx.aydaAdminStudentRemove_({role:'admin'},{id:'O003'});
+ assert.equal(out.removed,true);
+ assert.equal(pupils.rows[0][3],'DURUM');
+ assert.equal(pupils.rows[1][3],'Pasif');
+ assert.equal(pupils.rows[1][0],'O003');
+ assert.equal(groups.rows[1][1],0);
+});
