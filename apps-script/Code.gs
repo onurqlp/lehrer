@@ -217,7 +217,7 @@ function aydaAdminSetGroup_(user,p){
  const lock=LockService.getScriptLock();lock.waitLock(20000);
  try{const sh=aydaSheet_('GRUPLAR'),rows=sh.getDataRange().getDisplayValues(),h=rows[0],ix=rows.findIndex((r,i)=>i>0&&r[h.indexOf('ID')]===id);if(ix<1)throw Error('Grup bulunamadı.');const total=Number(rows[ix][h.indexOf('Toplam Ünite')])||24;if(completed>total)throw Error('Tamamlanan ünite toplamı aşamaz.');sh.getRange(ix+1,h.indexOf('Son Tamamlanan Ünite')+1).setValue(completed);sh.getRange(ix+1,h.indexOf('Öğrenci')+1).setValue(students);if(wantsWhatsapp){const wc=h.indexOf('WhatsApp');if(wc<0)throw Error('GRUPLAR tablosunda WhatsApp sütunu bulunamadı.');sh.getRange(ix+1,wc+1).setValue(whatsapp);}return {id,completed,students};}finally{lock.releaseLock();}
 }
-function aydaOverview_(user){const groups=aydaGroups_(user),schedule=aydaSchedule_(groups),history=aydaHistory_(user,groups),today=aydaToday_(),day=aydaWeekday_(today);return {user,groups,schedule,history,privateHistory:aydaPrivateHistory_(user),today,todayLessons:schedule.filter(p=>{const g=groups.find(x=>x.id===p.groupId);return p.day===day&&g&&(!g.start||g.start<=today)&&(!g.end||g.end>=today);}),accounts:user.role==='admin'?aydaRead_('KULLANICILAR').filter(x=>x['Rol']==='Öğretmen').map(x=>({id:x['Kullanıcı ID'],name:x['Kullanıcı Adı'],status:x['Durum'],teacherId:x['Öğretmen ID']})):[],teachers:aydaIsMonitor_(user)?aydaTeachers_():[],vaultStatus:user.role==='admin'?aydaVaultStatus_(user):[]};}
+function aydaOverview_(user){const groups=aydaGroups_(user),schedule=aydaSchedule_(groups),history=aydaHistory_(user,groups),today=aydaToday_(),day=aydaWeekday_(today);return {user,groups,schedule,history,privateHistory:aydaPrivateHistory_(user),today,todayLessons:schedule.filter(p=>{const g=groups.find(x=>x.id===p.groupId);return p.day===day&&g&&g.status==='Aktif'&&today>=AYDA_TRACKING_START;}),accounts:user.role==='admin'?aydaRead_('KULLANICILAR').filter(x=>x['Rol']==='Öğretmen').map(x=>({id:x['Kullanıcı ID'],name:x['Kullanıcı Adı'],status:x['Durum'],teacherId:x['Öğretmen ID']})):[],teachers:aydaIsMonitor_(user)?aydaTeachers_():[],vaultStatus:user.role==='admin'?aydaVaultStatus_(user):[]};}
 function aydaSave_(user,p){
   if(!p||typeof p!=='object')throw Error('Rapor bilgileri eksik.');
   const groupId=String(p.groupId||'').trim(),date=String(p.date||'').trim(),topic=String(p.topic||'').trim(),note=String(p.note||'').trim(),unit=Number(p.unit),completed=Number(p.completed),actual=String(p.actual||'').trim(),status=String(p.status||'İşlendi');
@@ -797,7 +797,7 @@ function aydaReminders_(user){
   for(const item of schedules){
    if(item.day!==day||!byId.has(item.groupId))continue;
    const group=byId.get(item.groupId);
-   if(date<AYDA_TRACKING_START||(group.start&&date<group.start)||(group.end&&date>group.end))continue;
+   if(date<AYDA_TRACKING_START)continue;
    const end=String(item.end||'').trim();
    if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(end))continue;
    const finish=new Date(date+'T'+end+':00+03:00').getTime();
@@ -1051,7 +1051,7 @@ function aydaTeacherMonthly_(user,p){
    const d=new Date(Date.UTC(monthDate.getUTCFullYear(),monthDate.getUTCMonth(),day));
    if(weekday[d.getUTCDay()]!==item.day)continue;
    const date=d.toISOString().slice(0,10);
-   if(date<AYDA_TRACKING_START||(g.start&&date<g.start)||(g.end&&date>g.end))continue;
+   if(date<AYDA_TRACKING_START)continue;
    const key=g.id+'|'+date+'|'+item.start;if(seen.has(key))continue;seen.add(key);
    plannedByGroup.set(g.id,(plannedByGroup.get(g.id)||0)+1);
   }
