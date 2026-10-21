@@ -69,8 +69,20 @@
  $('teacherTrackingRefresh').addEventListener('click',load);
  $('teacherTrackingSearch').addEventListener('input',render);
  for(const id of ['teacherTrackingGroup','teacherTrackingRisk'])$(id).addEventListener('change',render);
- window.addEventListener('ayda:login',load);
- window.addEventListener('ayda:saved',load);
- window.addEventListener('ayda:logout',()=>{request++;info=null;root.classList.add('hidden');});
- if(typeof data!=='undefined'&&data?.user?.role==='teacher')load();
+ // Do not request student details until the dedicated student screen is visited.
+ let dirty=true,lastFetch=0;
+ function openStudents(){
+  if(typeof data==='undefined'||data?.user?.role!=='teacher')return;
+  if(document.body.dataset.aydaTeacherView!=='students')return;
+  if(dirty||Date.now()-lastFetch>90000){
+   dirty=false;lastFetch=Date.now();load();
+  }
+ }
+ window.addEventListener('ayda:teacher-page-open',event=>{
+  if(event.detail?.page==='students')openStudents();
+ });
+ window.addEventListener('ayda:login',()=>{dirty=true;openStudents();});
+ window.addEventListener('ayda:saved',()=>{dirty=true;openStudents();});
+ window.addEventListener('ayda:logout',()=>{request++;info=null;dirty=true;lastFetch=0;root.classList.add('hidden');});
+ if(typeof data!=='undefined'&&data?.user?.role==='teacher')openStudents();
 })();
