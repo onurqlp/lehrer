@@ -86,6 +86,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   tab=name;
   for(const p of document.querySelectorAll('.owner-panel'))p.hidden=p.id!=='owner-'+name;
   for(const b of $('ownerNav').querySelectorAll('button[data-tab]')){b.classList.toggle('active',b.dataset.tab===name);b.setAttribute('aria-current',b.dataset.tab===name?'page':'false');}
+  if(name==='messages'&&token)window.dispatchEvent(new Event('ayda:messages-open'));
   try{sessionStorage.setItem('aydaOwnerTab',name);}catch(_){}
  }
  async function login(key){
