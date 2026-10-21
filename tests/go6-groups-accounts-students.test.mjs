@@ -113,3 +113,12 @@ test('Google API must be redeployed before new admin controls can send writes',(
  for(const file of ['assets/app.js','assets/owner.js','assets/ayda-teacher-focus.js','assets/ayda-experience.js'])
   assert.doesNotThrow(()=>new Function(read(file)),file);
 });
+
+test('teacher archive skips detailed student tracking; manager keeps full archive data',()=>{
+ const archive=read('assets/ayda-grup-arsivi.js');
+ assert.match(archive,/over\.user\.role==='teacher'\?\['lessonHomework','homeworkTasks','reminders'\]/);
+ assert.match(archive,/studentTab\.hidden=over\.user\.role==='teacher'/);
+ assert.match(backend,/if\(!aydaIsMonitor_\(user\)\)throw Error\('Ayrıntılı öğrenci takibi yönetici hesabına özeldir/);
+ assert.match(backend,/if\(user\.role!=='admin'\)throw Error\('Öğrenci gözlemi yalnızca yönetici/);
+ assert.match(backend,/function aydaStudentRoster_\(user\)/);
+});
