@@ -12,8 +12,9 @@ test('ders süreleri mevcut 1–6 tam saat kuralına uyar',()=>{
 
 test('yönetici önizlemesi için analizler paralel yüklenir',()=>{
  const owner=load('assets/owner.js');
- assert.match(owner,/Promise\.allSettled\(\[\s*api\('trackingSummary',token\),api\('reminders',token\)/);
- assert.match(owner,/loadTracking\(\)\.then\(/);
+ assert.match(owner,/const homeworkRead=api\('lessonHomework',requestedKey\)\.then\(/);
+ assert.match(owner,/Promise\.allSettled\(\[\s*api\('trackingSummary',requestedKey\),api\('reminders',requestedKey\)/);
+ assert.match(owner,/loadTracking\(\)\.catch\(/);
 });
 
 test('hesaplar URL ile şifre paylaşılmadan geçiş yapar',()=>{
