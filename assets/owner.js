@@ -109,8 +109,8 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    // Genel bakış hazır olur olmaz göster; akademik ayrıntılar paralel yüklenir.
    renderAll();
    activate(['messages','alerts','attendance','students','groups','health','lessons','teachers','schedule','accounts'].includes(location.hash.slice(1))?location.hash.slice(1):(sessionStorage.getItem('aydaOwnerTab')||'overview'));
-   await loadTracking();
    window.dispatchEvent(new Event('ayda:owner-ready'));
+   loadTracking().then(()=>window.dispatchEvent(new Event('ayda:owner-ready'))).catch(e=>errorMessage('Takip yüklenemedi: '+e.message));
 
   }catch(e){if(viewerSession.read()===provided)viewerSession.clear();if(aydaSession.read()===provided)aydaSession.clear();token='';overview=null;document.body.classList.remove('ayda-viewer-mode');$('ownerLogin').hidden=embeddedHealth;$('ownerApp').hidden=true;if(embeddedHealth)window.parent.postMessage({aydaHealthEmbed:1,action:'auth-error'},location.origin);$('ownerLogout').hidden=true;$('ownerLoginError').textContent=e.message;}
   finally{setLoading(false);}
@@ -119,14 +119,14 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   // Birbirinden bağımsız salt-okunur istekleri art arda değil, aynı anda yükle.
   const results=await Promise.allSettled([
    api('trackingSummary',token),api('reminders',token),
-   api('contactDirectory',token),api('lessonHomework',token)
+   api('lessonHomework',token)
   ]);
   const t=results[0];
   tracking=t.status==='fulfilled'&&t.value?.scope==='all'?t.value:null;
   reminders=results[1].status==='fulfilled'?results[1].value:null;
   if(reminders){const items=(reminders.items||[]).filter(x=>String(x.date||'')>='2026-10-20');reminders={...reminders,items,total:items.length,reports:items.filter(x=>x.type==='report').length,attendance:items.filter(x=>x.type==='attendance').length};}
-  contactDirectory=results[2].status==='fulfilled'?results[2].value:null;
-  lessonHomework=results[3].status==='fulfilled'?results[3].value:null;
+  contactDirectory={teachers:(overview?.teachers||[]).filter(t=>t.phone).map(t=>({id:t.id,teacherId:t.id,phone:t.phone,status:t.status})),students:[]};
+  lessonHomework=results[2].status==='fulfilled'?results[2].value:null;
   if(!tracking)errorMessage('Öğrenci takip verileri henüz yüklenemedi. Diğer bilgiler kullanılabilir.');
   else errorMessage('');
   renderAll();
@@ -544,8 +544,8 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    warn((row.type==='attendance'?'Eksik yoklama':'Eksik ders raporu')+' · '+(row.group||'Sınıf'),fmt(row.date)+' · '+tName(row.teacherId),[
     {label:'Öğretmene hatırlat →',compose:{teacherId:row.teacherId,groupId:row.groupId,date:row.date,type:row.type}}
    ]);
-  if(contactDirectory?.missingStudentPhones)
-   warn('Öğrenci iletişim bilgileri eksik',contactDirectory.missingStudentPhones+' öğrencinin kayıtlı veya geçerli telefonu yok.',[panel('Telefonları düzenle →','messages','aydaMsgStudentSearch')]);
+  for(const t of teachers.filter(t=>t.status==='Aktif'&&!t.phone))
+    warn(t.name+' · Öğretmen telefonu eksik','WhatsApp uyarısı için numara ekleyin.',[panel('Öğretmeni düzenle →','teachers','ownerTeacherCards')]);
   if(!reminders)
    warn('Eksik rapor kontrolü kullanılamıyor','Google Apps Script bağlantısını ve güncel dağıtımı kontrol edin.',[{label:'Verileri yenile →',refresh:true}]);
   summary.append(kpi('Aktif sınıf',groups.filter(g=>g.status==='Aktif').length),kpi('Aktif öğretmen',teachers.filter(t=>t.status==='Aktif').length),kpi('Kontrol gerektiren',issues.length),kpi('Eksik kayıt',reminders?.items?.length??'—'));
