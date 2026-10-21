@@ -41,7 +41,7 @@ function jsonpRequest(api,action,params){
   script.src=url.toString();document.head.append(script);
  });
 }
-async function jsonp(action,params={}){
+async function aydaJsonpNetwork(action,params={}){
  const activity=window.AYDA_ACTIVITY?.start(action);
  let activitySuccess=false;
  try{
@@ -67,6 +67,21 @@ async function jsonp(action,params={}){
  if(last?.transport&&!readOnly)last.unknownCommit=true;
  throw last||Error('API bağlantısı kurulamadı.');
  }finally{window.AYDA_ACTIVITY?.finish(activity,activitySuccess);}
+}
+/* GO1: Concurrent identical read requests share ONE network response.
+   No result caching and NO write deduplication: records always receive fresh confirmation. */
+const aydaReadFlights=new Map();
+const aydaReadActions=new Set(['ping','overview','studentRoster','trackingSummary','vaultExport','adminStudents','reminders','studentNotes','teacherMonthly','makeupList','teacherFeedback','feedbackInbox','contactDirectory','homeworkTasks','lessonHomework']);
+function jsonp(action,params={}){
+ if(!aydaReadActions.has(action))return aydaJsonpNetwork(action,params);
+ const identity=authKey+'\u0000'+action+'\u0000'+JSON.stringify(params);
+ const existing=aydaReadFlights.get(identity);
+ if(existing)return existing;
+ const task=aydaJsonpNetwork(action,params);
+ aydaReadFlights.set(identity,task);
+ const cleanup=()=>{if(aydaReadFlights.get(identity)===task)aydaReadFlights.delete(identity);};
+ task.then(cleanup,cleanup);
+ return task;
 }
 function utf8Base64Url(s){const bytes=new TextEncoder().encode(s);let binary='';for(const b of bytes)binary+=String.fromCharCode(b);return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 async function login(key){authKey=String(key||'');$('loginBtn').disabled=true;clear('loginMessage');try{const result=await jsonp('overview');if(result?.user?.role==='viewer')throw Error('İzleme hesabı yalnızca yonetici.html Akademik Kontrol sayfasında kullanılabilir.');data=result;sessionStorage.setItem('aydaKey',authKey);if(result?.user?.role==='admin')aydaSession.save(authKey);$('login').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');render();window.dispatchEvent(new Event('ayda:login'));}catch(e){authKey='';message('loginMessage',e.message);}finally{$('loginBtn').disabled=false;}}

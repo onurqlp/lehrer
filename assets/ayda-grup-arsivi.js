@@ -8,9 +8,11 @@
  const fmt=x=>/^\d{4}-\d{2}-\d{2}$/.test(String(x||''))?x.slice(8,10)+'.'+x.slice(5,7)+'.'+x.slice(0,4):(String(x||'')||'—');
  const hours=x=>{if(typeof x==='number')return x;const m=/^(\d{1,2}):(\d{2})/.exec(String(x||''));return m?Number(m[1])+Number(m[2])/60:0;};
  const slug=s=>String(s||'grup').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9_-]/g,'-').slice(0,48);
- const state={key:'',overview:null,tracking:null,homeworks:null,tasks:null,reminders:null,surveys:null,errors:[],id:'',busy:false,loadedAt:'',preloaded:false};
+ const state={key:'',overview:null,tracking:null,homeworks:null,tasks:null,reminders:null,surveys:null,errors:[],id:'',busy:false,loadedAt:'',preloaded:false,detailsReady:false};
  const sourceNames={trackingSummary:'Öğrenci takibi',lessonHomework:'Ders ödevleri',homeworkTasks:'Ödev görevleri',reminders:'Eksik ders kontrolü',surveySummary:'Memnuniyet anketleri'};
  let serial=0;
+ let activeTab='overview',printPrepared=false;
+ const validTabs=new Set(['overview','lessons','students','homework','evaluation']);
  function sessionKeys(){
   const keys=[];
   const addKey=s=>{if(typeof s==='string'&&s.length>0&&s.length<=150&&!keys.includes(s))keys.push(s);};
@@ -54,12 +56,15 @@
   const b=add(a,'div');add(b,'strong','',title);add(b,'p','',detail);
   const link=add(a,'a','','AYDA giriş sayfasına git →');link.href='./index.html';
  }
- function tab(name){
+ function tab(name,paint=true){
+  if(!validTabs.has(name))return;
+  activeTab=name;
   for(const btn of document.querySelectorAll('[data-archive-tab]')){
    btn.classList.toggle('active',btn.dataset.archiveTab===name);
    if(btn.dataset.archiveTab===name)btn.setAttribute('aria-current','page');else btn.removeAttribute('aria-current');
   }
   for(const p of document.querySelectorAll('.archive-panel'))p.hidden=p.id!=='archivePanel-'+name;
+  if(paint&&current())paintTab(name);
  }
  const current=()=>array(state.overview?.groups).find(g=>g.id===state.id)||null;
  const groupLessons=()=>array(state.overview?.history).filter(r=>r.groupId===state.id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
@@ -248,20 +253,36 @@
   const tbody=add(table,'tbody');
   for(const x of rows){const tr=add(tbody,'tr');for(const field of [x.date,x.teacher,x.score,x.recommend,x.improve||x.additional])add(tr,'td','',field||'—');}
  }
+ // Large lesson/student tables are constructed only for the visible archive tab.
+ function paintTab(name){
+  if(!current())return;
+  if(name==='overview')renderOverview();
+  else if(name==='lessons')renderLessons();
+  else if(name==='students')renderStudents();
+  else if(name==='homework')renderHomework();
+  else if(name==='evaluation')renderEvaluation();
+ }
+ function preparePrint(){
+  if(!current()||printPrepared)return;
+  for(const name of validTabs)paintTab(name);
+  printPrepared=true;
+ }
  function render(){
   const g=current();if(!g)return;
+  printPrepared=false;
   $('archiveGroupName').textContent=g.name||g.id;
   $('archiveGroupTag').textContent=(g.level||'Grup')+' · '+g.id;
   $('archiveGroupMeta').textContent=teacher(g.teacherId)+' · Başlangıç '+fmt(g.start)+' · '+(g.students||'—')+' kayıtlı öğrenci';
   $('archiveGroupBadge').textContent=g.status||'—';
   $('archiveGroupBadge').dataset.status=g.status==='Aktif'?'active':'archive';
   $('archiveUpdated').textContent=state.loadedAt?'Son okuma: '+state.loadedAt:'';
-  $('archiveExport').disabled=false;$('archiveCsv').disabled=false;$('archivePrint').disabled=false;
+  // Never offer a partial PDF / JSON / CSV while secondary data is still loading.
+  $('archiveExport').disabled=!state.detailsReady;$('archiveCsv').disabled=!state.detailsReady;$('archivePrint').disabled=!state.detailsReady;
   $('archiveWarnings').replaceChildren();
   if(g.status!=='Aktif')warning('Bu grup arşiv durumunda. Ders kayıtları gösteriliyor; tamamlanmış grupların öğrenci/yoklama/ödev geçmişini mevcut API eksiksiz getirmiyor.','amber');
   if(state.errors.length)warning('Bazı veri kaynaklarına ulaşılamadı: '+state.errors.join(' · '),'amber');
   if(state.homeworks&&Number(state.homeworks.total)>array(state.homeworks.items).length)warning('Ders ödevi listesi API sınırı nedeniyle eksik olabilir.','amber');
-  renderKpis();renderOverview();renderLessons();renderStudents();renderHomework();renderEvaluation();
+  renderKpis();paintTab(activeTab);
  }
  function createPayload(){
   const g=current();return {
@@ -294,24 +315,26 @@
  }
  async function refresh(){
   if(state.busy||!state.key)return;
-  state.busy=true;status('Veriler yenileniyor…');$('archiveRefresh').disabled=true;
+  state.busy=true;state.detailsReady=false;status('Veriler yenileniyor…');$('archiveRefresh').disabled=true;
   state.errors=[];
   try{
    const over=state.preloaded?state.overview:await request('overview',state.key);state.preloaded=false;
    if(!['admin','viewer','teacher'].includes(over?.user?.role))throw Error('Akademik arşiv için yetkili kullanıcı gerekir.');
    state.overview=over;
-   const calls=['trackingSummary','lessonHomework','homeworkTasks','reminders'];
-   if(over.user.role!=='teacher')calls.push('surveySummary');
-   const results=await Promise.allSettled(calls.map(x=>request(x,state.key)));
-   calls.forEach((name,i)=>{const key={trackingSummary:'tracking',lessonHomework:'homeworks',homeworkTasks:'tasks',reminders:'reminders',surveySummary:'surveys'}[name];const r=results[i];state[key]=r.status==='fulfilled'?r.value:null;if(r.status==='rejected')state.errors.push((sourceNames[name]||name)+': '+String(r.reason?.message||'hata'));});
-   if(over.user.role==='teacher')state.surveys=null;
+   // Group identity and recent lessons are ready before detail requests finish.
    const groups=array(over.groups).slice().sort((a,b)=>(a.status==='Aktif'?0:1)-(b.status==='Aktif'?0:1)||String(a.name).localeCompare(String(b.name),'tr'));
    if(!groups.length)throw Error('Bu hesap için görüntülenebilir grup bulunamadı.');
    const preferred=state.id||new URLSearchParams(location.search).get('group')||'';
    const select=$('archiveGroup');select.replaceChildren();
    for(const g of groups)select.add(new Option(g.name+' · '+g.level+' · '+g.status,g.id));
    state.id=groups.some(g=>g.id===preferred)?preferred:groups[0].id;select.value=state.id;
-   state.loadedAt=new Date().toLocaleString('tr-TR');render();
+   state.tracking=null;state.homeworks=null;state.tasks=null;state.reminders=null;state.surveys=null;
+   state.loadedAt='';render();status('Grup özeti hazır · ayrıntılar yükleniyor…');
+   const calls=['trackingSummary','lessonHomework','homeworkTasks','reminders'];
+   if(over.user.role!=='teacher')calls.push('surveySummary');
+   const results=await Promise.allSettled(calls.map(x=>request(x,state.key)));
+   calls.forEach((name,i)=>{const key={trackingSummary:'tracking',lessonHomework:'homeworks',homeworkTasks:'tasks',reminders:'reminders',surveySummary:'surveys'}[name];const r=results[i];state[key]=r.status==='fulfilled'?r.value:null;if(r.status==='rejected')state.errors.push((sourceNames[name]||name)+': '+String(r.reason?.message||'hata'));});
+   state.detailsReady=true;state.loadedAt=new Date().toLocaleString('tr-TR');render();
    status(state.errors.length?'Yüklendi · '+state.errors.length+' kaynak eksik':'Veriler güncel');
   }catch(e){status('Veri alınamadı');warning('Arşiv güncellenemedi: '+String(e.message||e),'amber');if(!state.overview)showAuth('Grup arşivi açılamadı.',String(e.message||e));}
   finally{state.busy=false;$('archiveRefresh').disabled=false;}
@@ -328,12 +351,14 @@
  }
  $('archiveGroup').addEventListener('change',e=>{
   state.id=e.target.value;const u=new URL(location.href);u.searchParams.set('group',state.id);history.replaceState(null,'',u.pathname+u.search);
-  render();tab('overview');
+  tab('overview',false);render();
  });
  $('archiveRefresh').addEventListener('click',refresh);
  $('archiveExport').addEventListener('click',exportJson);
  $('archiveCsv').addEventListener('click',exportCsv);
- $('archivePrint').addEventListener('click',()=>window.print());
+ // @media print displays all panels; prepare unopened panels before printing.
+ $('archivePrint').addEventListener('click',()=>{preparePrint();window.print();});
+ window.addEventListener('beforeprint',preparePrint);
  for(const b of document.querySelectorAll('[data-archive-tab]'))b.addEventListener('click',()=>tab(b.dataset.archiveTab));
  for(const b of document.querySelectorAll('[data-archive-jump]'))b.addEventListener('click',()=>tab(b.dataset.archiveJump));
  start();

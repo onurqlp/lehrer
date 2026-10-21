@@ -296,7 +296,27 @@
  }
  window.addEventListener('hashchange',openFeedbackWhenLinked);
 
- window.addEventListener('ayda:login',()=>{if(!tr())return;monthInput.value=monthOf();monthWrap.classList.remove('hidden');feedback.classList.remove('hidden');suggestDuration();groupOptions();loadMonth();loadMakeup();if(homeworkTasks.open)loadTasks();openFeedbackWhenLinked();});
- window.addEventListener('ayda:saved',()=>{if(tr()){loadMonth();loadMakeup();if(homeworkTasks.open)loadTasks();}});
- window.addEventListener('ayda:logout',()=>{taskRequest++;taskResult=null;homeworkTasks.open=false;taskList.replaceChildren();assignmentForm.reset();request++;monthWrap.classList.add('hidden');makeup.classList.add('hidden');feedback.classList.add('hidden');feedback.open=false;replies.replaceChildren();makeupBody.replaceChildren();monthNumbers.replaceChildren();text.value='';});
+ /* The makeup records are useful on the lesson page, but not needed for the home dashboard. */
+ let makeupLoadedThisSession=false;
+ window.addEventListener('ayda:teacher-page-open',event=>{
+  if(tr()&&event.detail?.page==='daily'&&!makeupLoadedThisSession){
+   makeupLoadedThisSession=true;loadMakeup();
+  }
+ });
+ window.addEventListener('ayda:login',()=>{
+  if(!tr())return;
+  makeupLoadedThisSession=false;
+  monthInput.value=monthOf();
+  monthWrap.classList.remove('hidden');feedback.classList.remove('hidden');
+  suggestDuration();groupOptions();loadMonth();
+  if(homeworkTasks.open)loadTasks();
+  openFeedbackWhenLinked();
+ });
+ window.addEventListener('ayda:saved',()=>{
+  if(!tr())return;
+  loadMonth();makeupLoadedThisSession=false;
+  if(document.body.dataset.aydaTeacherView==='daily'){makeupLoadedThisSession=true;loadMakeup();}
+  if(homeworkTasks.open)loadTasks();
+ });
+ window.addEventListener('ayda:logout',()=>{makeupLoadedThisSession=false;taskRequest++;taskResult=null;homeworkTasks.open=false;taskList.replaceChildren();assignmentForm.reset();request++;monthWrap.classList.add('hidden');makeup.classList.add('hidden');feedback.classList.add('hidden');feedback.open=false;replies.replaceChildren();makeupBody.replaceChildren();monthNumbers.replaceChildren();text.value='';});
 })();
