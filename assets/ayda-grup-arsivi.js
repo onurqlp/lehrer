@@ -8,7 +8,7 @@
  const fmt=x=>/^\d{4}-\d{2}-\d{2}$/.test(String(x||''))?x.slice(8,10)+'.'+x.slice(5,7)+'.'+x.slice(0,4):(String(x||'')||'—');
  const hours=x=>{if(typeof x==='number')return x;const m=/^(\d{1,2}):(\d{2})/.exec(String(x||''));return m?Number(m[1])+Number(m[2])/60:0;};
  const slug=s=>String(s||'grup').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9_-]/g,'-').slice(0,48);
- const state={key:'',overview:null,tracking:null,homeworks:null,tasks:null,reminders:null,surveys:null,errors:[],id:'',busy:false,loadedAt:'',preloaded:false};
+ const state={key:'',overview:null,tracking:null,homeworks:null,tasks:null,reminders:null,surveys:null,errors:[],id:'',busy:false,loadedAt:'',preloaded:false,detailsReady:false};
  const sourceNames={trackingSummary:'Öğrenci takibi',lessonHomework:'Ders ödevleri',homeworkTasks:'Ödev görevleri',reminders:'Eksik ders kontrolü',surveySummary:'Memnuniyet anketleri'};
  let serial=0;
  let activeTab='overview',printPrepared=false;
@@ -276,7 +276,8 @@
   $('archiveGroupBadge').textContent=g.status||'—';
   $('archiveGroupBadge').dataset.status=g.status==='Aktif'?'active':'archive';
   $('archiveUpdated').textContent=state.loadedAt?'Son okuma: '+state.loadedAt:'';
-  $('archiveExport').disabled=false;$('archiveCsv').disabled=false;$('archivePrint').disabled=false;
+  // Never offer a partial PDF / JSON / CSV while secondary data is still loading.
+  $('archiveExport').disabled=!state.detailsReady;$('archiveCsv').disabled=!state.detailsReady;$('archivePrint').disabled=!state.detailsReady;
   $('archiveWarnings').replaceChildren();
   if(g.status!=='Aktif')warning('Bu grup arşiv durumunda. Ders kayıtları gösteriliyor; tamamlanmış grupların öğrenci/yoklama/ödev geçmişini mevcut API eksiksiz getirmiyor.','amber');
   if(state.errors.length)warning('Bazı veri kaynaklarına ulaşılamadı: '+state.errors.join(' · '),'amber');
@@ -314,7 +315,7 @@
  }
  async function refresh(){
   if(state.busy||!state.key)return;
-  state.busy=true;status('Veriler yenileniyor…');$('archiveRefresh').disabled=true;
+  state.busy=true;state.detailsReady=false;status('Veriler yenileniyor…');$('archiveRefresh').disabled=true;
   state.errors=[];
   try{
    const over=state.preloaded?state.overview:await request('overview',state.key);state.preloaded=false;
@@ -333,7 +334,7 @@
    if(over.user.role!=='teacher')calls.push('surveySummary');
    const results=await Promise.allSettled(calls.map(x=>request(x,state.key)));
    calls.forEach((name,i)=>{const key={trackingSummary:'tracking',lessonHomework:'homeworks',homeworkTasks:'tasks',reminders:'reminders',surveySummary:'surveys'}[name];const r=results[i];state[key]=r.status==='fulfilled'?r.value:null;if(r.status==='rejected')state.errors.push((sourceNames[name]||name)+': '+String(r.reason?.message||'hata'));});
-   state.loadedAt=new Date().toLocaleString('tr-TR');render();
+   state.detailsReady=true;state.loadedAt=new Date().toLocaleString('tr-TR');render();
    status(state.errors.length?'Yüklendi · '+state.errors.length+' kaynak eksik':'Veriler güncel');
   }catch(e){status('Veri alınamadı');warning('Arşiv güncellenemedi: '+String(e.message||e),'amber');if(!state.overview)showAuth('Grup arşivi açılamadı.',String(e.message||e));}
   finally{state.busy=false;$('archiveRefresh').disabled=false;}
