@@ -35,7 +35,7 @@ function base(sheets){
     const s=ctx.aydaSheet_(name);s.appendRow(s.rows[0].map(k=>Object.hasOwn(obj,k)?obj[k]:''));
   };
   ctx.aydaNextId_ = ()=> 'G-TEST';
-  ctx.aydaToday_ = ()=> '2026-10-19';
+  ctx.aydaToday_ = ()=> '2026-10-20';
   ctx.aydaValidateDate_ = d=> /^\d{4}-\d{2}-\d{2}$/.test(d);
   ctx.aydaDate_ = d=>d;
   ctx.aydaWeekday_ = ()=> 'Pazartesi';
@@ -54,7 +54,7 @@ test('programın ikinci gününde hata olursa grup ve program satırları geri a
     if(name==='HAFTALIK_PROGRAM'&&obj['Gün']==='Çarşamba')throw Error('Injected second-schedule failure');
     original(name,obj);
   };
-  const input={name:'A2 Akşam',level:'A2',teacherId:'T1',start:'2026-10-19',students:12,total:24,completed:0,days:['Pazartesi','Çarşamba'],time:'20:00',end:'21:30'};
+  const input={name:'A2 Akşam',level:'A2',teacherId:'T1',start:'2026-10-20',students:12,total:24,completed:0,days:['Pazartesi','Çarşamba'],time:'20:00',end:'21:30'};
   assert.throws(()=>ctx.aydaAdminCreateGroup_({role:'admin'},input),/geri alındı/);
   assert.equal(groups.getLastRow(),1);
   assert.equal(plan.getLastRow(),1);
@@ -78,7 +78,7 @@ test('ders ve yoklama beraber yazılır; tekrar çağrı mükerrer kaydı engell
     }[k]??''))),
     homework:[]
   });
-  const input={groupId:'g',date:'2026-10-19',topic:'',note:'Bugün A2 çalışıldı',unit:1,completed:1,actual:'01:30',status:'İşlendi',attendance:[{studentId:'s1',status:'Geldi'}],homeworkEnabled:false,homeworkText:'Menschen A2 çalışması'};
+  const input={groupId:'g',date:'2026-10-20',topic:'',note:'Bugün A2 çalışıldı',unit:1,completed:1,actual:'02:00',status:'İşlendi',attendance:[{studentId:'s1',status:'Geldi'}],homeworkEnabled:false,homeworkText:'Menschen A2 çalışması'};
   const user={role:'teacher',id:'T1'};
   const first=ctx.aydaSave_(user,input);
   assert.equal(first.saved,true);
