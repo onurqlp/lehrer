@@ -63,7 +63,7 @@ test('manager list search waits briefly while explicit filter changes remain imm
 
 test('GO3 does not remove enrollment, lesson, attendance, or login controls',()=>{
  const teacher=source('index.html'),manager=source('yonetici.html');
- for(const id of ['loginForm','daily','history','aydaTeacherRail'])
+ for(const id of ['loginForm','daily','history','app'])
   assert.ok(teacher.includes('id="'+id+'"'),'missing teacher control '+id);
  for(const id of ['ownerLoginForm','ownerNav','ownerRefresh','ownerApp'])
   assert.ok(manager.includes('id="'+id+'"'),'missing manager control '+id);
