@@ -69,5 +69,6 @@ test('güncelleme UI koduyla sınırlı; yoklama ve kayıt yanıtları doğrulan
  assert.match(app,/unknownCommit=true/);
  assert.match(app,/const readOnly=\['ping','overview'/);
  const owner=source('assets/owner.js');
- assert.match(owner,/api\('trackingSummary',token\),api\('reminders',token\)/);
+ assert.match(owner,/api\('trackingSummary',requestedKey\),api\('reminders',requestedKey\)/);
+ assert.match(owner,/if\(!isCurrent\(\)\)return false/);
 });
