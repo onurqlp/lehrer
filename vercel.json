@@ -1,7 +1,6 @@
 {
   "functions": {
     "api/index.js": {
-      "includeFiles": "apps-script/Code.gs",
       "maxDuration": 60
     }
   }

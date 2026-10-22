@@ -1,11 +1,10 @@
 'use strict';
 
 const crypto = require('node:crypto');
-const fs = require('node:fs');
-const path = require('node:path');
 const vm = require('node:vm');
 const { Pool } = require('pg');
 const { createSpreadsheetShim } = require('./gas-compat.cjs');
+const gasSourceBase64 = require('./code-source.cjs');
 
 const pool = new Pool({
   connectionString: process.env.LEHRER_DB_POSTGRES_URL || process.env.LEHRER_DB_DATABASE_URL || process.env.LEHRER_DB_POSTGRES_URL_NON_POOLING || process.env.LEHRER_DB_DATABASE_URL_UNPOOLED,
@@ -13,11 +12,7 @@ const pool = new Pool({
   idleTimeoutMillis: 10000,
   connectionTimeoutMillis: 10000
 });
-let gasCode;
-function loadCode() {
-  if (!gasCode) gasCode = fs.readFileSync(path.join(__dirname, '..', 'apps-script', 'Code.gs'), 'utf8');
-  return gasCode;
-}
+const gasCode = Buffer.from(gasSourceBase64, 'base64').toString('utf8');
 
 async function ensureStorage() {
   if (!(process.env.LEHRER_DB_POSTGRES_URL || process.env.LEHRER_DB_DATABASE_URL || process.env.LEHRER_DB_POSTGRES_URL_NON_POOLING || process.env.LEHRER_DB_DATABASE_URL_UNPOOLED)) throw new Error('Beta veritabanı bağlantısı ayarlanmamış.');
@@ -124,7 +119,7 @@ module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
     res.end(result);
   } catch (error) {
-    console.error('[AYDA beta runtime]', error?.stack || `${error?.name || 'Error'}: ${String(error?.message || error || 'Unknown').slice(0, 240)}`);
+    console.error('[AYDA beta runtime]', error?.name || 'Error', String(error?.message || error || 'Unknown').slice(0, 240));
     const text = String(error?.message || error || 'Sunucu hatası').slice(0, 500);
     const callback = String(new URL(req.url, 'https://beta.invalid').searchParams.get('callback') || '');
     if (/^ayda_cb_[A-Za-z0-9_]{1,64}$/.test(callback)) {

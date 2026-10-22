@@ -54,6 +54,11 @@ test('beta API keeps the Apps Script JSONP contract on the synthetic Excel-shape
   assert.equal(body.data.teachers[0].name, 'Test Eğitmeni');
 });
 
+test('Vercel API bundles the original Apps Script source as executable text', () => {
+  const bundled = require('../api/code-source.cjs');
+  assert.equal(Buffer.from(bundled, 'base64').toString('utf8'), readFileSync(new URL('../apps-script/Code.gs', import.meta.url), 'utf8'));
+});
+
 test('beta backup actions create only an optional Neon snapshot', () => {
   const api = makeApi();
   const setup = JSON.parse(api('backupSetup').text.slice('ayda_cb_beta('.length, -2));
