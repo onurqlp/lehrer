@@ -22,8 +22,9 @@
  }
  function apiAt(address,action,key){
   return new Promise((resolve,reject)=>{
-   if(!/^https:\/\/script\.google\.com\/(?:macros\/s\/|a\/macros\/[^/]+\/s\/|a\/[^/]+\/macros\/s\/)/.test(address)){reject(Error('Google API adresi eksik.'));return;}
-   const cb='ayda_cb_'+Date.now()+'_'+(++seq),script=document.createElement('script'),url=new URL(address);
+   const url=new URL(address,location.origin);
+   if(url.origin!==location.origin||url.pathname!=='/api'){reject(Error('Beta API adresi geçersiz.'));return;}
+   const cb='ayda_cb_'+Date.now()+'_'+(++seq),script=document.createElement('script');
    let done=false;
    const finish=(err,val)=>{if(done)return;done=true;clearTimeout(timer);script.remove();delete window[cb];err?reject(err):resolve(val);};
    const timer=setTimeout(()=>{const e=Error('Google sunucusundan yanıt gelmedi.');e.transport=true;finish(e);},12000);

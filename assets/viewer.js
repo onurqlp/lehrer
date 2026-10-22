@@ -26,10 +26,11 @@ async function apiRetry(){
 }
 function api(address){
  return new Promise((resolve,reject)=>{
-  if(!/^https:\/\/script\.google\.com\/(?:macros\/s\/|a\/macros\/[^/]+\/s\/)/.test(address||'')){
-   reject(Error('API yapılandırması bulunamadı.'));return;
+  const url=new URL(address,location.origin);
+  if(url.origin!==location.origin||url.pathname!=='/api'){
+   reject(Error('Beta API yapılandırması bulunamadı.'));return;
   }
-  const cb='ayda_cb_'+Date.now()+'_'+(++seq),url=new URL(address),script=document.createElement('script');
+  const cb='ayda_cb_'+Date.now()+'_'+(++seq),script=document.createElement('script');
   let done=false;
   const finish=(err,value)=>{if(done)return;done=true;clearTimeout(timer);script.remove();delete window[cb];err?reject(err):resolve(value);};
   const timer=setTimeout(()=>finish(transportFailure('Sunucu zaman aşımı.')),15000);

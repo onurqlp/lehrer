@@ -57,8 +57,9 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
  };
  function apiRequest(url,action,key,params={}){
   return new Promise((resolve,reject)=>{
-   if(!/^https:\/\/script\.google\.com\/(?:a\/macros\/[^/]+\/s\/|a\/[^/]+\/macros\/s\/|macros\/s\/)/.test(url)){reject(Error('API adresi geçersiz.'));return;}
-   const cb='ayda_cb_'+Date.now()+'_'+(++requestIndex),script=document.createElement('script'),u=new URL(url);
+   const u=new URL(url,location.origin);
+   if(u.origin!==location.origin||u.pathname!=='/api'){reject(Error('Beta API adresi geçersiz.'));return;}
+   const cb='ayda_cb_'+Date.now()+'_'+(++requestIndex),script=document.createElement('script');
    let finished=false;
    const finish=(error,data)=>{if(finished)return;finished=true;clearTimeout(timer);delete window[cb];script.remove();error?reject(error):resolve(data);};
    const transport=msg=>{const e=Error(msg);e.transport=true;return e;};

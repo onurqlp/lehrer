@@ -36,7 +36,8 @@
     if(!value?.ok)return finish(Error(String(value?.error||action+' sunucu yanıtı başarısız')));
     finish(null,value.data);
    };
-   const url=new URL(window.AYDA_API_URL);
+   const url=new URL(window.AYDA_API_URL,location.origin);
+   if(url.origin!==location.origin||url.pathname!=='/api')return finish(Error('Beta API adresi geçersiz.'));
    url.searchParams.set('action',action);
    url.searchParams.set('key',key);
    url.searchParams.set('callback',callback);

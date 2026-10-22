@@ -23,10 +23,11 @@ function apiTransportError(detail){
 }
 function jsonpRequest(api,action,params){
  return new Promise((resolve,reject)=>{
-  if(!/^https:\/\/script\.google\.com\/(?:macros\/s\/|a\/macros\/[^/]+\/s\/|a\/[^/]+\/macros\/s\/)/.test(api)){
-   reject(Error('Apps Script API adresi ayarlanmamış.'));return;
+  const url=new URL(api,location.origin);
+  if(url.origin!==location.origin||url.pathname!=='/api'){
+   reject(Error('Beta API adresi geçersiz.'));return;
   }
-  const cb='ayda_cb_'+Date.now()+'_'+(++requestNo),url=new URL(api),script=document.createElement('script');
+  const cb='ayda_cb_'+Date.now()+'_'+(++requestNo),script=document.createElement('script');
   let settled=false;
   const finish=(err,result)=>{if(settled)return;settled=true;clearTimeout(timer);delete window[cb];script.remove();err?reject(err):resolve(result);};
   const timeoutMs=action==='save'?60000:action==='overview'?45000:

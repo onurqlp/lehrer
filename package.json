@@ -1,0 +1,27 @@
+{
+  "name": "ayda-lehrer-beta",
+  "version": "1.0.0",
+  "description": "- Yönetici hesabıyla **bir kez giriş** yaptıktan sonra aynı tarayıcı sekmesinde Öğretmen Paneli ↔ Yönetim Paneli arası yeni parola istemeden geçilir. Aynı oturum anahtarı kullanılır; yeni öğretmen anahtarı oluşturulmaz. - Yönetim panelindeki **Öğretmen hesabını incele** seçeneği, öğretmenlerin ayrıntı kartlarını yönetici yetkisiyle filtreler; öğretmen adına kayıt yapmaz. - Öğretmen ana sayfasında Yönetim kısayolu yalnızca yönetici girişiyle görüntülenir. - Yönetim sayfası genel bakışı hemen çizer, yoklama/hatırlatma/iletişim/ödev özetlerini paralel alır. - API bağlantısında ayarlı çalışan Google adresi ilk denenir; diğer adresler sadece fallback'tir. - Süre seçimleri 30 dakikalık adımlarda korunur; eski tam saat listesi yeni doğru seçeneklerin üzerine yazılmaz. - ÖNEMLİ: Bu değişiklik Google Apps Script dağıtımını otomatik yayınlamaz. V4.4 veritabanı yedekleme ve bütünlük API'si Google tarafında ayrıca etkinleştirilmelidir. - Herhangi bir kayıt temizliği, var olan Drive tablosu silme ya da öğretmen hesabı kimliğini devralma yapılmadı.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/onurqlp/lehrer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/onurqlp/lehrer/issues"
+  },
+  "homepage": "https://github.com/onurqlp/lehrer#readme",
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
+}
