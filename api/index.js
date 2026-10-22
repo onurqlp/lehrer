@@ -124,7 +124,7 @@ module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
     res.end(result);
   } catch (error) {
-    console.error('[AYDA beta runtime]', error?.name || 'Error', String(error?.message || error || 'Unknown').slice(0, 240));
+    console.error('[AYDA beta runtime]', error?.stack || `${error?.name || 'Error'}: ${String(error?.message || error || 'Unknown').slice(0, 240)}`);
     const text = String(error?.message || error || 'Sunucu hatası').slice(0, 500);
     const callback = String(new URL(req.url, 'https://beta.invalid').searchParams.get('callback') || '');
     if (/^ayda_cb_[A-Za-z0-9_]{1,64}$/.test(callback)) {
