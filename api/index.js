@@ -42,7 +42,7 @@ function safeEqual(a, b) {
 function makeGasContext(state) {
   const shim = createSpreadsheetShim(state);
   const context = vm.createContext(shim);
-  vm.runInContext(loadCode(), context, { filename: 'apps-script/Code.gs', timeout: 3000 });
+  vm.runInContext(gasCode, context, { filename: 'apps-script/Code.gs', timeout: 3000 });
   return context;
 }
 
