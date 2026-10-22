@@ -48,7 +48,7 @@
   if(next.children.length)items.append(next);
   const head=el('div','ayda-auto-subhead',alerts?'Eksik kayıtlar · Son 30 gün':'Eksik kayıt kontrolü');
   items.append(head);
-  if(!alerts){items.append(el('p','ayda-auto-subtle','Hatırlatmaların çalışması için Apps Script’in güncel sürümünün yayımlanması gerekir.'));return;}
+  if(!alerts){items.append(el('p','ayda-auto-subtle','Beta API hatırlatma servisi yanıt vermedi.'));return;}
   if(!alerts.items?.length){items.append(el('p','ayda-auto-done','✓ Başlangıç tarihinden itibaren eksik ders veya yoklama kaydı yok.'));return;}
   for(const row of alerts.items.slice(0,12)){
    const wrap=el('div','ayda-auto-line ayda-auto-warning');

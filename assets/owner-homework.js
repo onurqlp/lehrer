@@ -12,7 +12,7 @@
   if(!bridge()?.ready())return;
   preview.replaceChildren();list.replaceChildren();
   if(!tasks){
-   list.append(el('p','ayda-auto-subtle','Ödev görevleri henüz yüklenemedi. Apps Script sürümünü kontrol edin.'));
+   list.append(el('p','ayda-auto-subtle','Ödev görevleri beta veritabanından yüklenemedi.'));
    return;
   }
   const all=tasks.tasks||[],active=all.filter(t=>t.status==='Aktif'),

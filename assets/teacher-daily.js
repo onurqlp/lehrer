@@ -205,7 +205,7 @@
   if(!tr())return;monthInput.value=monthInput.value||monthOf();
   const month=monthInput.value,local=monthFallback(month);paintMonth(local);
   try{const fresh=await jsonp('teacherMonthly',{month});if(fresh?.month===month&&monthInput.value===month){const normalized={...fresh,cancelled:local.cancelled,postponed:local.postponed,remaining:Math.max(0,Number(fresh.planned||0)-Number(fresh.completed||0)-local.cancelled)};lastMonth=normalized;paintMonth(normalized);}}
-  catch{ /* Older Apps Script: local snapshot remains usable. */ }
+  catch{ /* Older beta API: local snapshot remains usable. */ }
  }
  function makeActionContent(item){
   const form=el('div','ayda-makeup-expanded hidden');
@@ -260,7 +260,7 @@
   const my=++request;reload.disabled=true;makeup.classList.remove('hidden');
   makeupBody.replaceChildren(el('p','ayda-auto-subtle','Son kayıtlar kontrol ediliyor…'));
   try{const list=await jsonp('makeupList');if(my!==request)return;lastMakeup=list;paintMakeup(list);}
-  catch(e){if(my===request)makeupBody.replaceChildren(el('p','ayda-auto-subtle','Sonradan tamamlama özellikleri için güncel Apps Script sürümünün yayımlanması gerekiyor.'));}
+  catch(e){if(my===request)makeupBody.replaceChildren(el('p','ayda-auto-subtle','Sonradan tamamlama kayıtları beta veritabanında kullanılamıyor.'));}
   finally{if(my===request)reload.disabled=false;}
  }
  async function loadFeedback(){
@@ -275,7 +275,7 @@
     if(item.reply)card.append(el('p','ayda-feedback-admin','Yönetim yanıtı: '+item.reply));
     replies.append(card);
    }
-  }catch{replies.append(el('p','ayda-auto-subtle','Geri bildirim geçmişi için güncel Apps Script sürümü gerekiyor.'));}
+  }catch{replies.append(el('p','ayda-auto-subtle','Geri bildirim geçmişi beta veritabanında yüklenemedi.'));}
  }
  feedbackForm.addEventListener('submit',async event=>{
   event.preventDefault();if(!tr())return;submit.disabled=true;feedbackState.textContent='Yönetime iletiliyor…';

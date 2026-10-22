@@ -49,7 +49,7 @@
  const banner=create('section','compact-strip');banner.id='managerCompactStrip';
  const words=append(banner,'div','compact-strip-text');
  append(words,'strong','','Tam yetkili yönetim • tek veri kaynağı');
- append(words,'small','','Bu ekran ana panelle aynı Google Sheets verilerini ve yönetim işlemlerini kullanır.');
+ append(words,'small','','Bu ekran ana panelle aynı beta veritabanını ve yönetim işlemlerini kullanır.');
  const links=append(banner,'div','compact-strip-links');
  const insight=create('section','compact-insights');insight.id='managerCompactInsights';
  stats.after(banner);banner.after(insight);insight.after(admin);admin.after(ops);

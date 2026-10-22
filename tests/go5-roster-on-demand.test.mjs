@@ -107,7 +107,7 @@ test('GO5 retains teacher navigation event and admin login eager refresh',()=>{
 
 test('first-time teacher opening sees loading state rather than obsolete Google preview warning',()=>{
  assert.match(src,/badge\.textContent=rosterLoading\?'YÜKLENİYOR'/);
- assert.match(src,/empty\.textContent=rosterLoading\?'Google öğrenci listesi yükleniyor/);
+ assert.match(src,/empty\.textContent=rosterLoading\?'Beta veritabanından öğrenci listesi yükleniyor/);
  assert.match(src,/caution\.textContent=rosterLoading\?'Öğrenci listesi yükleniyor/);
  assert.doesNotMatch(src,/Apps Script güncellenene kadar yoklama/);
 });

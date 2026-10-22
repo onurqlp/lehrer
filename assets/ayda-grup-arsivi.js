@@ -24,7 +24,7 @@
  }
  function request(action,key){
   return new Promise((resolve,reject)=>{
-   if(!window.AYDA_API_URL)return reject(Error('Google API adresi bulunamadı.'));
+   if(!window.AYDA_API_URL)return reject(Error('Beta API adresi bulunamadı.'));
    const callback='ayda_cb_arch_'+(++serial),script=document.createElement('script');
    let done=false;
    const finish=(error,result)=>{
@@ -168,7 +168,7 @@
   const root=$('archiveStudents');root.replaceChildren();
   const students=groupStudents(),grp=groupAttendance(),g=current();
   if(!state.tracking){return empty(root,'Öğrenci takip verileri şu anda yüklenemedi. Veri yok sonucu olarak değerlendirilmez.');}
-  if(g.status!=='Aktif'){return empty(root,'Bu grup aktif değil. Mevcut Google öğrenci takibi API’si pasif/tamamlanmış grupların geçmiş yoklama ve ödev ayrıntılarını döndürmüyor. Eski ders raporları korunmuştur; tam geçmiş için Google API arşiv erişimi gerekir.');}
+  if(g.status!=='Aktif'){return empty(root,'Bu grup aktif değil. Pasif ve tamamlanmış gruplarda yalnızca beta veritabanına aktarılmış geçmiş kayıtlar gösterilir.');}
   const headline=add(root,'p','archive-context','Güncel aktif grup: '+students.length+' öğrenci · '+(grp?(grp.present||0)+' katılım, '+(grp.absent||0)+' gelmeme ve '+(grp.homeworkMissing||0)+' eksik ödev kaydı':'Toplu veri henüz yok')+'. API, öğrenci başına yalnızca son 5 yoklama ve ödev kontrolünün tarihli ayrıntısını sağlar.');
   if(!students.length)return;
   const list=add(root,'div','archive-student-list');
@@ -233,7 +233,7 @@
   add(root,'p','archive-context','Bu bölüm otomatik sayısal kontrol listesidir. Öğrencilerin başarısı ya da öğretmenin niteliği hakkında kesin yargı değildir.');
   const notes=[
    'Akademik veri başlangıcı: 21.10.2026. Önceki ders kayıtları bu API çıktısına dahil değildir.',
-   'Grup kaydı ve ders raporları Google Sheets üzerinde tutuluyor; bu sayfa verileri yeniden derliyor, bağımsız bir sunucu arşivi yazmıyor.',
+   'Grup kaydı ve ders raporları beta veritabanında tutuluyor; bu sayfa mevcut verileri yeniden derliyor.',
    'Yoklama/ödev ayrıntıları yalnızca aktif öğrenci kayıtları için ve kişi başına son 5 tarihli kontrolle sınırlı; eski tam tarihçe API’de mevcut değil.',
    'Ders ödevleri en fazla 400; teslim tarihli ödev görevleri en fazla 180; eksik kayıtlar en fazla 120 kayıt olarak dönebiliyor.',
    'Öğretmen değişikliği ve haftalık programın eski sürümleri bu API’den dönmüyor; yalnızca mevcut atama ve aktif program gösterilir.',
@@ -289,7 +289,7 @@
  function createPayload(){
   const g=current();return {
    archiveFormat:'AYDA_GRUP_ARSIVI_V1',groupId:g.id,generatedAt:new Date().toISOString(),periodStart:'2026-10-21',
-   disclaimer:'Google API sinirlamalari ve kesilmis listeler mevcut olabilir; bu dosya sunucu tarafinda kaydedilmis arsiv degildir.',
+   disclaimer:'Bu rapor beta veritabanındaki Excel aktarımını ve sonradan kaydedilen test kayıtlarını gösterir.',
    scope:state.overview.user.role,group:g,teacher:{id:g.teacherId,name:teacher(g.teacherId)},
    activeSchedule:array(state.overview.schedule).filter(x=>x.groupId===g.id),
    lessonReports:groupLessons(),studentTracking:state.tracking?groupStudents():null,

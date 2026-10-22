@@ -24,7 +24,7 @@
   if(statusForm){
    const notice=el('div','ayda-group-close-note');
    const title=el('strong','','Grubu tamamlamadan önce akademik arşivini indirin.');
-   const explanation=el('span','','Mevcut Google API, grup kapandıktan sonra bazı öğrenci yoklama/ödev ayrıntılarını artık göstermiyor. Yalnızca mevcut kayıtlardan arşiv dosyası alınabilir.');
+   const explanation=el('span','','Beta arşivinde yalnızca veritabanına aktarılmış yoklama ve ödev kayıtları gösterilir.');
    const link=el('a','ayda-group-archive-link','Seçili grubun arşivini aç ↗');
    const picker=get('aydaFixStatusGroup');
    const syncLink=()=>{link.href='./grup-arsivi.html?group='+encodeURIComponent(picker?.value||'');link.target='_blank';link.rel='noopener noreferrer';};

@@ -6,17 +6,11 @@ const $=id=>document.getElementById(id);let authKey='',data=null,requestNo=0;
 const $el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
 const clear=id=>$(id).replaceChildren();
 function message(id,text,kind='error'){const n=$el('div','message '+kind,text);$(id).replaceChildren(n);}
-/* The Google Workspace /a/macros URL may redirect through account selection.
-   Use the public /macros/s URL for the same deployment as a fallback.
-   Never automatically retry a write action: it might already have been saved. */
+/* Beta requests stay on this origin; never fall back to the live Apps Script API. */
 let workingApiUrl='';
 function apiCandidates(){
  const configured=String(window.AYDA_API_URL||'').trim();
- const id=configured.match(/\/s\/([A-Za-z0-9_-]+)\/exec(?:$|\?)/)?.[1];
- if(!id)return [configured].filter(Boolean);
- const root='https://script.google.com/';
- const paths=['macros/s/','a/macros/aydadil.com/s/','a/aydadil.com/macros/s/'];
- return [...new Set([workingApiUrl,configured,...paths.map(p=>root+p+id+'/exec')].filter(Boolean))];
+ return [...new Set([workingApiUrl,configured].filter(Boolean))];
 }
 function apiTransportError(detail){
  const err=new Error(detail);err.transport=true;return err;
@@ -33,12 +27,12 @@ function jsonpRequest(api,action,params){
   const timeoutMs=action==='save'?60000:action==='overview'?45000:
    ['adminStudents','studentRoster','trackingSummary','teacherMonthly','makeupList'].includes(action)?40000:
     ['saveAttendance','removeTeacher','teacherAddStudent','updateReport'].includes(action)?45000:24000;
-  const timer=setTimeout(()=>finish(apiTransportError('Apps Script yanıtı '+Math.round(timeoutMs/1000)+' saniyede zaman aşımına uğradı.')),timeoutMs);
+  const timer=setTimeout(()=>finish(apiTransportError('Beta sunucusu yanıtı '+Math.round(timeoutMs/1000)+' saniyede zaman aşımına uğradı.')),timeoutMs);
   window[cb]=r=>{if(!r||!r.ok)finish(Error((r&&r.error)||'Sunucudan geçersiz yanıt geldi.'));else finish(null,r.data);};
   url.searchParams.set('callback',cb);url.searchParams.set('action',action);url.searchParams.set('key',authKey);
   for(const [k,v] of Object.entries(params))url.searchParams.set(k,v);
-  script.onerror=()=>finish(apiTransportError('Google Apps Script bağlantısı kurulamadı.'));
-  script.onload=()=>{if(!settled)finish(apiTransportError('Google Apps Script JSONP yerine giriş veya hata sayfası döndürdü.'));};
+  script.onerror=()=>finish(apiTransportError('Beta sunucusuna ulaşılamadı.'));
+  script.onload=()=>{if(!settled)finish(apiTransportError('Beta API beklenen yanıtı döndürmedi.'));};
   script.src=url.toString();document.head.append(script);
  });
 }
@@ -63,7 +57,7 @@ async function aydaJsonpNetwork(action,params={}){
  }
  if(readOnly&&candidates.length>1){
   if(last&&/zaman aşımı/.test(last.message||''))throw last;
-  throw Error('Google Apps Script bağlantısı doğrulanamadı. Sayfayı yenileyin veya bağlantıyı kontrol edin. '+(last?.message||''));
+  throw Error('Beta API bağlantısı doğrulanamadı. Sayfayı yenileyin veya bağlantıyı kontrol edin. '+(last?.message||''));
  }
  if(last?.transport&&!readOnly)last.unknownCommit=true;
  throw last||Error('API bağlantısı kurulamadı.');
@@ -240,14 +234,14 @@ $('loginForm').addEventListener('submit',e=>{e.preventDefault();login($('key').v
 $('logout').addEventListener('click',()=>{sessionStorage.removeItem('aydaKey');aydaSession.clear();authKey='';data=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');$('logout').classList.add('hidden');$('key').value='';$('roleChip').textContent='Öğretmen ve Yönetici';document.body.classList.remove('ayda-is-admin');history.replaceState(null,'',location.pathname);lastSharedHomework=null;shareBackendChecked=false;$('sendHomeworkToGroup').hidden=true;$('aydaShareHint').hidden=true;window.dispatchEvent(new Event('ayda:logout'));});
 let lastSharedHomework=null,shareBackendChecked=false;
 async function aydaVerifyDurationBackend(actual){
- // Ders saati yalnızca tam saat; eski sürüm kontrolü gereksiz Google isteği çıkarıyordu.
+ // Ders saati yalnızca tam saat; eski sürüm kontrolü gereksiz sunucu isteği çıkarıyordu.
  if(!/^0[1-6]:00$/.test(String(actual||'')))throw Error('Ders süresi 1, 2, 3, 4, 5 veya 6 tam saat olmalı.');
 }
 async function aydaVerifyShareBackend(){
  if(shareBackendChecked)return;
  // Gerçek API yeteneğini doğrula; yeni tarihli sürümleri sabit regex ile engelleme.
  const info=await jsonp('lessonHomework');
- if(!info||!Array.isArray(info.items))throw Error('Google bağlantısında ödev paylaşımı servisi doğrulanamadı. Ders kaydedilmedi.');
+ if(!info||!Array.isArray(info.items))throw Error('Beta veritabanında ödev paylaşımı doğrulanamadı. Ders kaydedilmedi.');
  shareBackendChecked=true;
 }
 
@@ -321,8 +315,8 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
   if(aydaUncertainPrivateSave&&aydaPrivateLessonMatch(
    {teacherId:data?.user?.id,date:aydaUncertainPrivateSave.date,student:aydaUncertainPrivateSave.student},
    payload,data?.user?.id)){
-   // Prior save may have reached Google; verify without sending a second write.
-   message('formMessage','Önceki özel ders Google’da kontrol ediliyor; ikinci kayıt gönderilmiyor…','info');
+   // Prior save may have reached the beta database; verify without sending a second write.
+   message('formMessage','Önceki özel ders beta veritabanında kontrol ediliyor; ikinci kayıt gönderilmiyor…','info');
    const checked=await jsonp('overview');
    const found=aydaFindPrivateLesson(checked,payload,data?.user?.id);
    data=checked;render();
@@ -330,12 +324,12 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
    if(found){
     aydaUncertainPrivateSave=null;
     aydaSetLessonSaved(true);
-    message('formMessage','Özel ders Google’da kayıtlı (ID: '+found.id+'). İkinci kayıt oluşturulmadı.','success');
+    message('formMessage','Özel ders beta veritabanında kayıtlı (ID: '+found.id+'). İkinci kayıt oluşturulmadı.','success');
     window.dispatchEvent(new Event('ayda:saved'));
     return;
    }
    aydaUncertainPrivateSave=null;
-   throw Error('Özel ders Google’da bulunamadı. Formu gözden geçirip tekrar Kaydet düğmesine basabilirsiniz.');
+   throw Error('Özel ders beta veritabanında bulunamadı. Formu gözden geçirip tekrar Kaydet düğmesine basabilirsiniz.');
   }
  }
  const tracking=payload.type==='group'?window.AYDA_ATTENDANCE?.collect?.():null;
@@ -357,15 +351,15 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
    :await jsonp('save',{payload:utf8Base64Url(JSON.stringify(payload))});
  }catch(writeError){
   if(payload.type!=='private'||!writeError.unknownCommit)throw writeError;
-  // The save can finish on Google after the browser times out.
+  // The save can finish in the beta database after the browser times out.
   // Never retry the same write: check privateHistory from a read-only overview.
   aydaUncertainPrivateSave={student:payload.student,date:payload.date};
-  message('formMessage','Google yanıtı gecikti. Özel ders kaydı yeniden gönderilmeden kontrol ediliyor…','info');
+  message('formMessage','Beta veritabanı yanıtı gecikti. Özel ders kaydı yeniden gönderilmeden kontrol ediliyor…','info');
   try{
    const checked=await jsonp('overview');
    const found=aydaFindPrivateLesson(checked,payload,data?.user?.id);
    if(!found){
-    const e=Error('Google özel ders kaydı henüz doğrulanamadı. Yeniden Kaydet düğmesine basıldığında önce Google’daki kayıtlar kontrol edilecek.');
+    const e=Error('Beta veritabanındaki özel ders kaydı henüz doğrulanamadı. Yeniden Kaydet düğmesine basıldığında önce Beta veritabanındaki kayıtlar kontrol edilecek.');
     e.unknownCommit=true;throw e;
    }
    saved={saved:true,id:found.id,recovered:true};
@@ -373,7 +367,7 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
    aydaUncertainPrivateSave=null;
   }catch(readError){
    if(readError.unknownCommit)throw readError;
-   const e=Error('Google’daki özel ders henüz doğrulanamadı ('+readError.message+'). Kaydet düğmesine tekrar basıldığında yalnızca kayıt kontrolü yapılacak.');
+   const e=Error('Beta veritabanındaki özel ders henüz doğrulanamadı ('+readError.message+'). Kaydet düğmesine tekrar basıldığında yalnızca kayıt kontrolü yapılacak.');
    e.unknownCommit=true;throw e;
   }
  }
@@ -381,8 +375,8 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  if(payload.type==='private')aydaUncertainPrivateSave=null;
  const trackingVerified=!!tracking&&saved.trackingSaved===true&&saved.attendanceCount===tracking.attendance.length;
  const homeworkVerified=oldAttendance||payload.type!=='group'||payload.status!=='İşlendi'||(saved.homeworkSaved===true&&/^DO-[A-Za-z0-9-]{8,80}$/.test(saved.homeworkId||''));
- if(payload.type==='group'&&payload.status==='İşlendi'&&(!trackingVerified||!homeworkVerified))throw Error('Kayıt onayı eksik. Apps Script sürümünü kontrol edin, aynı raporu tekrar göndermeden önce yöneticiyle görüşün.');
- const confirmation=saved.recovered?'Özel dersin Google’a daha önce kaydedildiği doğrulandı. Tekrar kayıt oluşturulmadı.':(oldAttendance?'Eksik yoklama tamamlandı.':(payload.type==='group'&&payload.status==='İşlendi'?'Ders ve yoklama kaydedildi. WhatsApp paylaşımı hazır.':'Ders kaydı tamamlandı.'));
+ if(payload.type==='group'&&payload.status==='İşlendi'&&(!trackingVerified||!homeworkVerified))throw Error('Kayıt onayı eksik. Beta API sürümünü kontrol edin, aynı raporu tekrar göndermeden önce yöneticiyle görüşün.');
+ const confirmation=saved.recovered?'Özel dersin beta veritabanına daha önce kaydedildiği doğrulandı. Tekrar kayıt oluşturulmadı.':(oldAttendance?'Eksik yoklama tamamlandı.':(payload.type==='group'&&payload.status==='İşlendi'?'Ders ve yoklama kaydedildi. WhatsApp paylaşımı hazır.':'Ders kaydı tamamlandı.'));
  message('formMessage',confirmation+(saved.progressWarning?' '+saved.progressWarning:''),'success');
  lastSharedHomework=!oldAttendance&&payload.type==='group'&&payload.status==='İşlendi'?{
    id:saved.homeworkId,lessonId:saved.id,groupId:payload.groupId,
@@ -405,7 +399,7 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  window.dispatchEvent(new Event('ayda:saved'));
 }catch(err){
  const sheet=$('lessonType').value==='private'?'AYDA_OZEL_DERS_CIZELGESI':'DERS_KAYITLARI';
- message('formMessage',err.unknownCommit?'Google’dan kesin kayıt onayı alınamadı. '+sheet+' sekmesini kontrol edin. Aynı dersi ikinci kez göndermeyin. ('+err.message+')':err.message);
+ message('formMessage',err.unknownCommit?'Beta veritabanından kesin kayıt onayı alınamadı. '+sheet+' sekmesini kontrol edin. Aynı dersi ikinci kez göndermeyin. ('+err.message+')':err.message);
 }finally{b.disabled=false;aydaSyncSaveLabel();}});
 
 // Academic planning: one unit per scheduled class date; two further class dates for exam preparation.
@@ -456,12 +450,12 @@ $('aydaSeparateTeacherForm')?.addEventListener('submit',async event=>{
  if(!confirm(account.name+' ('+account.id+') hesabına yeni öğretmen ID verilecek. '+groupIds.length+' grup bu hesaba devredilecek. Diğer hesapların eski öğretmen ID erişimi korunacak. Onaylıyor musunuz?'))return;
  const button=$('aydaSeparateTeacherSave');button.disabled=true;
  try{
-  const capability=await jsonp('ping');if(capability.studentRemoval!=='soft-delete-v1')throw Error('Ortak ID onarımı için Google Apps Script güncellemesi gerekiyor.');
+  const capability=await jsonp('ping');if(capability.studentRemoval!=='soft-delete-v1')throw Error('Ortak ID onarımı için beta API güncellemesi gerekiyor.');
   const r=await jsonp('separateTeacherAccount',{payload:utf8Base64Url(JSON.stringify({accountId,groupIds}))});
-  if(!r.saved||r.accountId!==accountId||r.transferredGroups!==groupIds.length)throw Error('Google ID/grup ayrımı onaylanmadı. Yeniden denemeden önce KULLANICILAR tablosunu kontrol edin.');
+  if(!r.saved||r.accountId!==accountId||r.transferredGroups!==groupIds.length)throw Error('Beta API ID/grup ayrımını onaylamadı. Yeniden denemeden önce KULLANICILAR tablosunu kontrol edin.');
   data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
   message('aydaSeparateTeacherStatus',account.name+' için '+r.teacherId+' oluşturuldu. '+r.transferredGroups+' grup devredildi. Eski raporlar korundu.','success');
- }catch(e){message('aydaSeparateTeacherStatus','İşlem doğrulanamadı: '+e.message+'. Tekrarlamadan önce Google kayıtlarını denetleyin.');}
+ }catch(e){message('aydaSeparateTeacherStatus','İşlem doğrulanamadı: '+e.message+'. Tekrarlamadan önce Beta veritabanı kayıtlarını denetleyin.');}
  finally{button.disabled=false;}
 });
 function fillAdminSelectors(){const ts=$('newGroupTeacher'),old=ts.value;ts.replaceChildren(new Option('Öğretmen seçin',''));for(const t of data.teachers||[])if(t.status==='Aktif')ts.add(new Option(t.name+' ('+t.id+')',t.id));ts.value=old;const es=$('editGroupId'),prev=es.value;es.replaceChildren(new Option('Grup seçin',''));for(const g of data.groups)es.add(new Option(g.name+' · '+g.level,g.id));es.value=prev;syncEditGroup();if(!$('newGroupStart').value)$('newGroupStart').value=data.today;}
@@ -487,13 +481,13 @@ function renderAcademic(){
 }
 for(const id of ['academicLevel','academicStatus','academicSearch'])$(id).addEventListener(id==='academicSearch'?'input':'change',renderAcademic);
 
-async function adminAction(action,payload,output,button){button.disabled=true;clear(output);try{const r=await jsonp(action,{payload:utf8Base64Url(JSON.stringify(payload))});if(r.key){const groupCount=action==='createTeacher'?(payload.groupIds||[]).length:0;const confirmed=action!=='createTeacher'||(r.teacherType===payload.teacherType&&Number(r.assignedGroups)===groupCount);const msg=$el('div','message '+(confirmed?'success':'error'),'Yeni öğretmen '+r.name+' ('+r.teacherId+') oluşturuldu. '+(confirmed?'Giriş anahtarı yalnızca burada gösterilir.':'Google Apps Script sürümü güncel değil: öğretmen türü / grup atamaları doğrulanamadı. Yönetici hesabından kayıtları kontrol edin; aynı öğretmeni tekrar oluşturmayın.'));const area=$el('textarea');area.value=r.key;area.readOnly=true;area.rows=3;$(output).append(msg,area);}else message(output,(r.name||r.id||'Kayıt')+' başarıyla kaydedildi.','success');data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));}catch(e){message(output,e.message);}finally{button.disabled=false;}}
+async function adminAction(action,payload,output,button){button.disabled=true;clear(output);try{const r=await jsonp(action,{payload:utf8Base64Url(JSON.stringify(payload))});if(r.key){const groupCount=action==='createTeacher'?(payload.groupIds||[]).length:0;const confirmed=action!=='createTeacher'||(r.teacherType===payload.teacherType&&Number(r.assignedGroups)===groupCount);const msg=$el('div','message '+(confirmed?'success':'error'),'Yeni öğretmen '+r.name+' ('+r.teacherId+') oluşturuldu. '+(confirmed?'Giriş anahtarı yalnızca burada gösterilir.':'Beta API yanıtı doğrulanamadı. Yönetici hesabından kayıtları kontrol edin; aynı öğretmeni tekrar oluşturmayın.'));const area=$el('textarea');area.value=r.key;area.readOnly=true;area.rows=3;$(output).append(msg,area);}else message(output,(r.name||r.id||'Kayıt')+' başarıyla kaydedildi.','success');data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));}catch(e){message(output,e.message);}finally{button.disabled=false;}}
 $('teacherCreateForm').addEventListener('submit',async e=>{
  e.preventDefault();const button=e.submitter||$('teacherCreateForm').querySelector('button');
  button.disabled=true;
  try{
   const status=await jsonp('ping');
-  if(String(status.version||'')!=='2026-10-21.9')throw Error('Google Apps Script Code.gs 2026-10-21.9 sürümünü dağıtmanız gerekiyor. Telefon kaybolmaması için kayıt başlatılmadı.');
+  if(String(status.version||'')!=='2026-10-21.9')throw Error('Beta API sürümü beklenenden farklı. Telefon verisi korunması için kayıt başlatılmadı.');
   await adminAction('createTeacher',{name:$('newTeacherName').value.trim(),phone:$('newTeacherPhone').value.trim(),teacherType:$('newTeacherType').value,groupIds:[...$('newTeacherGroups').querySelectorAll('input:checked')].map(x=>x.value)},'teacherCreateResult',button);
  }catch(err){message('teacherCreateResult',err.message);}finally{button.disabled=false;}
 });
@@ -623,7 +617,7 @@ $('teacherGroupsForm').addEventListener('submit',async e=>{
  if(!confirm('Seçilen öğretmenin mevcut sınıf eşleşmeleri bu seçimle değişecek. Devam edilsin mi?'))return;
  button.disabled=true;
  try{const result=await jsonp('assignTeacherGroups',{payload:utf8Base64Url(JSON.stringify({teacherId,groupIds}))});
-  if(result.teacherId!==teacherId||result.assigned!==groupIds.length)throw Error('Google yanıtı beklenen eşleştirmeyi doğrulamıyor.');
+  if(result.teacherId!==teacherId||result.assigned!==groupIds.length)throw Error('Beta API yanıtı beklenen eşleştirmeyi doğrulamıyor.');
   data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));message('teacherGroupsResult','Sınıf atamaları kaydedildi: '+result.assigned+' sınıf.','success');
  }catch(err){message('teacherGroupsResult',err.message);}finally{button.disabled=false;}
 });
@@ -634,9 +628,9 @@ $('adminStudentRemove').addEventListener('click',async()=>{
  if(!confirm(student.name+' adlı öğrenciyi aktif listeden çıkarmak istiyor musunuz? Geçmiş yoklama ve ödevler korunacaktır.'))return;
  const button=$('adminStudentRemove');button.disabled=true;
  try{
-  const capability=await jsonp('ping');if(capability.studentRemoval!=='soft-delete-v1')throw Error('Öğrenci kaldırmak için güncel Google Apps Script sürümünü dağıtmanız gerekiyor.');
+  const capability=await jsonp('ping');if(capability.studentRemoval!=='soft-delete-v1')throw Error('Öğrenci kaldırmak için beta API güncellemesi gerekiyor.');
   const result=await jsonp('removeStudent',{payload:utf8Base64Url(JSON.stringify({id}))});
-  if(result?.removed!==true||result.id!==id)throw Error('Google öğrenci kaldırmayı doğrulamadı.');
+  if(result?.removed!==true||result.id!==id)throw Error('Beta API öğrenci kaldırmayı doğrulamadı.');
   await aydaLoadAdminStudents();
   data=await jsonp('overview');render();window.dispatchEvent(new Event('ayda:admin-data-updated'));
   message('adminStudentResult',student.name+' aktif listeden çıkarıldı. Geçmiş kayıtları korundu.','success');
@@ -660,7 +654,7 @@ window.addEventListener('ayda:login',()=>{aydaAdminEditOptions();aydaStudentsLoa
 $('adminStudentPick').addEventListener('focus',()=>{if(!aydaStudentsLoaded){aydaStudentsLoaded=true;aydaLoadAdminStudents();}});
 $('adminStudentReload').addEventListener('click',()=>{aydaStudentsLoaded=true;});
 
-// Ana panel yenilemesi form alanlarını korur; Google'a yeni kayıt göndermez.
+// Ana panel yenilemesi form alanlarını korur; yeni kayıt göndermez.
 window.AYDA_ACTIVITY?.bindRefresh(async()=>{
  if(!data?.user)return;
  const ids=['lessonType','lessonDate','groupId','privateStudent','actual','status','completed','note'];

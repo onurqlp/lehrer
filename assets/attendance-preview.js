@@ -27,13 +27,13 @@
   const quickAdd=byId('attendanceQuickAdd');if(quickAdd)quickAdd.hidden=!valid||!liveRoster;
   const badge=attendanceBox.querySelector('.attendance-preview-tag');if(badge)badge.textContent=rosterLoading?'YÜKLENİYOR':liveRoster?'CANLI':'BEKLENİYOR';
   const saveButton=byId('saveBtn');if(saveButton&&!saveButton.disabled)saveButton.textContent=valid?'Yoklama + ödev + dersi kaydet':'Ders durumunu kaydet';
-  if(!valid){const banner=attendanceBox.querySelector('.attendance-caution');if(banner)banner.textContent=rosterLoading?'Google öğrenci listesi yükleniyor…':liveRoster?'Canlı kayıt hazır. İşlenen bir grup dersini seçerek yoklama alın.':rosterError?'Öğrenci listesi alınamadı: '+rosterError:'Ders Kaydı ekranında öğrenci listesi otomatik yüklenir.';empty.textContent=byId('lessonType').value==='private'?'Öğrenci yoklaması grup dersleri için tasarlandı.':!group?'Önce bir grup seçin.':'İptal veya ertelenen derslerde yoklama alınmaz.';empty.hidden=false;counter.textContent='';demoBtn.hidden=true;return;}
+  if(!valid){const banner=attendanceBox.querySelector('.attendance-caution');if(banner)banner.textContent=rosterLoading?'Beta veritabanından öğrenci listesi yükleniyor…':liveRoster?'Canlı kayıt hazır. İşlenen bir grup dersini seçerek yoklama alın.':rosterError?'Öğrenci listesi alınamadı: '+rosterError:'Ders Kaydı ekranında öğrenci listesi otomatik yüklenir.';empty.textContent=byId('lessonType').value==='private'?'Öğrenci yoklaması grup dersleri için tasarlandı.':!group?'Önce bir grup seçin.':'İptal veya ertelenen derslerde yoklama alınmaz.';empty.hidden=false;counter.textContent='';demoBtn.hidden=true;return;}
   const actual=roster.get(groupId)||[],students=actual.length?actual:(demo?examples:[]);
   demoBtn.hidden=liveRoster||actual.length>0;
   if(allButton)allButton.hidden=!liveRoster||!actual.length;
   demoBtn.textContent=demo?'Örnek listeyi kapat':'4 örnek öğrenciyle ekranı dene';
   empty.hidden=students.length>0;
-  empty.textContent=rosterLoading?'Google öğrenci listesi yükleniyor… Lütfen bekleyin.':liveRoster?'Bu grubun öğrenci listesi bulunamadı. Yönetici öğrencileri gruba bağlayana kadar işlenen ders raporu kaydedilemez.':('Öğrenci listesi henüz hazır değil. '+(rosterError?'Bağlantı hatası: '+rosterError+' · ':'' )+'Yoklama, canlı liste gelmeden kaydedilemez.');
+  empty.textContent=rosterLoading?'Beta veritabanından öğrenci listesi yükleniyor… Lütfen bekleyin.':liveRoster?'Bu grubun öğrenci listesi bulunamadı. Yönetici öğrencileri gruba bağlayana kadar işlenen ders raporu kaydedilemez.':('Öğrenci listesi henüz hazır değil. '+(rosterError?'Bağlantı hatası: '+rosterError+' · ':'' )+'Yoklama, canlı liste gelmeden kaydedilemez.');
   byId('attendanceGroupName').textContent=group.name+' · '+(actual.length?actual.length+' öğrenci'+(liveRoster?' (canlı yoklama)':' (CSV önizleme)'):'öğrenci listesi bekleniyor');
   const review=byId('attendanceReview');if(review)review.hidden=true; // İşaretli liste için ek onay tıklaması gerekmez.
   const caution=attendanceBox.querySelector('.attendance-caution');if(caution)caution.textContent=rosterLoading?'Öğrenci listesi yükleniyor. Lütfen işlem tamamlanana kadar bekleyin.':liveRoster?(actual.length?'Önce tüm öğrencilerin yoklamasını işaretleyin. Günlük verilen ödevi aşağıya yazın; rapor tek tuşla kaydedilir.':'Bu grupta öğrenci kaydı yok; yöneticiye bilgi verin.'):'Canlı öğrenci listesi alınamadı; yoklama kaydı başlatılmaz. '+(rosterError?'Sunucu mesajı: '+rosterError:'');
@@ -83,13 +83,13 @@
    if((roster.get(String(group.id))||[]).some(r=>normalize(r.name)===normalize(name))){
     quickAddStatus.textContent='Bu isim zaten sınıfta kayıtlı. Yoklamadaki ismi kontrol edin.';return;
    }
-   quickAddButton.disabled=true;quickAddName.disabled=true;quickAddStatus.textContent='Google kaydı yapılıyor…';
+   quickAddButton.disabled=true;quickAddName.disabled=true;quickAddStatus.textContent='Beta veritabanına kaydediliyor…';
    try{
     const input=JSON.stringify({groupId:String(group.id),name});
     const bytes=new TextEncoder().encode(input);let raw='';for(const byte of bytes)raw+=String.fromCharCode(byte);
     const payload=btoa(raw).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
     const result=await jsonp('teacherAddStudent',{payload});
-    if(!result?.id||result.groupId!==String(group.id))throw Error('Google öğrenci kimliğini doğrulamadı.');
+    if(!result?.id||result.groupId!==String(group.id))throw Error('Beta API öğrenci kimliğini doğrulamadı.');
     await syncRoster(true);
     if(!(roster.get(String(group.id))||[]).some(s=>s.id===result.id))throw Error('Kayıt oluşturuldu ancak listede henüz görünmüyor. Listeyi yenileyin; tekrar eklemeyin.');
     quickAddName.value='';
@@ -128,7 +128,7 @@
  if(csvInput){
   csvInput.addEventListener('change',async()=>{
    csvResults.replaceChildren();
-   if(liveRoster){csvMessage.textContent='Öğrenciler Google Sheets OGRENCILER sekmesinden otomatik yükleniyor. CSV karşılaştırması yoklama listesini değiştirmez.';csvInput.value='';renderRoster();return;}
+   if(liveRoster){csvMessage.textContent='Öğrenciler Excel aktarımından beta veritabanına yükleniyor. CSV karşılaştırması yoklama listesini değiştirmez.';csvInput.value='';renderRoster();return;}
    roster=new Map();rows.clear();demo=false;
    const file=csvInput.files&&csvInput.files[0];
    if(!file){csvMessage.textContent='Dosya seçilmedi.';renderRoster();return;}

@@ -10,15 +10,7 @@
  const fmt=date=>/^\d{4}-\d{2}-\d{2}$/.test(String(date||''))?date.slice(8)+'.'+date.slice(5,7)+'.'+date.slice(0,4):(date||'—');
  const today=()=>overview?.today||new Date().toISOString().slice(0,10);
  async function api(action,key){
-  const id=API.match(/\/s\/([A-Za-z0-9_-]+)\/exec(?:$|\?)/)?.[1];
-  const root='https://script.google.com/';
-  const sources=id?[root+'a/macros/aydadil.com/s/'+id+'/exec',root+'a/aydadil.com/macros/s/'+id+'/exec',root+'macros/s/'+id+'/exec']:[API];
-  let last;
-  for(const url of [...new Set(sources)]){
-    try{return await apiAt(url,action,key);}
-    catch(error){last=error;if(!error.transport)throw error;}
-  }
-  throw last||Error('Google API bağlantısına ulaşılamadı.');
+  return apiAt(API,action,key);
  }
  function apiAt(address,action,key){
   return new Promise((resolve,reject)=>{
@@ -27,11 +19,11 @@
    const cb='ayda_cb_'+Date.now()+'_'+(++seq),script=document.createElement('script');
    let done=false;
    const finish=(err,val)=>{if(done)return;done=true;clearTimeout(timer);script.remove();delete window[cb];err?reject(err):resolve(val);};
-   const timer=setTimeout(()=>{const e=Error('Google sunucusundan yanıt gelmedi.');e.transport=true;finish(e);},12000);
+   const timer=setTimeout(()=>{const e=Error('Beta sunucusundan yanıt gelmedi.');e.transport=true;finish(e);},12000);
    window[cb]=answer=>answer?.ok?finish(null,answer.data):finish(Error(answer?.error||'Sunucu yanıtı geçersiz.'));
    url.searchParams.set('callback',cb);url.searchParams.set('action',action);url.searchParams.set('key',key);
-   script.onerror=()=>{const e=Error('Google Apps Script bağlantısına ulaşılamadı.');e.transport=true;finish(e);};
-   script.onload=()=>{if(!done){const e=Error('Apps Script geçerli JSONP yanıtı üretmedi.');e.transport=true;finish(e);}};
+   script.onerror=()=>{const e=Error('Beta API bağlantısına ulaşılamadı.');e.transport=true;finish(e);};
+   script.onload=()=>{if(!done){const e=Error('Beta API geçerli JSONP yanıtı üretmedi.');e.transport=true;finish(e);}};
    script.src=url.toString();document.head.append(script);
   });
  }
@@ -58,7 +50,7 @@
   finally{setBusy(false);}
  }
  async function refreshTracking(){
-  try{const result=await api('trackingSummary',authKey);if(result?.scope!=='all')throw Error('Google Apps Script üzerinde yeni takip sürümü henüz yayımlanmadı.');tracking=result;showError('');}
+  try{const result=await api('trackingSummary',authKey);if(result?.scope!=='all')throw Error('Beta API takip sürümü hazır değil.');tracking=result;showError('');}
   catch(error){tracking=null;showError('Öğrenci takibi yüklenemedi: '+error.message+' — Grup ve ders kayıtları görüntülenebilir.');}
   render();
  }

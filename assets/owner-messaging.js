@@ -120,7 +120,7 @@
   paintInboxOverview();
   feedbacks.replaceChildren();
   if(monitoring){feedbackStatus.textContent='Öğretmen geri bildirimlerine yanıt ve kayıt değişiklikleri yalnızca Admin Panelindedir.';return;}
-  if(!inbox){feedbacks.append(node('p','ayda-auto-subtle','Öğretmen geri bildirimi servisi için Apps Script güncellenmelidir.'));return;}
+  if(!inbox){feedbacks.append(node('p','ayda-auto-subtle','Beta geri bildirim servisi yanıt vermedi.'));return;}
   const list=inbox.rows||[];const unopened=list.filter(m=>m.status==='Yeni').length;
   const badge=$('aydaMsgBadge');if(badge)badge.textContent=unopened?' ('+unopened+' yeni)':'';
   feedbackStatus.textContent=unopened?unopened+' okunmamış öğretmen mesajı var.':'Bekleyen yeni mesaj yok.';

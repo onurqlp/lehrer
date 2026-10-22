@@ -25,7 +25,7 @@
   send.disabled=true;info('Öğretmen bilgileri doğrulanıyor…',true);
   try{
    const status=await jsonp('ping');
-   if(String(status.version||'')!=='2026-10-21.9')throw Error('Google Apps Script henüz güncellenmedi. Code.gs 2026-10-21.9 sürümünü dağıtın.');
+   if(String(status.version||'')!=='2026-10-21.9')throw Error('Beta API sürümü beklenenden farklı.');
    const saved=await jsonp('updateTeacher',{payload:utf8Base64Url(JSON.stringify(payload))});
    if(!saved?.saved||saved.teacherId!==teacherId)throw Error('Google kayıt onayı alınamadı. Tekrar işlem yapmadan önce güncel verileri kontrol edin.');
    data=await jsonp('overview');refresh();window.dispatchEvent(new Event('ayda:admin-data-updated'));

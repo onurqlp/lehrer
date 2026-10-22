@@ -82,7 +82,7 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
   try {
     const pathname = new URL(req.url, 'https://beta.invalid').pathname;
-    if (pathname === '/api/seed') {
+    if (pathname === '/api/seed' || (pathname === '/api' && req.method === 'POST')) {
       if (req.method !== 'POST' || !process.env.AYDA_BETA_SEED_KEY ||
           !safeEqual(req.headers.authorization?.replace(/^Bearer\s+/i, ''), process.env.AYDA_BETA_SEED_KEY)) {
         return sendJson(res, 404, { ok: false, error: 'Bulunamadı.' });

@@ -9,9 +9,7 @@ function storeCache(data){try{localStorage.setItem(CACHE_KEY,JSON.stringify({sav
    account. Retry the SAME deployment's canonical /macros/s URL for public reads. */
 function apiUrls(){
  const primary=String(window.AYDA_API_URL||'').trim();
- const match=primary.match(/^https:\/\/script\.google\.com\/a\/macros\/[^/]+\/s\/([^/]+)\/exec$/);
- const canonical=match?'https://script.google.com/macros/s/'+match[1]+'/exec':primary;
- return [...new Set([canonical,primary].filter(Boolean))];
+ return [primary].filter(Boolean);
 }
 function transportFailure(text){
  const error=new Error(text);error.transport=true;return error;
@@ -22,7 +20,7 @@ async function apiRetry(){
   try{return await api(url);}
   catch(error){last=error;if(!error?.transport)throw error;}
  }
- throw Error('Apps Script bağlantısı kurulamadı. Google dağıtımının erişimi “Herkes”, çalıştıranı “Ben” olmalı. ('+(last?.message||'Bağlantı hatası')+')');
+ throw Error('Beta API bağlantısı kurulamadı. ('+(last?.message||'Bağlantı hatası')+')');
 }
 function api(address){
  return new Promise((resolve,reject)=>{
@@ -36,8 +34,8 @@ function api(address){
   const timer=setTimeout(()=>finish(transportFailure('Sunucu zaman aşımı.')),15000);
   window[cb]=result=>result?.ok?finish(null,result.data):finish(Error(result?.error||'Geçersiz sunucu yanıtı.'));
   url.searchParams.set('callback',cb);url.searchParams.set('action','publicDashboard');
-  script.onerror=()=>finish(transportFailure('Google Apps Script yanıtı tarayıcıya yüklenemedi.'));
-  script.onload=()=>{if(!done)finish(transportFailure('Google Apps Script geçerli veri döndürmedi.'));};
+  script.onerror=()=>finish(transportFailure('Beta API yanıtı tarayıcıya yüklenemedi.'));
+  script.onload=()=>{if(!done)finish(transportFailure('Beta API geçerli veri döndürmedi.'));};
   script.src=url.toString();document.head.append(script);
  });
 }

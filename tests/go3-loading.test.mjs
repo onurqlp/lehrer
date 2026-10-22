@@ -18,12 +18,11 @@ test('teacher and manager scripts are deferred, ordered, never async',()=>{
  }
 });
 
-test('all three internal entrypoints warm up Google connection but keep CSS order',()=>{
+test('all three internal entrypoints stay independent of Google and keep CSS order',()=>{
  for(const file of ['index.html','yonetici.html','grup-arsivi.html']){
   const html=source(file);
-  assert.match(html,/<link rel="preconnect" href="https:\/\/script\.google\.com"/);
-  assert.match(html,/<link rel="dns-prefetch" href="https:\/\/script\.googleusercontent\.com"/);
-  assert.ok(html.indexOf('rel="preconnect"')<html.indexOf('rel="stylesheet"'));
+  assert.doesNotMatch(html,/script\.google\.com|googleusercontent\.com/);
+  assert.match(html,/<meta name="robots" content="noindex,nofollow">/);
  }
 });
 
@@ -68,5 +67,5 @@ test('GO3 does not remove enrollment, lesson, attendance, or login controls',()=
  for(const id of ['ownerLoginForm','ownerNav','ownerRefresh','ownerApp'])
   assert.ok(manager.includes('id="'+id+'"'),'missing manager control '+id);
  for(const p of ['assets/app.js','assets/owner.js','assets/ayda-grup-arsivi.js'])
-  assert.ok(!/AYDA_API_URL\s*=\s*['"]test/.test(source(p)),'do not change Google API');
+  assert.ok(!/AYDA_API_URL\s*=\s*['"]test/.test(source(p)),'API must stay outside inline test stubs');
 });

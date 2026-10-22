@@ -51,9 +51,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   return {unit:fmt(matches[rest-1]),exam:fmt(matches[rest+1])};
  };
  const candidates=()=>{
-  const m=API.match(/\/s\/([A-Za-z0-9_-]+)\/exec(?:$|\?)/);
-  if(!m)return [API];
-  return [...new Set([API,'https://script.google.com/macros/s/'+m[1]+'/exec','https://script.google.com/a/macros/aydadil.com/s/'+m[1]+'/exec','https://script.google.com/a/aydadil.com/macros/s/'+m[1]+'/exec'])];
+  return API?[API]:[];
  };
  function apiRequest(url,action,key,params={}){
   return new Promise((resolve,reject)=>{
@@ -64,11 +62,11 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
    const finish=(error,data)=>{if(finished)return;finished=true;clearTimeout(timer);delete window[cb];script.remove();error?reject(error):resolve(data);};
    const transport=msg=>{const e=Error(msg);e.transport=true;return e;};
    const timeoutMs=action==='backupSetup'?90000:action==='overview'?45000:action==='vaultExport'?50000:30000;
-   const timer=setTimeout(()=>finish(transport('Google işlemi '+Math.round(timeoutMs/1000)+' saniyede yanıt vermedi. İşlem Google tarafında sürmüş olabilir; yedek durumunu kontrol edin.')),timeoutMs);
+   const timer=setTimeout(()=>finish(transport('Beta API işlemi '+Math.round(timeoutMs/1000)+' saniyede yanıt vermedi. İşlem beta veritabanında sürmüş olabilir; kopya durumunu kontrol edin.')),timeoutMs);
    window[cb]=result=>result?.ok?finish(null,result.data):finish(Error(result?.error||'Sunucu geçersiz cevap verdi.'));
    u.searchParams.set('action',action);u.searchParams.set('callback',cb);u.searchParams.set('key',key);for(const [k,v] of Object.entries(params))u.searchParams.set(k,v);
-   script.onerror=()=>finish(transport('Google Apps Script bağlantısı kurulamadı.'));
-   script.onload=()=>{if(!finished)finish(transport('Apps Script beklenen yanıtı döndürmedi.'));};
+   script.onerror=()=>finish(transport('Beta API bağlantısı kurulamadı.'));
+   script.onload=()=>{if(!finished)finish(transport('Beta API beklenen yanıtı döndürmedi.'));};
    script.src=u.toString();document.head.append(script);
   });
  }
@@ -78,7 +76,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   try{
   const readOnly=['overview','trackingSummary','reminders','integrityStatus','backupStatus','studentNotes','vaultExport','feedbackInbox','contactDirectory','homeworkTasks','lessonHomework'].includes(action);let err;
   for(const address of (readOnly?[...new Set([activeApi,...candidates()].filter(Boolean))]:[activeApi||candidates()[0]])){try{const data=await apiRequest(address,action,key,params);activeApi=address;activitySuccess=true;return data;}catch(e){err=e;if(!e.transport)throw e;if(/saniyede yanıt vermedi/.test(e.message||''))break;}}
-  throw err||Error('Google Apps Script bağlantısı kurulamadı.');
+  throw err||Error('Beta API bağlantısı kurulamadı.');
   }finally{window.AYDA_ACTIVITY?.finish(activity,activitySuccess);}
  }
 /* GO1: Coalesce pending identical read-only requests; never cache completed reads or writes. */
@@ -138,7 +136,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   const isCurrent=()=>!!token&&token===requestedKey&&generation===ownerDataGeneration;
   let coreApplied=false;
   tracking=null;reminders=null;lessonHomework=null;homeworkState='loading';
-  // Attach both handlers immediately; no unhandled rejection on slow Google reads.
+  // Attach both handlers immediately; no unhandled rejection on slow beta database reads.
   const homeworkRead=api('lessonHomework',requestedKey).then(
    value=>{
     if(!isCurrent())return;
@@ -344,7 +342,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   const q=$('ownerGroupSearch').value.trim().toLocaleLowerCase('tr');
   const subset=orderedGroups(groups.filter(g=>(!level||g.level===level)&&(!state||g.status===state)&&(!q||(g.name+' '+g.level+' '+tName(g.teacherId)).toLocaleLowerCase('tr').includes(q))));
   renderGroupTotals('ownerGroupTotals',groups);
-  const summary=$('ownerGroupResults');if(summary)summary.textContent=subset.length+' / '+groups.length+' grup gösteriliyor · Google akademik kayıtları';
+  const summary=$('ownerGroupResults');if(summary)summary.textContent=subset.length+' / '+groups.length+' grup gösteriliyor · beta akademik kayıtları';
   const container=$('ownerGroupList');container.replaceChildren();
   for(const g of subset)container.append(groupCard(g));
   if(!subset.length)showEmpty('ownerGroupList','Bu filtrelere uygun grup bulunamadı.');
@@ -586,7 +584,7 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   for(const t of teachers.filter(t=>t.status==='Aktif'&&!t.phone))
     warn(t.name+' · Öğretmen telefonu eksik','WhatsApp uyarısı için numara ekleyin.',[panel('Öğretmeni düzenle →','teachers','ownerTeacherCards')]);
   if(!reminders)
-   warn('Eksik rapor kontrolü kullanılamıyor','Google Apps Script bağlantısını ve güncel dağıtımı kontrol edin.',[{label:'Verileri yenile →',refresh:true}]);
+   warn('Eksik rapor kontrolü kullanılamıyor','Beta API bağlantısını kontrol edin.',[{label:'Verileri yenile →',refresh:true}]);
   summary.append(kpi('Aktif sınıf',groups.filter(g=>g.status==='Aktif').length),kpi('Aktif öğretmen',teachers.filter(t=>t.status==='Aktif').length),kpi('Kontrol gerektiren',issues.length),kpi('Eksik kayıt',reminders?.items?.length??'—'));
   if(!issues.length){showEmpty('ownerHealthIssues',reminders?'Kontrol edilen alanlarda eksiklik bulunamadı.':'Temel sınıf kontrolleri tamam. Eksik kayıt hizmetinden henüz yanıt alınmadı.');return;}
   function navigate(fix){

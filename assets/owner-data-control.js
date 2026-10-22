@@ -9,15 +9,15 @@
   return e;
  };
  const card=make('details','card');card.id='aydaDataControl';
- const summary=make('summary','','Veri bütünlüğü ve son yedekleme durumunu kontrol et');
+ const summary=make('summary','','Beta veritabanı bütünlüğü ve kopya durumu');
  const state=make('p','muted','Henüz kontrol edilmedi.');
  state.setAttribute('role','status');state.setAttribute('aria-live','polite');
  const actions=make('div','actions');
  const check=make('button','ayda-inline-btn','Kayıt bütünlüğünü kontrol et');
- const backup=make('button','ayda-inline-btn','Günlük yedeklemeyi kur');
+ const backup=make('button','ayda-inline-btn','İsteğe bağlı beta kopyası al');
  check.type='button';backup.type='button';
  actions.append(check,backup);
- const details=make('p','tiny','Kontrol yalnızca yöneticiye açıktır. Testler canlı kayıtları değiştirmez. Yedekleme ayrı bir Drive kopyası oluşturur.');
+ const details=make('p','tiny','Kontrol ve kopya alma yalnızca yöneticiye açıktır. Beta kayıtları ayrı Neon veritabanındadır; bu ortamda zamanlanmış yedekleme yoktur.');
  const result=make('div','muted');
  card.append(summary,state,details,actions,result);
  const target=document.getElementById('ownerHealthIssues');
@@ -41,55 +41,51 @@
    const counts=integrity?.counts||{};
    result.append(make('p','',Object.entries(counts).map(([k,v])=>k+': '+v).join(' · ')));
    for(const issue of integrity?.issues||[])result.append(make('p','',issue));
-   if(backupStatus?.installed&&backupStatus?.exists){
-    result.append(make('p','','Günlük Drive yedeği açık · Son yedek: '+(backupStatus.at||'bilinmiyor')));
-    if(backupStatus.url){const link=make('a','','Son doğrulanmış yedeği Drive’da aç ↗');link.href=backupStatus.url;link.target='_blank';link.rel='noopener noreferrer';result.append(link);}
+   if(backupStatus?.provider==='Neon beta'){
+    result.append(make('p','',backupStatus.exists?'İsteğe bağlı kopya mevcut · Son kopya: '+(backupStatus.at||'bilinmiyor'):'Henüz beta kopyası alınmadı.'));
+    result.append(make('p','',backupStatus.error||'Otomatik zamanlanmış yedekleme yok.'));
+   }else if(backupStatus?.installed&&backupStatus?.exists){
+    result.append(make('p','','Günlük yedek açık · Son yedek: '+(backupStatus.at||'bilinmiyor')));
+    if(backupStatus.url){const link=make('a','','Son doğrulanmış yedeği aç ↗');link.href=backupStatus.url;link.target='_blank';link.rel='noopener noreferrer';result.append(link);}
     if(backupStatus.error)result.append(make('p','','Son yedekleme uyarısı: '+backupStatus.error));
    }else{
     result.append(make('p','','Otomatik yedekleme doğrulanamadı. Önce günlük yedeklemeyi kurun.'));
    }
   }catch(e){
-   state.textContent='Google kayıt kontrol servisi henüz hazır değil.';
-   result.append(make('p','','Google Apps Script bağlantısı veya izinleri kontrol edilmeli. '+String(e.message||e)));
+   state.textContent='Beta kayıt kontrol servisi yanıt vermedi.';
+   result.append(make('p','','Beta Vercel API ve veritabanı bağlantısını kontrol edin. '+String(e.message||e)));
   }finally{change(false);}
  }
  check.addEventListener('click',showHealth);
  backup.addEventListener('click',async()=>{
-  change(true);state.textContent='Google Drive yedeği oluşturuluyor; bu işlem bir dakikadan uzun sürebilir…';result.replaceChildren();
+  change(true);state.textContent='Neon beta veritabanının doğrulanmış kopyası alınıyor…';result.replaceChildren();
   const detail=(msg)=>result.append(make('p','',msg));
   try{
-   // İkinci tıklamada tamamlanmış günlük kurulumu gereksiz yere tekrar başlatma.
    const current=await call('backupStatus').catch(()=>null);
-   if(current?.installed&&current?.exists){
-    state.textContent='Günlük otomatik yedekleme zaten kurulu.';
-    detail('Son yedek: '+(current.at||'Tarihi bilinmiyor'));
-    if(current.error)detail('Son kayıtlı Google uyarısı: '+current.error);
-    return;
-   }
    const response=await call('backupSetup');
-   if(!response?.ok||!response?.verified||!response?.daily)throw Error('Google yanıtında doğrulanmış yedek veya günlük tetikleyici bilgisi eksik.');
-   state.textContent='Tam yedek doğrulandı; günlük otomatik yedekleme kuruldu.';
+   if(!response?.ok||!response?.verified||response?.provider!=='Neon beta')throw Error('Beta veritabanı kopyası doğrulanamadı.');
+   state.textContent='Beta veritabanı kopyası doğrulandı.';
    detail('İlk yedek: '+(response.at||'—')+' · Kontrol edilen sekme: '+(response.sheets??'—'));
+   detail('Bu kopya isteğe bağlıdır; otomatik zamanlanmış yedekleme yoktur.');
   }catch(error){
    // JSONP zaman aşımında işlem sunucuda sürebilir; tekrar kopya oluşturmadan sorgula.
    let verification=null,checkError='';
    try{verification=await call('backupStatus');}catch(e){checkError=String(e?.message||e);}
-   if(verification?.installed&&verification?.exists){
-    state.textContent='Günlük yedekleme etkin. Yedek, Google üzerinden doğrulandı.';
+   if(verification?.provider==='Neon beta'&&verification?.exists){
+    state.textContent='Beta veritabanı kopyası mevcut.';
     detail('Son yedek: '+(verification.at||'—'));
-    if(verification.error)detail('Google uyarısı: '+verification.error);
+    if(verification.error)detail(verification.error);
    }else{
     state.textContent='Yedekleme henüz doğrulanamadı.';
-    detail('Google hata ayrıntısı: '+String(error?.message||error));
+    detail('Beta yedekleme hatası: '+String(error?.message||error));
     if(verification){
-     detail('Günlük tetikleyici: '+(verification.installed?'Kurulu':'Kurulu değil')+' · Drive yedeği: '+(verification.exists?'Mevcut':'Doğrulanamadı'));
-     if(verification.error)detail('Son Google yedekleme hatası: '+verification.error);
+     detail('Beta kopyası: '+(verification.exists?'Mevcut':'Doğrulanamadı'));
+     if(verification.error)detail(verification.error);
     }
     if(checkError)detail('Durum kontrolü hatası: '+checkError);
     const msg=String(error?.message||error)+' '+checkError+' '+(verification?.error||'');
-    if(/permission|authorization|authorize|access denied|insufficient|yetki|izin/i.test(msg))detail('Google Apps Script düzenleyicisinde aydaBackupYetkilendir işlevini çalıştırıp Drive ve tetikleyici izinlerini onaylayın.');
-    else if(/zaman aşımı|timeout|timed out|yanıt vermedi/i.test(msg))detail('Google işlemi sürüyor olabilir. 1–2 dakika sonra Kayıt bütünlüğünü kontrol et düğmesiyle yedek durumunu yeniden sorgulayın; tekrar kurulum başlatmayın.');
-    else detail('Bu ayrıntıyı paylaşın; hata kaynağına göre Google tarafını düzeltebiliriz.');
+    if(/zaman aşımı|timeout|timed out|yanıt vermedi/i.test(msg))detail('Kopya işlemi sürüyor olabilir. Bir dakika sonra beta kopya durumunu yeniden kontrol edin.');
+    else detail('Bu hata beta veritabanı kopyasının alınamadığını gösteriyor.');
    }
   }finally{change(false);}
  });

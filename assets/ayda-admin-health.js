@@ -71,7 +71,7 @@ function render(overview,tracking,reminders,contactDirectory){
   if(contactDirectory?.missingStudentPhones)
    warn('Öğrenci iletişim bilgileri eksik',contactDirectory.missingStudentPhones+' öğrencinin kayıtlı veya geçerli telefonu yok.',[panel('Telefonları düzenle →','messages','aydaMsgStudentSearch')]);
   if(!reminders)
-   warn('Eksik rapor kontrolü kullanılamıyor','Google Apps Script bağlantısını ve güncel dağıtımı kontrol edin.',[{label:'Verileri yenile →',refresh:true}]);
+   warn('Eksik rapor kontrolü kullanılamıyor','Beta API ve veritabanı bağlantısını kontrol edin.',[{label:'Verileri yenile →',refresh:true}]);
 
  const header=document.getElementById('aydaAdminHealthShow');
  if(header)header.textContent=issues.length?'Toplam '+issues.length+' uyarı · İncele →':'Sistem Sağlığı · Tüm kontroller →';

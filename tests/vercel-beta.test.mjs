@@ -54,8 +54,44 @@ test('beta API keeps the Apps Script JSONP contract on the synthetic Excel-shape
   assert.equal(body.data.teachers[0].name, 'Test Eğitmeni');
 });
 
+test('beta backup actions create only an optional Neon snapshot', () => {
+  const api = makeApi();
+  const setup = JSON.parse(api('backupSetup').text.slice('ayda_cb_beta('.length, -2));
+  assert.equal(setup.ok, true);
+  assert.equal(setup.data.provider, 'Neon beta');
+  assert.equal(setup.data.verified, true);
+  assert.equal(setup.data.manual, true);
+  assert.equal(setup.data.daily, false);
+  const status = JSON.parse(api('backupStatus').text.slice('ayda_cb_beta('.length, -2));
+  assert.equal(status.data.provider, 'Neon beta');
+  assert.equal(status.data.exists, true);
+  assert.equal(status.data.installed, false);
+});
+
+test('beta teacher-key creation stores its private archive in the beta database', () => {
+  const api = makeApi();
+  const created = JSON.parse(api('rotateKey', 'test', { target: 'U001' }).text.slice('ayda_cb_beta('.length, -2));
+  assert.equal(created.ok, true);
+  assert.equal(created.data.target, 'U001');
+  assert.ok(created.data.key.length > 30);
+  const archived = JSON.parse(api('vaultExport').text.slice('ayda_cb_beta('.length, -2));
+  assert.equal(archived.ok, true);
+  assert.ok(archived.data.rows.some(row => row.accountId === 'U001' && row.key === created.data.key));
+});
+
 test('beta API and pages point to same-origin Vercel; production Apps Script URL stays out of the public client config', () => {
   const config = readFileSync(new URL('../assets/config.js', import.meta.url), 'utf8');
   assert.match(config, /AYDA_API_URL\s*=\s*['"]\/api['"]/);
   assert.doesNotMatch(config, /script\.google\.com\/macros\/s\//);
+});
+
+test('beta browser code has no Google endpoint fallback', () => {
+  for (const path of ['assets/app.js','assets/manager.js','assets/owner.js','assets/viewer.js','assets/ayda-grup-arsivi.js']) {
+    const code = readFileSync(new URL('../'+path, import.meta.url), 'utf8');
+    assert.doesNotMatch(code, /https:\/\/script\.google\.com/);
+  }
+  for (const path of ['index.html','yonetici.html','grup-arsivi.html']) {
+    const page = readFileSync(new URL('../'+path, import.meta.url), 'utf8');
+    assert.doesNotMatch(page, /script\.google\.com|googleusercontent\.com/);
+  }
 });

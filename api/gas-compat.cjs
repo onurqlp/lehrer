@@ -45,7 +45,7 @@ function createSpreadsheetShim(state) {
     getName() { return this.name; }
     setName(name) {
       if (sheets[name] && name !== this.name) throw new Error('Bu adla sekme zaten var.');
-      delete sheets[this.name]; this.name = name; sheets[name] = this.rows(); return this;
+      const data = this.rows(); delete sheets[this.name]; this.name = name; sheets[name] = data; return this;
     }
     rows() { return sheets[this.name]; }
     getLastRow() { return this.rows().length; }
@@ -88,16 +88,31 @@ function createSpreadsheetShim(state) {
   const spreadsheet = {
     openById: () => new Book(),
     create: name => {
-      let target = name;
-      if (sheets[target]) target = `${name} (beta)`;
+      const target = `AYDA_BETA_TEMP_${crypto.randomUUID()}`;
       sheets[target] = [];
       return { getId: () => `beta-${target}`, getSheetByName: n => sheets[n] ? new Sheet(n) : null,
-        getSheets: () => Object.keys(sheets).map(n => new Sheet(n)), insertSheet: n => { sheets[n] = []; return new Sheet(n); } };
+        getSheets: () => [new Sheet(target)], insertSheet: n => { sheets[n] = []; return new Sheet(n); } };
     },
     flush: () => {}
   };
+  const betaBackupStatus = () => {
+    const newest = state.backups?.[0];
+    return { provider: 'Neon beta', installed: false, exists: !!newest, at: newest?.at || '', url: '',
+      error: 'Beta ortamında otomatik zamanlanmış yedek yoktur; panelden isteğe bağlı kopya alınabilir.' };
+  };
+  const betaBackupNow = () => {
+    state.backups ||= [];
+    const snapshot = JSON.parse(JSON.stringify(state.sheets));
+    const at = new Date().toISOString();
+    state.backups.unshift({ at, sheets: snapshot });
+    state.backups = state.backups.slice(0, 3);
+    return { ok: true, verified: true, daily: false, manual: true, provider: 'Neon beta', at, sheets: Object.keys(snapshot).length };
+  };
   return {
     SpreadsheetApp: spreadsheet,
+    AYDA_BETA_RUNTIME: true,
+    AYDA_BETA_BACKUP_STATUS_: betaBackupStatus,
+    AYDA_BETA_BACKUP_NOW_: betaBackupNow,
     PropertiesService: { getScriptProperties: () => props },
     Utilities: {
       DigestAlgorithm: { SHA_256: 'sha256' }, Charset: { UTF_8: 'utf8' },

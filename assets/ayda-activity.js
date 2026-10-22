@@ -1,4 +1,4 @@
-/* AYDA | Ortak işlem durumu: yalnızca tarayıcı arayüzü, Google veri şemasına dokunmaz. */
+/* AYDA | Ortak işlem durumu: yalnızca tarayıcı arayüzü, beta veritabanı şemasına dokunmaz. */
 (()=>{'use strict';
  if(window.AYDA_ACTIVITY)return;
  let serial=0,visible=false,lastChecked=0,lastSaved=0,lastError='',refreshHandler=null,refreshing=false,dismissTimer=0;
@@ -46,7 +46,7 @@
   if(all.length){
    const current=writes[0]||all[all.length-1];
    title.textContent=current.label+(all.length>1?' · '+all.length+' işlem':'')+'…';
-   meta.textContent=writes.length?'Lütfen bekleyin; işlemi yeniden göndermeyin.':'Lütfen bekleyin; veriler Google’dan alınıyor.';
+   meta.textContent=writes.length?'Lütfen bekleyin; işlemi yeniden göndermeyin.':'Lütfen bekleyin; veriler beta veritabanından alınıyor.';
   }else{
    title.textContent=lastError?'Bağlantı kontrolü gerekli':lastSaved>lastChecked?'İşlem tamamlandı':'Veriler kontrol edildi';
    meta.textContent=lastError?lastError:lastChecked?'Son kontrol: '+clock(new Date(lastChecked)):lastSaved?'Son kayıt yanıtı: '+clock(new Date(lastSaved)):'';
