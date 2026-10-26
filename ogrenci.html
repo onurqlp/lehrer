@@ -17,16 +17,11 @@
       <img src="./assets/ayda-logo.png" width="429" height="144" alt="AYDA Dil Akademisi">
       <span>ÖĞRENCİ PANELİ</span>
     </a>
-    <span class="student-demo-pill">DEMO · ÖRNEK VERİ</span>
+    <span class="student-live-pill">ÖĞRENCİ GİRİŞİ</span>
     <button id="logoutButton" class="student-logout" type="button" hidden>Çıkış Yap</button>
   </header>
 
   <main class="student-shell">
-    <div class="student-demo-note" role="note">
-      <strong>Deneme ekranı</strong>
-      <span>Buradaki öğrenci, ödev ve ders bilgileri örnektir; canlı öğrenci kayıtlarıyla bağlantılı değildir.</span>
-    </div>
-
     <section id="loginPanel" class="student-login-card" aria-labelledby="loginTitle">
       <div class="student-eyebrow">AYDA DİL AKADEMİSİ</div>
       <h1 id="loginTitle">Öğrenci Paneli</h1>
@@ -39,10 +34,7 @@
         <button class="student-primary" type="submit">Giriş Yap</button>
         <p id="loginMessage" class="student-status" role="alert" aria-live="polite"></p>
       </form>
-      <details class="student-demo-credentials">
-        <summary>Demo giriş bilgileri</summary>
-        <p>Kullanıcı adı: <code>demo.a1</code><br>Şifre: <code>AydaDemo26!</code></p>
-      </details>
+      <p class="student-login-help">Giriş bilgilerini AYDA yönetiminden aldıysan öğrenci numaranı ve parolanı kullan.</p>
     </section>
 
     <section id="studentDashboard" class="student-dashboard" aria-label="Öğrenci ana ekranı" hidden>
@@ -52,7 +44,7 @@
           <h1 id="studentName">Öğrenci</h1>
           <p><span id="studentLevel">A1</span><span class="student-dot">·</span><span id="studentGroup">A1 Demo Grubu</span></p>
         </div>
-        <span class="student-sample-tag">Örnek öğrenci</span>
+        <div class="student-course-end"><span>Kurs bitiş tarihi</span><strong id="courseEndDate">—</strong></div>
       </div>
 
       <div class="student-dashboard-grid">
@@ -63,9 +55,19 @@
           </div>
           <div class="student-tabs" role="tablist" aria-label="Ödev görünümü">
             <button type="button" class="student-tab is-active" data-homework-view="current" role="tab" aria-selected="true">Bu hafta</button>
+            <button type="button" class="student-tab" data-homework-view="missed" role="tab" aria-selected="false">Eksik ödevler</button>
             <button type="button" class="student-tab" data-homework-view="history" role="tab" aria-selected="false">Geçmiş</button>
           </div>
           <div id="homeworkList" class="student-homework-list" aria-live="polite"></div>
+        </section>
+
+        <section class="student-card student-attendance-card" aria-labelledby="attendanceHeading">
+          <div class="student-card-heading">
+            <span class="student-icon student-calendar-icon" aria-hidden="true">✓</span>
+            <div><div class="student-eyebrow">KATILIM DURUMUM</div><h2 id="attendanceHeading">Yoklama Geçmişim</h2></div>
+          </div>
+          <p id="attendanceSummary" class="student-homework-status"></p>
+          <div id="attendanceList" class="student-homework-list" aria-live="polite"></div>
         </section>
 
         <section id="nextLesson" class="student-card student-next-card" aria-labelledby="nextLessonHeading">
@@ -93,12 +95,13 @@
 
         <a id="classWhatsapp" class="student-whatsapp" hidden target="_blank" rel="noopener noreferrer">Sınıf WhatsApp Grubum <span aria-hidden="true">↗</span></a>
       </div>
-      <p class="student-updated">Bu demo ekranı gerçek öğrenci verilerini göstermiyor.</p>
+      <p id="studentUpdated" class="student-updated"></p>
     </section>
 
     <div id="studentLoading" class="student-loading" aria-live="polite" hidden><span class="student-spinner" aria-hidden="true"></span>Veriler güncelleniyor…</div>
     <div id="studentError" class="student-error" role="alert" hidden></div>
   </main>
+  <script src="./assets/config.js?v=20261026" defer></script>
   <script src="./assets/student-panel.js?v=20261026" defer></script>
 </body>
 </html>
