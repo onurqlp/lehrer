@@ -3,9 +3,7 @@ const AYDA_DB_ID = '1FDLlugevKNHLP83M1uZGjjf4MNz0NV91KkxdZ6yJheg';
 const AYDA_TZ = 'Europe/Istanbul';
 // Sıfırdan başlayan sistem için eski dersleri eksik kayda dahil etme.
 const AYDA_TRACKING_START = '2026-10-21';
-const AYDA_API_VERSION = '2026-10-26.2'; // Student portal, homework submissions, and read-only data.
-const AYDA_STUDENT_PORTAL_ORIGIN_ = 'https://lehrer.aydadil.com';
-const AYDA_HOMEWORK_MAX_BYTES_ = 8 * 1024 * 1024;
+const AYDA_API_VERSION = '2026-10-26.3'; // Student portal and WhatsApp homework confirmations.
 
 let AYDA_OPEN_DB_=null;
 // GO2: Only cache within one authorized, read-only HTTP request.
@@ -1154,15 +1152,12 @@ function aydaHomeworkTasks_(user){
   item.count++;item.days+=Number.isFinite(diff)&&diff>0?diff:0;
   extensions.set(id,item);
  }
+ const logSheet=aydaDb_().getSheetByName('AYDA_ODEV_WP_GONDERIM');
+ const deliveryRows=logSheet&&logSheet.getLastRow()>1?aydaRead_('AYDA_ODEV_WP_GONDERIM'):[],deliveriesByTask=new Map();
+ for(const row of deliveryRows){const groupId=String(row['GRUP_ID']||'');if(!allowed.has(groupId))continue;const taskId=String(row['GOREV_ID']||''),list=deliveriesByTask.get(taskId)||[];list.push({studentId:String(row['OGRENCI_ID']||''),studentName:String(row['OGRENCI_ADI']||''),sentAt:String(row['GONDERIM_ZAMANI']||''),status:String(row['DURUM']||'WhatsApp gönderildi')});deliveriesByTask.set(taskId,list);}
  const tasks=aydaRead_('ODEV_GOREVLERI').filter(r=>allowed.has(r['GRUP_ID']))
-  .map(r=>({
-   id:r['GOREV_ID'],groupId:r['GRUP_ID'],group:allowed.get(r['GRUP_ID']).name,
-   teacherId:r['OGRETMEN_ID'],title:r['BASLIK'],description:r['ACIKLAMA'],
-   createdDate:aydaDate_(r['VERILIS_TARIHI']),dueDate:aydaDate_(r['TESLIM_TARIHI']),
-   status:r['DURUM'],updatedAt:r['GUNCELLEME_ZAMANI'],
-   extensionCount:extensions.get(r['GOREV_ID'])?.count||0,extraDays:extensions.get(r['GOREV_ID'])?.days||0,
-   overdue:r['DURUM']==='Aktif'&&aydaDate_(r['TESLIM_TARIHI'])<today
-  })).sort((a,b)=>a.status.localeCompare(b.status,'tr')||a.dueDate.localeCompare(b.dueDate));
+  .map(r=>({id:r['GOREV_ID'],groupId:r['GRUP_ID'],group:allowed.get(r['GRUP_ID']).name,teacherId:r['OGRETMEN_ID'],title:r['BASLIK'],description:r['ACIKLAMA'],createdDate:aydaDate_(r['VERILIS_TARIHI']),dueDate:aydaDate_(r['TESLIM_TARIHI']),status:r['DURUM'],updatedAt:r['GUNCELLEME_ZAMANI'],deliveries:deliveriesByTask.get(String(r['GOREV_ID']||''))||[],deliveredCount:(deliveriesByTask.get(String(r['GOREV_ID']||''))||[]).length,extensionCount:extensions.get(r['GOREV_ID'])?.count||0,extraDays:extensions.get(r['GOREV_ID'])?.days||0,overdue:r['DURUM']==='Aktif'&&aydaDate_(r['TESLIM_TARIHI'])<today}))
+  .sort((a,b)=>a.status.localeCompare(b.status,'tr')||a.dueDate.localeCompare(b.dueDate));
  return {tasks:tasks.slice(0,180),total:tasks.length,overdue:tasks.filter(t=>t.overdue).length,scope:aydaIsMonitor_(user)?'all':'own',today};
 }
 function aydaHomeworkSafeText_(text){
@@ -1563,12 +1558,11 @@ function aydaStudentPortal_(token){
  const homeworkChecks=aydaRead_('ODEV_TAKIBI').filter(r=>String(r['GRUP_ID']||'').trim()===groupId&&String(r['OGRENCI_ID']||'').trim()===id&&aydaDate_(r['TARIH'])>=AYDA_TRACKING_START)
   .map(r=>{const lessonId=String(r['DERS_KAYIT_ID']||''),assignment=assignmentByLesson.get(lessonId);return {date:aydaDate_(r['TARIH']),status:String(r['ODEV_DURUMU']||''),text:assignment?.text||''};})
   .filter(r=>r.status==='Yaptı'||r.status==='Yapmadı').sort((a,b)=>b.date.localeCompare(a.date));
- const submissionSheet=aydaDb_().getSheetByName('ODEV_TESLIMLERI');
- const mySubmissions=submissionSheet&&submissionSheet.getLastRow()>1?aydaRead_('ODEV_TESLIMLERI').filter(r=>String(r['OGRENCI_ID']||'').trim()===id&&String(r['GRUP_ID']||'').trim()===groupId):[];
- const latestSubmission=new Map();
- mySubmissions.forEach(r=>{const taskId=String(r['GOREV_ID']||''),old=latestSubmission.get(taskId);if(!old||String(r['TESLIM_ZAMANI']||'')>=String(old['TESLIM_ZAMANI']||''))latestSubmission.set(taskId,r);});
+ const logSheet=aydaDb_().getSheetByName('AYDA_ODEV_WP_GONDERIM');
+ const myDeliveries=logSheet&&logSheet.getLastRow()>1?aydaRead_('AYDA_ODEV_WP_GONDERIM').filter(r=>String(r['OGRENCI_ID']||'').trim()===id&&String(r['GRUP_ID']||'').trim()===groupId):[],deliveryByTask=new Map();
+ myDeliveries.forEach(r=>deliveryByTask.set(String(r['GOREV_ID']||''),{sentAt:String(r['GONDERIM_ZAMANI']||''),status:String(r['DURUM']||'WhatsApp gönderildi')}));
  const tasks=aydaRead_('ODEV_GOREVLERI').filter(r=>String(r['GRUP_ID']||'').trim()===groupId&&r['DURUM']==='Aktif')
-  .map(r=>{const submission=latestSubmission.get(String(r['GOREV_ID']||''));return {id:String(r['GOREV_ID']||''),title:String(r['BASLIK']||''),description:String(r['ACIKLAMA']||''),assignedDate:aydaDate_(r['VERILIS_TARIHI']),dueDate:aydaDate_(r['TESLIM_TARIHI']),status:r['DURUM'],overdue:!!aydaDate_(r['TESLIM_TARIHI'])&&aydaDate_(r['TESLIM_TARIHI'])<today,submission:submission?{fileName:String(submission['DOSYA_ADI']||''),submittedAt:String(submission['TESLIM_ZAMANI']||''),status:String(submission['DURUM']||'Teslim edildi · öğretmen kontrolü bekliyor')}:null};})
+  .map(r=>({id:String(r['GOREV_ID']||''),title:String(r['BASLIK']||''),description:String(r['ACIKLAMA']||''),assignedDate:aydaDate_(r['VERILIS_TARIHI']),dueDate:aydaDate_(r['TESLIM_TARIHI']),status:r['DURUM'],overdue:!!aydaDate_(r['TESLIM_TARIHI'])&&aydaDate_(r['TESLIM_TARIHI'])<today,delivery:deliveryByTask.get(String(r['GOREV_ID']||''))||null}))
   .sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
  return {student:{name,id,level:String(student['SEVIYE']||group['Seviye']||''),group:String(group['Grup']||''),groupId},
   course:{start:aydaDate_(group['Başlangıç']),end:aydaDate_(group['Planlanan Bitiş'])},
@@ -1581,65 +1575,32 @@ function aydaStudentLogout_(token){
  CacheService.getScriptCache().remove('AYDA_STUDENT_SESSION_'+aydaHash_(String(token||'')));
  return {loggedOut:true};
 }
-function aydaHomeworkSubmissionSheet_(){
- const db=aydaDb_();let sheet=db.getSheetByName('ODEV_TESLIMLERI');
- if(!sheet){sheet=db.insertSheet('ODEV_TESLIMLERI');sheet.appendRow(['TESLIM_ID','GOREV_ID','GRUP_ID','OGRENCI_ID','OGRENCI_ADI','DOSYA_ADI','DOSYA_MIME','DOSYA_BOYUT','DRIVE_FILE_ID','DOSYA_URL','TESLIM_ZAMANI','DURUM','OGRETMEN_NOTU']);sheet.setFrozenRows(1);}
+function aydaStudentHomeworkSentSheet_(){
+ const db=aydaDb_();let sheet=db.getSheetByName('AYDA_ODEV_WP_GONDERIM');
+ if(!sheet){sheet=db.insertSheet('AYDA_ODEV_WP_GONDERIM');sheet.appendRow(['TESLIM_ID','GOREV_ID','GRUP_ID','OGRENCI_ID','OGRENCI_ADI','KANAL','GONDERIM_ZAMANI','DURUM']);sheet.setFrozenRows(1);}
  return sheet;
 }
-function aydaHomeworkFolder_(){
- const props=PropertiesService.getScriptProperties();let id=props.getProperty('AYDA_HOMEWORK_UPLOAD_FOLDER_ID'),folder;
- if(id){try{folder=DriveApp.getFolderById(id);folder.getName();}catch(e){folder=null;}}
- if(!folder){folder=DriveApp.createFolder('AYDA Ogrenci Odev Teslimleri');props.setProperty('AYDA_HOMEWORK_UPLOAD_FOLDER_ID',folder.getId());}
- return folder;
-}
-function aydaHomeworkUploadsSetup(){
- const folder=aydaHomeworkFolder_(),sheet=aydaHomeworkSubmissionSheet_();
- return {ready:true,folderId:folder.getId(),folderName:folder.getName(),sheetName:sheet.getName()};
-}
-function aydaStudentHomeworkSubmit_(p){
+function aydaStudentConfirmHomeworkSent_(p){
  const studentId=CacheService.getScriptCache().get('AYDA_STUDENT_SESSION_'+aydaHash_(String(p.token||'')));
  if(!studentId)throw Error('Oturum süresi doldu. Yeniden giriş yapın.');
  const student=aydaRead_('OGRENCILER').find(r=>String(r['OGRENCI_ID']||'').trim()===studentId);
  if(!student||!student['AD_SOYAD']||['Pasif','Silindi'].includes(String(student['DURUM']||'')))throw Error('Öğrenci hesabı aktif değil.');
  const groupId=String(student['GRUP_ID']||'').trim(),group=aydaRead_('GRUPLAR').find(g=>String(g['ID']||'').trim()===groupId&&g['Durum']==='Aktif');
  if(!group)throw Error('Aktif grup bilgisi bulunamadı.');
+ const groupLink=String(group['WhatsApp']||'').trim();
+ if(!/^https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9_-]+$/.test(groupLink))throw Error('Yönetici WhatsApp ödev grubu bağlantısını henüz eklememiş.');
  const taskId=String(p.taskId||'').trim(),task=aydaRead_('ODEV_GOREVLERI').find(r=>String(r['GOREV_ID']||'').trim()===taskId&&String(r['GRUP_ID']||'').trim()===groupId&&r['DURUM']==='Aktif');
- if(!task)throw Error('Bu ödev artık teslim alınmıyor.');
- const name=String(p.fileName||'').trim().replace(/[\\/\x00-\x1f\x7f]/g,'_').slice(0,120)||'odev-dosyasi';
- const mime=String(p.mimeType||'').toLowerCase(),encoded=String(p.fileData||'');
- if(!['application/pdf','image/jpeg','image/png'].includes(mime))throw Error('Yalnızca PDF, JPG veya PNG dosyası yükleyin.');
- if(!encoded||encoded.length>Math.ceil(AYDA_HOMEWORK_MAX_BYTES_*4/3)+16)throw Error('Dosya 8 MB sınırını aşamaz.');
- let bytes;try{bytes=Utilities.base64DecodeWebSafe(encoded);}catch(e){throw Error('Dosya okunamadı. Yeniden deneyin.');}
- if(!bytes.length||bytes.length>AYDA_HOMEWORK_MAX_BYTES_)throw Error('Dosya boş veya 8 MB sınırını aşıyor.');
- const signature=bytes.slice(0,8).map(b=>(b+256)%256);
- const valid=mime==='application/pdf'?String.fromCharCode.apply(null,signature.slice(0,5))==='%PDF-':mime==='image/png'?signature.join(',')==='137,80,78,71,13,10,26,10':signature[0]===255&&signature[1]===216&&signature[2]===255;
- if(!valid)throw Error('Dosya içeriği seçilen formatla eşleşmiyor.');
- const ext=mime==='application/pdf'?'.pdf':mime==='image/png'?'.png':'.jpg';
- const safeName=name.replace(/\.(pdf|jpe?g|png)$/i,'').slice(0,100)+ext;
+ if(!task)throw Error('Aktif ödev görevi bulunamadı.');
  const lock=LockService.getScriptLock();lock.waitLock(20000);
  try{
-  const id='OT-'+Utilities.getUuid(),blob=Utilities.newBlob(bytes,mime,safeName),submittedAt=new Date();let file=null;
-  try{
-   file=aydaHomeworkFolder_().createFile(blob);
-   const sheet=aydaHomeworkSubmissionSheet_();sheet.appendRow([id,taskId,groupId,studentId,String(student['AD_SOYAD']).trim(),"'"+safeName,mime,bytes.length,file.getId(),file.getUrl(),submittedAt,'Teslim edildi · öğretmen kontrolü bekliyor','']);SpreadsheetApp.flush();
-   return {submitted:true,id,taskId,fileName:safeName,submittedAt:Utilities.formatDate(submittedAt,AYDA_TZ,"yyyy-MM-dd'T'HH:mm:ss"),status:'Teslim edildi · öğretmen kontrolü bekliyor'};
-  }catch(error){if(file)try{file.setTrashed(true);}catch(cleanupError){Logger.log('Ödev yükleme geri alma başarısız: '+cleanupError.message);}throw error;}
+  const sheet=aydaStudentHomeworkSentSheet_(),values=sheet.getDataRange().getDisplayValues(),headers=values[0].map(String),taskCol=headers.indexOf('GOREV_ID'),studentCol=headers.indexOf('OGRENCI_ID'),rowIndex=values.findIndex((row,i)=>i>0&&row[taskCol]===taskId&&row[studentCol]===studentId),sentAt=new Date(),status='WhatsApp ödev grubuna gönderildi (öğrenci onayı)';
+  const record={TESLIM_ID:'WP-'+Utilities.getUuid(),GOREV_ID:taskId,GRUP_ID:groupId,OGRENCI_ID:studentId,OGRENCI_ADI:String(student['AD_SOYAD']).trim(),KANAL:'WhatsApp',GONDERIM_ZAMANI:sentAt,DURUM:status};
+  if(rowIndex>0)sheet.getRange(rowIndex+1,1,1,headers.length).setValues([headers.map(h=>Object.prototype.hasOwnProperty.call(record,h)?record[h]:values[rowIndex][headers.indexOf(h)]||'')]);
+  else sheet.appendRow(headers.map(h=>Object.prototype.hasOwnProperty.call(record,h)?record[h]:''));
+  SpreadsheetApp.flush();
+  return {taskId,sentAt:Utilities.formatDate(sentAt,AYDA_TZ,"yyyy-MM-dd'T'HH:mm:ss"),status};
  }finally{lock.releaseLock();}
 }
-function aydaPostResponse_(data,nonce,origin){
- const payload=JSON.stringify({type:'AYDA_STUDENT_HOMEWORK_RESULT',nonce:String(nonce||''),...data}).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
- return HtmlService.createHtmlOutput('<!doctype html><meta charset="utf-8"><script>parent.postMessage('+payload+','+JSON.stringify(origin)+');</script>').setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-}
-function doPost(e){
- AYDA_READ_MEMO_=null;AYDA_OPEN_DB_=null;const p=e&&e.parameter||{},nonce=String(p.nonce||'').slice(0,100),origin=String(p.origin||'');
- if(origin!==AYDA_STUDENT_PORTAL_ORIGIN_)return aydaPostResponse_({ok:false,error:'Güvenli site doğrulanamadı.'},nonce,AYDA_STUDENT_PORTAL_ORIGIN_);
- try{
-  if(String(p.action||'')!=='studentSubmitHomework')throw Error('Geçersiz işlem.');
-  const data=aydaStudentHomeworkSubmit_(p);return aydaPostResponse_({ok:true,data},nonce,AYDA_STUDENT_PORTAL_ORIGIN_);
- }catch(error){return aydaPostResponse_({ok:false,error:String(error.message||error)},nonce,AYDA_STUDENT_PORTAL_ORIGIN_);}
- finally{AYDA_READ_MEMO_=null;AYDA_OPEN_DB_=null;}
-}
-
 
 function doGet(e){
   // Discard anything from an earlier execution context.
@@ -1658,6 +1619,7 @@ function doGet(e){
     else if(action==='publicTrackingDashboard'){out={ok:false,error:'Öğrenci bilgileri anonim erişime kapalı.'};}
     else if(action==='studentLogin'){const raw=Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8');if(raw.length>1000)throw Error('Giriş bilgileri geçersiz.');out={ok:true,data:aydaStudentLogin_(JSON.parse(raw))};}
     else if(action==='studentPortal'){AYDA_READ_MEMO_=new Map();out={ok:true,data:aydaStudentPortal_(p.token)};}
+    else if(action==='studentConfirmHomeworkSent'){const raw=Utilities.newBlob(Utilities.base64DecodeWebSafe(String(p.payload||''))).getDataAsString('UTF-8');if(raw.length>2000)throw Error('Teslim bilgisi geçersiz.');out={ok:true,data:aydaStudentConfirmHomeworkSent_(JSON.parse(raw))};}
     else if(action==='studentLogout'){out={ok:true,data:aydaStudentLogout_(p.token)};}
     else {const user=aydaAuth_(p.key);
     if(user.role==='viewer'&&!['overview','trackingSummary','reminders','studentRoster','studentNotes','contactDirectory','lessonHomework','homeworkTasks','backupStatus','integrityStatus','infoFormSummary','surveySummary','feedbackInbox'].includes(action))throw Error('İzleme hesabı bu yönetim işlemini yapamaz.');
