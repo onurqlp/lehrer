@@ -125,14 +125,9 @@
     setText('lessonUnit', `Tahmini sıradaki ünite: ${Math.min(student.lastCompletedUnit + 1, student.totalUnits)} · Programdan tahmin edilmiştir`);
     renderHomework('current');
     document.querySelectorAll('[data-homework-view]').forEach(button => {
-      button.addEventListener('click', () => {
-        document.querySelectorAll('[data-homework-view]').forEach(tab => {
-          const selected = tab === button;
-          tab.classList.toggle('is-active', selected);
-          tab.setAttribute('aria-selected', String(selected));
-        });
-        renderHomework(button.dataset.homeworkView);
-      });
+      const selected = button.dataset.homeworkView === 'current';
+      button.classList.toggle('is-active', selected);
+      button.setAttribute('aria-selected', String(selected));
     });
     const whatsapp = byId('classWhatsapp');
     if (student.whatsappUrl) {
@@ -145,6 +140,17 @@
     const updated = document.querySelector('.student-updated');
     updated.textContent = `Örnek veriler · Son görüntüleme ${formatDate(new Date(), { hour: '2-digit', minute: '2-digit' })} (Türkiye saati)`;
   }
+
+  document.querySelectorAll('[data-homework-view]').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('[data-homework-view]').forEach(tab => {
+        const selected = tab === button;
+        tab.classList.toggle('is-active', selected);
+        tab.setAttribute('aria-selected', String(selected));
+      });
+      renderHomework(button.dataset.homeworkView);
+    });
+  });
 
   function saveSession() {
     try { localStorage.setItem(sessionKey, JSON.stringify({ demo: true, expires: Date.now() + 8 * 60 * 60 * 1000 })); } catch (_) {}
