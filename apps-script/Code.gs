@@ -1592,6 +1592,10 @@ function aydaHomeworkFolder_(){
  if(!folder){folder=DriveApp.createFolder('AYDA Ogrenci Odev Teslimleri');props.setProperty('AYDA_HOMEWORK_UPLOAD_FOLDER_ID',folder.getId());}
  return folder;
 }
+function aydaHomeworkUploadsSetup(){
+ const folder=aydaHomeworkFolder_(),sheet=aydaHomeworkSubmissionSheet_();
+ return {ready:true,folderId:folder.getId(),folderName:folder.getName(),sheetName:sheet.getName()};
+}
 function aydaStudentHomeworkSubmit_(p){
  const studentId=CacheService.getScriptCache().get('AYDA_STUDENT_SESSION_'+aydaHash_(String(p.token||'')));
  if(!studentId)throw Error('Oturum süresi doldu. Yeniden giriş yapın.');
@@ -1614,9 +1618,12 @@ function aydaStudentHomeworkSubmit_(p){
  const safeName=name.replace(/\.(pdf|jpe?g|png)$/i,'').slice(0,100)+ext;
  const lock=LockService.getScriptLock();lock.waitLock(20000);
  try{
-  const id='OT-'+Utilities.getUuid(),blob=Utilities.newBlob(bytes,mime,safeName),file=aydaHomeworkFolder_().createFile(blob),submittedAt=new Date();
-  const sheet=aydaHomeworkSubmissionSheet_();sheet.appendRow([id,taskId,groupId,studentId,String(student['AD_SOYAD']).trim(),"'"+safeName,mime,bytes.length,file.getId(),file.getUrl(),submittedAt,'Teslim edildi · öğretmen kontrolü bekliyor','']);SpreadsheetApp.flush();
-  return {submitted:true,id,taskId,fileName:safeName,submittedAt:Utilities.formatDate(submittedAt,AYDA_TZ,"yyyy-MM-dd'T'HH:mm:ss"),status:'Teslim edildi · öğretmen kontrolü bekliyor'};
+  const id='OT-'+Utilities.getUuid(),blob=Utilities.newBlob(bytes,mime,safeName),submittedAt=new Date();let file=null;
+  try{
+   file=aydaHomeworkFolder_().createFile(blob);
+   const sheet=aydaHomeworkSubmissionSheet_();sheet.appendRow([id,taskId,groupId,studentId,String(student['AD_SOYAD']).trim(),"'"+safeName,mime,bytes.length,file.getId(),file.getUrl(),submittedAt,'Teslim edildi · öğretmen kontrolü bekliyor','']);SpreadsheetApp.flush();
+   return {submitted:true,id,taskId,fileName:safeName,submittedAt:Utilities.formatDate(submittedAt,AYDA_TZ,"yyyy-MM-dd'T'HH:mm:ss"),status:'Teslim edildi · öğretmen kontrolü bekliyor'};
+  }catch(error){if(file)try{file.setTrashed(true);}catch(cleanupError){Logger.log('Ödev yükleme geri alma başarısız: '+cleanupError.message);}throw error;}
  }finally{lock.releaseLock();}
 }
 function aydaPostResponse_(data,nonce,origin){
