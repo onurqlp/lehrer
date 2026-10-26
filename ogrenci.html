@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1b31">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Öğrenci Paneli | AYDA Dil Akademisi</title>
+  <link rel="icon" href="./assets/ayda-logo.png">
+  <link rel="stylesheet" href="./assets/ayda-brand.css?v=20261026">
+  <link rel="stylesheet" href="./assets/student-panel.css?v=20261026">
+</head>
+<body class="ayda-internal student-page">
+  <a class="student-skip" href="#loginPanel">İçeriğe geç</a>
+  <header class="student-header">
+    <a class="student-brand" href="./ogrenci.html" aria-label="AYDA Öğrenci Paneli">
+      <img src="./assets/ayda-logo.png" width="429" height="144" alt="AYDA Dil Akademisi">
+      <span>ÖĞRENCİ PANELİ</span>
+    </a>
+    <span class="student-demo-pill">DEMO · ÖRNEK VERİ</span>
+    <button id="logoutButton" class="student-logout" type="button" hidden>Çıkış Yap</button>
+  </header>
+
+  <main class="student-shell">
+    <div class="student-demo-note" role="note">
+      <strong>Deneme ekranı</strong>
+      <span>Buradaki öğrenci, ödev ve ders bilgileri örnektir; canlı öğrenci kayıtlarıyla bağlantılı değildir.</span>
+    </div>
+
+    <section id="loginPanel" class="student-login-card" aria-labelledby="loginTitle">
+      <div class="student-eyebrow">AYDA DİL AKADEMİSİ</div>
+      <h1 id="loginTitle">Öğrenci Paneli</h1>
+      <p>Ödevlerini, sıradaki dersini ve öğrenme kaynaklarını tek ekranda gör.</p>
+      <form id="studentLoginForm" novalidate>
+        <label for="studentUsername">Kullanıcı adı</label>
+        <input id="studentUsername" name="username" autocomplete="username" required>
+        <label for="studentPassword">Şifre</label>
+        <input id="studentPassword" name="password" type="password" autocomplete="current-password" required>
+        <button class="student-primary" type="submit">Giriş Yap</button>
+        <p id="loginMessage" class="student-status" role="alert" aria-live="polite"></p>
+      </form>
+      <details class="student-demo-credentials">
+        <summary>Demo giriş bilgileri</summary>
+        <p>Kullanıcı adı: <code>demo.a1</code><br>Şifre: <code>AydaDemo26!</code></p>
+      </details>
+    </section>
+
+    <section id="studentDashboard" class="student-dashboard" aria-label="Öğrenci ana ekranı" hidden>
+      <div class="student-welcome">
+        <div>
+          <div class="student-eyebrow">MERHABA</div>
+          <h1 id="studentName">Öğrenci</h1>
+          <p><span id="studentLevel">A1</span><span class="student-dot">·</span><span id="studentGroup">A1 Demo Grubu</span></p>
+        </div>
+        <span class="student-sample-tag">Örnek öğrenci</span>
+      </div>
+
+      <div class="student-dashboard-grid">
+        <section class="student-card student-homework-card" aria-labelledby="homeworkHeading">
+          <div class="student-card-heading">
+            <span class="student-icon student-homework-icon" aria-hidden="true">✎</span>
+            <div><div class="student-eyebrow">BU HAFTAKİ</div><h2 id="homeworkHeading">Ödevlerim</h2></div>
+          </div>
+          <div class="student-tabs" role="tablist" aria-label="Ödev görünümü">
+            <button type="button" class="student-tab is-active" data-homework-view="current" role="tab" aria-selected="true">Bu hafta</button>
+            <button type="button" class="student-tab" data-homework-view="history" role="tab" aria-selected="false">Geçmiş</button>
+          </div>
+          <div id="homeworkList" class="student-homework-list" aria-live="polite"></div>
+        </section>
+
+        <section id="nextLesson" class="student-card student-next-card" aria-labelledby="nextLessonHeading">
+          <div class="student-card-heading">
+            <span class="student-icon student-calendar-icon" aria-hidden="true">◷</span>
+            <div><div class="student-eyebrow">TAKVİMİNE EKLE</div><h2 id="nextLessonHeading">Sonraki Dersim</h2></div>
+          </div>
+          <div id="lessonDate" class="student-lesson-date"></div>
+          <div id="lessonTime" class="student-lesson-time"></div>
+          <p id="lessonTopic" class="student-lesson-topic"></p>
+          <div id="lessonUnit" class="student-unit-label"></div>
+        </section>
+
+        <a class="student-portal-card student-learning-card" href="https://ders.aydadil.com/" target="_blank" rel="noopener noreferrer">
+          <span class="student-portal-icon" aria-hidden="true">▤</span>
+          <span class="student-portal-copy"><span class="student-eyebrow">ÇALIŞMAYA DEVAM ET</span><strong>AYDA Öğrenme Portalı</strong><small>Alıştırmalar, öğrenme materyalleri, dijital kütüphane ve sınav hazırlığı.</small></span>
+          <span class="student-portal-action">Portala Git <span aria-hidden="true">↗</span></span>
+        </a>
+
+        <a class="student-portal-card student-video-card" href="https://kurs.aydadil.com/" target="_blank" rel="noopener noreferrer">
+          <span class="student-portal-icon" aria-hidden="true">▶</span>
+          <span class="student-portal-copy"><span class="student-eyebrow">DERS KAYITLARI</span><strong>Canlı Ders Tekrar Videoları</strong><small>Kaçırdığın veya tekrar izlemek istediğin canlı ders kayıtları.</small></span>
+          <span class="student-portal-action">Kayıtları Aç <span aria-hidden="true">↗</span></span>
+        </a>
+
+        <a id="classWhatsapp" class="student-whatsapp" hidden target="_blank" rel="noopener noreferrer">Sınıf WhatsApp Grubum <span aria-hidden="true">↗</span></a>
+      </div>
+      <p class="student-updated">Bu demo ekranı gerçek öğrenci verilerini göstermiyor.</p>
+    </section>
+
+    <div id="studentLoading" class="student-loading" aria-live="polite" hidden><span class="student-spinner" aria-hidden="true"></span>Veriler güncelleniyor…</div>
+    <div id="studentError" class="student-error" role="alert" hidden></div>
+  </main>
+  <script src="./assets/student-panel.js?v=20261026" defer></script>
+</body>
+</html>
