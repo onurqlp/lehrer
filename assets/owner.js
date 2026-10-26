@@ -368,6 +368,16 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   }
   // İzleme ekranı salt okunurdur; not ve takip düzenlemeleri yalnızca Admin Panelinde yapılır.
   if(['danger','watch'].includes(status(s)))box.append(quick('Devamsızlık / ödev için WhatsApp hatırlatması',()=>{activate('messages');window.dispatchEvent(new CustomEvent('ayda:compose-student',{detail:{studentId:s.id,groupId:s.groupId}}));}));
+  if(bridge()?.canManage()){
+   const access=add(box,'div','owner-student-recent'),button=quick('Öğrenci paneli girişini oluştur / yenile',async()=>{
+    button.disabled=true;output.textContent='Başlangıç parolası hazırlanıyor…';
+    try{const result=await bridge().api('setStudentPortalPassword',{payload:payload64(JSON.stringify({studentId:s.id}))});
+     output.textContent='Kullanıcı adı: '+result.username+' · Başlangıç parolası: '+result.password+' · Öğrenciye ilet; parola tekrar gösterilmez.';
+    }catch(error){output.textContent='Giriş oluşturulamadı: '+error.message;}
+    finally{button.disabled=false;}
+   }),output=add(access,'span','', '');
+   access.prepend(button);
+  }
   box.append(quick('Öğrenci raporunu yazdır / PDF',()=>printStudent(s)));
   return box;
  }
@@ -748,3 +758,4 @@ const aydaSession={save(key){try{localStorage.setItem('aydaAdminSession',JSON.st
   if(previous)login(previous);
  }
 })();
+
