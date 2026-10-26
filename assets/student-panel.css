@@ -115,9 +115,13 @@
 }
 @media(prefers-reduced-motion:reduce){.student-portal-card{transition:none}.student-spinner{animation-duration:2s}}
 .student-homework-upload-note{margin:8px 0 5px!important;color:#536779;font-size:11px;line-height:1.45}
-.student-homework-upload{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}
-.student-homework-upload input[type=file]{min-width:0;max-width:100%;flex:1 1 190px;color:#536779;font-size:11px}
-.student-upload-button,.student-homework-whatsapp{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:8px 11px;border:0;border-radius:9px;background:#102541;color:#fff;font-size:11px;font-weight:800;text-decoration:none;cursor:pointer}
-.student-upload-button:disabled{opacity:.55;cursor:wait}
-.student-upload-feedback{display:block;margin-top:5px;color:#536779;font-size:11px}
-.student-homework-whatsapp{margin-top:8px;background:#eaf7f0;color:#176344;border:1px solid #bfdfcc}
+.student-upload-button,.student-homework-whatsapp{display:inline-flex;align-items:center;justify-content:center;min-height:38px;margin:7px 6px 0 0;padding:8px 12px;border:1px solid #b7d8cb;border-radius:9px;background:#eef9f3;color:#176344;font-size:11px;font-weight:800;text-decoration:none;cursor:pointer}
+.student-upload-button{border-color:#102541;background:#102541;color:#fff}
+.student-upload-button:disabled{opacity:.55;cursor:not-allowed}
+.student-upload-feedback{display:block;margin-top:6px;color:#536779;font-size:11px;line-height:1.45}
+.student-demo-access,.student-demo-banner{display:grid;gap:8px;margin-top:18px;padding:14px;border:1px solid #ead8aa;border-radius:12px;background:#fff9e9;color:#5c4929}
+.student-demo-access strong,.student-demo-banner strong{font-size:11px;letter-spacing:.05em}
+.student-demo-access p,.student-demo-access small{margin:0;font-size:11px;line-height:1.5}
+.student-demo-access code{padding:2px 5px;border-radius:5px;background:#f4ecd9;color:#4f3d1b}
+.student-demo-button{min-height:38px;padding:8px 12px;border:1px solid #d2b866;border-radius:9px;background:#fff;color:#60490f;font-weight:800;cursor:pointer}
+.student-demo-banner{display:block;margin:0 0 14px;font-size:12px;line-height:1.5}
