@@ -12,7 +12,7 @@
   const student = {
     name: 'Deniz Yılmaz', level: 'A1', group: 'A1 Demo Grubu', active: scenario !== 'inactive',
     schedule: [{ day: 1, start: '20:00', end: '21:30' }, { day: 3, start: '20:00', end: '21:30' }, { day: 5, start: '20:00', end: '21:30' }],
-    lastCompletedUnit: 2, totalUnits: 24, whatsappUrl: scenario === 'no-whatsapp' ? 'https://chat.whatsapp.com/demo' : ''
+    lastCompletedUnit: 2, totalUnits: 24, whatsappUrl: ''
   };
   const homework = {
     current: scenario === 'no-homework' || scenario === 'not-shared' ? [] : [{
