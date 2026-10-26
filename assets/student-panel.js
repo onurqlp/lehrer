@@ -142,7 +142,6 @@
       whatsapp.hidden = true;
       whatsapp.removeAttribute('href');
     }
-    setText('studentDashboard', '');
     const updated = document.querySelector('.student-updated');
     updated.textContent = `Örnek veriler · Son görüntüleme ${formatDate(new Date(), { hour: '2-digit', minute: '2-digit' })} (Türkiye saati)`;
   }
