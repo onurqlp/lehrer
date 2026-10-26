@@ -1,4 +1,4 @@
-.student-page{min-height:100vh;background:var(--ayda-cream,#fbf9f5);color:var(--ayda-text,#142b44)}
+.student-page{margin:0;min-height:100vh;background:var(--ayda-cream,#fbf9f5);color:var(--ayda-text,#142b44)}
 .student-page .student-skip{position:absolute;left:12px;top:-60px;z-index:100;padding:10px 14px;background:#fff;color:#102541;border-radius:9px}
 .student-page .student-skip:focus{top:10px}
 .student-header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;max-width:1240px;margin:0 auto;padding:11px 26px;min-height:76px;background:var(--ayda-deep,#0b1b31);border-bottom:1px solid #2b3b50}
