@@ -18,7 +18,7 @@
 .student-login-card>p{margin:0 0 20px;color:var(--ayda-muted,#536779);font-size:14px}
 .student-login-card form{display:grid;gap:8px}
 .student-login-card label{margin-top:5px;color:#17324f;font-size:13px;font-weight:750}
-.student-login-card input{width:100%;min-height:48px;padding:11px 13px;border:1px solid #c9d4df;border-radius:10px;background:#fff;color:#142b44;font-size:16px}
+.student-login-card input{box-sizing:border-box;width:100%;min-height:48px;padding:11px 13px;border:1px solid #c9d4df;border-radius:10px;background:#fff;color:#142b44;font-size:16px}
 .student-primary{min-height:50px;margin-top:9px;padding:12px 16px;border:0;border-radius:11px;background:#102541;color:#fff;font-size:15px;font-weight:800;cursor:pointer}
 .student-primary:hover{background:#1b3e62}
 .student-status{min-height:20px;margin:0;color:#a13636;font-size:13px;font-weight:700}
