@@ -6,12 +6,16 @@
 .student-brand{display:inline-flex;align-items:center;gap:13px;min-width:0;color:#fff;text-decoration:none;line-height:1.2}
 .student-brand img{display:block;width:125px;height:auto;object-fit:contain;flex:0 0 auto}
 .student-brand span{border-left:1px solid #9cb2c45e;padding-left:12px;color:var(--ayda-gold,#e8c37b);font-size:10px;letter-spacing:.12em;font-weight:800}
-.student-demo-pill{margin-left:auto;padding:6px 10px;border:1px solid #d9b45f;border-radius:999px;background:#342a19;color:#f5d88e;font-size:10px;font-weight:850;letter-spacing:.07em;white-space:nowrap}
+.student-live-pill{margin-left:auto;padding:6px 10px;border:1px solid #7892ab64;border-radius:999px;background:#142b44;color:#e4edf5;font-size:10px;font-weight:800;white-space:nowrap}
 .student-logout{min-height:42px;padding:8px 12px;border:1px solid #7892ab64;border-radius:9px;background:transparent;color:white;font-weight:750;cursor:pointer}
 .student-logout[hidden]{display:none!important}
 .student-shell{max-width:1120px;margin:0 auto;padding:22px 26px 52px}
 .student-demo-note{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:11px 14px;border:1px solid #e9d4a2;border-radius:12px;background:#fff9ea;color:#5c4929;font-size:12px;line-height:1.45}
 .student-demo-note strong{flex:none;color:#725317;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.student-course-end{display:grid;gap:3px;flex:none;padding:9px 12px;border:1px solid #d7c1896b;border-radius:12px;background:#102541;color:#fff}
+.student-course-end span{color:#d8e5f3;font-size:10px}
+.student-course-end strong{color:#f6d994;font-size:13px}
+.student-login-help{font-size:12px!important;line-height:1.5}
 .student-login-card{max-width:480px;margin:36px auto;padding:28px;border:1px solid var(--ayda-border,#dbe3ea);border-radius:20px;background:#fff;box-shadow:var(--ayda-shadow,0 9px 28px rgba(10,28,46,.055))}
 .student-eyebrow{color:var(--ayda-gold-ink,#74511b);font-size:10px;font-weight:850;letter-spacing:.105em;line-height:1.4}
 .student-login-card h1,.student-welcome h1{margin:5px 0 7px;color:var(--ayda-navy,#102541);font-size:clamp(25px,4vw,33px);line-height:1.2;letter-spacing:-.035em}
@@ -74,16 +78,16 @@
 @media(max-width:640px){
   .student-header{gap:8px;padding:8px 12px;min-height:60px}
   .student-brand{gap:8px}.student-brand img{width:97px}.student-brand span{padding-left:8px;font-size:8px;letter-spacing:.07em}
-  .student-demo-pill{padding:5px 7px;font-size:8px;letter-spacing:0}
+  .student-live-pill{padding:5px 7px;font-size:8px}
   .student-logout{min-height:38px;padding:7px 9px;font-size:11px}
   .student-shell{padding:10px 12px 28px}
-  .student-demo-note{align-items:flex-start;gap:6px;margin-bottom:9px;padding:7px 9px;font-size:9px}
-  .student-demo-note strong{font-size:9px}
   .student-login-card{margin:14px auto;padding:21px 18px;border-radius:16px}
   .student-dashboard-grid{grid-template-columns:minmax(0,1fr);gap:8px}
   .student-welcome{margin-bottom:8px;padding:11px 13px}
   .student-welcome h1{font-size:23px}
-  .student-sample-tag{padding:5px 7px;font-size:9px}
+  .student-course-end{padding:6px 8px}
+  .student-course-end span{font-size:8px}
+  .student-course-end strong{font-size:10px}
   .student-card{padding:11px}
   .student-card-heading{margin-bottom:6px}
   .student-icon{width:36px;height:36px;border-radius:11px;font-size:19px}
