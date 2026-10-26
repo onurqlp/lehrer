@@ -1,0 +1,98 @@
+.student-page{min-height:100vh;background:var(--ayda-cream,#fbf9f5);color:var(--ayda-text,#142b44)}
+.student-page .student-skip{position:absolute;left:12px;top:-60px;z-index:100;padding:10px 14px;background:#fff;color:#102541;border-radius:9px}
+.student-page .student-skip:focus{top:10px}
+.student-header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;max-width:1240px;margin:0 auto;padding:11px 26px;min-height:76px;background:var(--ayda-deep,#0b1b31);border-bottom:1px solid #2b3b50}
+.student-page:before{position:fixed;inset:0 0 auto;height:76px;background:#0b1b31;content:"";z-index:-1}
+.student-brand{display:inline-flex;align-items:center;gap:13px;min-width:0;color:#fff;text-decoration:none;line-height:1.2}
+.student-brand img{display:block;width:125px;height:auto;object-fit:contain;flex:0 0 auto}
+.student-brand span{border-left:1px solid #9cb2c45e;padding-left:12px;color:var(--ayda-gold,#e8c37b);font-size:10px;letter-spacing:.12em;font-weight:800}
+.student-demo-pill{margin-left:auto;padding:6px 10px;border:1px solid #d9b45f;border-radius:999px;background:#342a19;color:#f5d88e;font-size:10px;font-weight:850;letter-spacing:.07em;white-space:nowrap}
+.student-logout{min-height:42px;padding:8px 12px;border:1px solid #7892ab64;border-radius:9px;background:transparent;color:white;font-weight:750;cursor:pointer}
+.student-logout[hidden]{display:none!important}
+.student-shell{max-width:1120px;margin:0 auto;padding:22px 26px 52px}
+.student-demo-note{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:11px 14px;border:1px solid #e9d4a2;border-radius:12px;background:#fff9ea;color:#5c4929;font-size:12px;line-height:1.45}
+.student-demo-note strong{flex:none;color:#725317;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.student-login-card{max-width:480px;margin:36px auto;padding:28px;border:1px solid var(--ayda-border,#dbe3ea);border-radius:20px;background:#fff;box-shadow:var(--ayda-shadow,0 9px 28px rgba(10,28,46,.055))}
+.student-eyebrow{color:var(--ayda-gold-ink,#74511b);font-size:10px;font-weight:850;letter-spacing:.105em;line-height:1.4}
+.student-login-card h1,.student-welcome h1{margin:5px 0 7px;color:var(--ayda-navy,#102541);font-size:clamp(25px,4vw,33px);line-height:1.2;letter-spacing:-.035em}
+.student-login-card>p{margin:0 0 20px;color:var(--ayda-muted,#536779);font-size:14px}
+.student-login-card form{display:grid;gap:8px}
+.student-login-card label{margin-top:5px;color:#17324f;font-size:13px;font-weight:750}
+.student-login-card input{width:100%;min-height:48px;padding:11px 13px;border:1px solid #c9d4df;border-radius:10px;background:#fff;color:#142b44;font-size:16px}
+.student-primary{min-height:50px;margin-top:9px;padding:12px 16px;border:0;border-radius:11px;background:#102541;color:#fff;font-size:15px;font-weight:800;cursor:pointer}
+.student-primary:hover{background:#1b3e62}
+.student-status{min-height:20px;margin:0;color:#a13636;font-size:13px;font-weight:700}
+.student-demo-credentials{margin-top:8px;padding-top:12px;border-top:1px solid #e6ebef;color:#536779;font-size:12px}
+.student-demo-credentials summary{width:max-content;cursor:pointer;font-weight:700}
+.student-demo-credentials p{margin:10px 0 0;line-height:1.7}
+.student-dashboard[hidden],.student-loading[hidden],.student-error[hidden]{display:none!important}
+.student-dashboard{display:block}
+.student-welcome{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:16px;padding:19px 22px;border-radius:17px;background:linear-gradient(112deg,#0b1b31 0%,#173957 95%);color:#fff;box-shadow:var(--ayda-shadow)}
+.student-welcome .student-eyebrow{color:var(--ayda-gold,#e8c37b)}
+.student-welcome h1{color:white;overflow-wrap:anywhere}
+.student-welcome p{margin:0;color:#d8e5f3;font-size:14px;font-weight:650}
+.student-dot{padding:0 8px;color:var(--ayda-gold,#e8c37b)}
+.student-sample-tag{flex:none;padding:6px 9px;border:1px solid #d7c1896b;border-radius:999px;color:#f6d994;font-size:10px;font-weight:800}
+.student-dashboard-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:stretch}
+.student-card{min-width:0;padding:18px 19px;border:1px solid var(--ayda-border,#dbe3ea);border-radius:17px;background:#fff;box-shadow:var(--ayda-shadow,0 9px 28px rgba(10,28,46,.055))}
+.student-card-heading{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.student-icon{display:grid;place-items:center;width:43px;height:43px;flex:none;border-radius:13px;background:#edf5fb;color:#214d75;font-size:22px;font-weight:800}
+.student-calendar-icon{background:#f8f0de;color:#8a6219}
+.student-card h2{margin:1px 0 0;color:#102541;font-size:19px;line-height:1.2;letter-spacing:-.025em}
+.student-tabs{display:flex;gap:5px;margin-bottom:12px;padding:4px;border-radius:10px;background:#f3f6f8}
+.student-tab{flex:1;min-height:36px;padding:7px 10px;border:0;border-radius:7px;background:transparent;color:#536779;font-size:12px;font-weight:750;cursor:pointer}
+.student-tab.is-active{background:#fff;color:#102541;box-shadow:0 1px 4px #10254122}
+.student-homework-list{display:grid;gap:9px}
+.student-homework-item{padding:12px;border:1px solid #e4eaf0;border-radius:12px;background:#fcfdff}
+.student-homework-item strong{display:block;color:#18334f;font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.student-homework-meta{display:flex;flex-wrap:wrap;gap:5px 12px;margin-top:5px;color:#607284;font-size:11px}
+.student-homework-deadline{display:inline-flex;margin-top:7px;padding:4px 7px;border-radius:7px;background:#fff4dc;color:#775313;font-size:10px;font-weight:800}
+.student-homework-status{margin:0;padding:12px;border-radius:11px;background:#f5f8fa;color:#526474;font-size:13px;line-height:1.5}
+.student-lesson-date{margin-top:6px;color:#102541;font-size:18px;font-weight:850;line-height:1.35}
+.student-lesson-time{margin-top:3px;color:#214d75;font-size:14px;font-weight:750}
+.student-lesson-topic{margin:12px 0 0;padding-top:10px;border-top:1px solid #e7ebef;color:#536779;font-size:12px;line-height:1.5}
+.student-unit-label{margin-top:9px;color:#80601e;font-size:11px;font-weight:800}
+.student-portal-card{display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-width:0;padding:17px 18px;border:1px solid #d9e4ec;border-radius:17px;background:linear-gradient(145deg,#fff 0%,#f3f8fb 100%);color:#142b44;text-decoration:none;box-shadow:var(--ayda-shadow);transition:transform .18s ease,border-color .18s ease}
+.student-portal-card:hover{transform:translateY(-2px);border-color:#b4c9da}
+.student-video-card{background:linear-gradient(145deg,#fff 0%,#fbf6e9 100%);border-color:#e9dfc6}
+.student-portal-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:#e6f0f7;color:#214d75;font-size:21px;font-weight:850}
+.student-video-card .student-portal-icon{background:#f6ebd2;color:#8b641b}
+.student-portal-copy{display:grid;gap:4px}
+.student-portal-copy .student-eyebrow{font-size:9px}
+.student-portal-copy strong{color:#102541;font-size:16px;line-height:1.25;overflow-wrap:anywhere}
+.student-portal-copy small{color:#536779;font-size:11px;line-height:1.45}
+.student-portal-action{display:inline-flex;align-items:center;gap:7px;min-height:36px;margin-top:auto;padding:7px 11px;border-radius:9px;background:#102541;color:white;font-size:11px;font-weight:800}
+.student-video-card .student-portal-action{background:#74551f}
+.student-whatsapp{grid-column:1/-1;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:11px 16px;border:1px solid #b7d8cb;border-radius:12px;background:#eef9f3;color:#176344;text-decoration:none;font-weight:800}
+.student-whatsapp[hidden]{display:none!important}
+.student-updated{margin:12px 2px 0;color:#748596;font-size:10px;text-align:center}
+.student-loading,.student-error{margin:16px auto;padding:14px;border-radius:12px;text-align:center}
+.student-loading{color:#536779;background:#fff;border:1px solid #dbe3ea}
+.student-spinner{display:inline-block;width:15px;height:15px;margin-right:8px;vertical-align:-3px;border:2px solid #bdcad5;border-top-color:#214d75;border-radius:50%;animation:student-spin .75s linear infinite}
+.student-error{border:1px solid #e7bcbc;background:#fff5f5;color:#922d2d}
+@keyframes student-spin{to{transform:rotate(360deg)}}
+@media(max-width:640px){
+  .student-header{gap:8px;padding:10px 14px;min-height:66px}
+  .student-brand{gap:8px}.student-brand img{width:97px}.student-brand span{padding-left:8px;font-size:8px;letter-spacing:.07em}
+  .student-demo-pill{padding:5px 7px;font-size:8px;letter-spacing:0}
+  .student-logout{min-height:38px;padding:7px 9px;font-size:11px}
+  .student-shell{padding:13px 13px 35px}
+  .student-demo-note{align-items:flex-start;gap:6px;margin-bottom:12px;padding:9px 10px;font-size:10px}
+  .student-demo-note strong{font-size:9px}
+  .student-login-card{margin:18px auto;padding:21px 18px;border-radius:16px}
+  .student-dashboard-grid{grid-template-columns:minmax(0,1fr);gap:11px}
+  .student-welcome{margin-bottom:11px;padding:15px 16px}
+  .student-welcome h1{font-size:25px}
+  .student-sample-tag{padding:5px 7px;font-size:9px}
+  .student-card{padding:15px}
+  .student-card-heading{margin-bottom:9px}
+  .student-portal-card{min-height:142px;padding:15px;gap:9px}
+  .student-portal-copy strong{font-size:15px}
+  .student-portal-action{min-height:40px;font-size:12px}
+}
+@media(min-width:760px){
+  .student-portal-card{display:grid;grid-template-columns:auto 1fr;align-content:start;min-height:158px}
+  .student-portal-icon{grid-row:1/3}
+  .student-portal-action{grid-column:2}
+}
+@media(prefers-reduced-motion:reduce){.student-portal-card{transition:none}.student-spinner{animation-duration:2s}}
