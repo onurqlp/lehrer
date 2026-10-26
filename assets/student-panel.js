@@ -1,199 +1,29 @@
 'use strict';
-
-(() => {
-  const byId = id => document.getElementById(id);
-  const query = new URLSearchParams(window.location.search);
-  const scenario = query.get('scenario') || 'homework';
-  const credentials = { username: 'demo.a1', password: 'AydaDemo26!' };
-  const sessionKey = 'aydaStudentDemoSession';
-  const tz = 'Europe/Istanbul';
-
-  // These fixtures are synthetic and remain in this browser. They never call the staff API.
-  const student = {
-    name: 'Deniz Yılmaz', level: 'A1', group: 'A1 Demo Grubu', active: scenario !== 'inactive',
-    schedule: [{ day: 1, start: '20:00', end: '21:30' }, { day: 3, start: '20:00', end: '21:30' }, { day: 5, start: '20:00', end: '21:30' }],
-    lastCompletedUnit: 2, totalUnits: 24, whatsappUrl: ''
-  };
-  const homework = {
-    current: scenario === 'no-homework' || scenario === 'not-shared' ? [] : [{
-      title: 'Menschen A1 · Ünite 3, sayfa 42–43', lessonDate: '2026-10-23', dueDate: '2026-10-29', state: 'open'
-    }],
-    history: [{ title: 'Menschen A1 · Ünite 2 tekrar çalışması', lessonDate: '2026-10-16', dueDate: '2026-10-22', state: 'completed' }]
-  };
-
-  function dateParts(date = new Date()) {
-    const values = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date);
-    return Object.fromEntries(values.filter(part => part.type !== 'literal').map(part => [part.type, Number(part.value)]));
-  }
-
-  function timeParts(date = new Date()) {
-    const values = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(date);
-    return Object.fromEntries(values.filter(part => part.type !== 'literal').map(part => [part.type, Number(part.value)]));
-  }
-
-  function makeIstanbulDate(year, month, day, hour = 0, minute = 0) {
-    // Europe/Istanbul is UTC+03:00; use UTC arithmetic so the browser's own timezone is irrelevant.
-    return new Date(Date.UTC(year, month - 1, day, hour - 3, minute));
-  }
-
-  function nextLesson(now = new Date()) {
-    const today = dateParts(now);
-    const currentTime = timeParts(now);
-    const todayUtc = new Date(Date.UTC(today.year, today.month - 1, today.day));
-    for (let offset = 0; offset < 8; offset += 1) {
-      const candidate = new Date(todayUtc);
-      candidate.setUTCDate(candidate.getUTCDate() + offset);
-      const session = student.schedule.find(item => item.day === candidate.getUTCDay());
-      if (!session) continue;
-      const [hour, minute] = session.start.split(':').map(Number);
-      if (offset === 0 && (currentTime.hour > hour || (currentTime.hour === hour && currentTime.minute >= minute))) continue;
-      return { date: makeIstanbulDate(candidate.getUTCFullYear(), candidate.getUTCMonth() + 1, candidate.getUTCDate()), ...session };
-    }
-    return null;
-  }
-
-  function formatDate(date, options) {
-    return new Intl.DateTimeFormat('tr-TR', { timeZone: tz, ...options }).format(date);
-  }
-
-  function formatHomeworkDate(iso) {
-    const [year, month, day] = iso.split('-').map(Number);
-    return formatDate(makeIstanbulDate(year, month, day), { day: 'numeric', month: 'long' });
-  }
-
-  function setText(id, value) {
-    const element = byId(id);
-    if (element) element.textContent = value;
-  }
-
-  function showLogin(message = '') {
-    byId('loginPanel').hidden = false;
-    byId('studentDashboard').hidden = true;
-    byId('logoutButton').hidden = true;
-    setText('loginMessage', message);
-  }
-
-  function renderHomework(view = 'current') {
-    const container = byId('homeworkList');
-    const items = homework[view];
-    container.replaceChildren();
-    if (!items.length) {
-      const empty = document.createElement('p');
-      empty.className = 'student-homework-status';
-      empty.textContent = scenario === 'no-homework' && view === 'current'
-        ? 'Bu derste ödev verilmedi.'
-        : 'Henüz ödev paylaşılmadı.';
-      container.append(empty);
-      return;
-    }
-    items.forEach(item => {
-      const card = document.createElement('article');
-      card.className = 'student-homework-item';
-      const title = document.createElement('strong');
-      title.textContent = item.title;
-      const meta = document.createElement('div');
-      meta.className = 'student-homework-meta';
-      const lesson = document.createElement('span');
-      lesson.textContent = `Ders tarihi: ${formatHomeworkDate(item.lessonDate)}`;
-      const status = document.createElement('span');
-      status.textContent = item.state === 'completed' ? 'Tamamlandı' : 'Açık';
-      meta.append(lesson, status);
-      card.append(title, meta);
-      if (item.dueDate) {
-        const due = document.createElement('span');
-        due.className = 'student-homework-deadline';
-        due.textContent = `Teslim: ${formatHomeworkDate(item.dueDate)}`;
-        card.append(due);
-      }
-      container.append(card);
-    });
-  }
-
-  function renderDashboard() {
-    setText('studentName', student.name);
-    setText('studentLevel', student.level);
-    setText('studentGroup', student.group);
-    const session = nextLesson();
-    if (session) {
-      setText('lessonDate', formatDate(session.date, { weekday: 'long', day: 'numeric', month: 'long' }));
-      setText('lessonTime', `${session.start}–${session.end}`);
-    } else {
-      setText('lessonDate', 'Sonraki ders programı bulunamadı');
-      setText('lessonTime', '');
-    }
-    setText('lessonTopic', 'Konu öğretmen tarafından henüz belirtilmedi.');
-    setText('lessonUnit', `Tahmini sıradaki ünite: ${Math.min(student.lastCompletedUnit + 1, student.totalUnits)} · Programdan tahmin edilmiştir`);
-    renderHomework('current');
-    document.querySelectorAll('[data-homework-view]').forEach(button => {
-      const selected = button.dataset.homeworkView === 'current';
-      button.classList.toggle('is-active', selected);
-      button.setAttribute('aria-selected', String(selected));
-    });
-    const whatsapp = byId('classWhatsapp');
-    if (student.whatsappUrl) {
-      whatsapp.href = student.whatsappUrl;
-      whatsapp.hidden = false;
-    } else {
-      whatsapp.hidden = true;
-      whatsapp.removeAttribute('href');
-    }
-    const updated = document.querySelector('.student-updated');
-    updated.textContent = `Örnek veriler · Son görüntüleme ${formatDate(new Date(), { hour: '2-digit', minute: '2-digit' })} (Türkiye saati)`;
-  }
-
-  document.querySelectorAll('[data-homework-view]').forEach(button => {
-    button.addEventListener('click', () => {
-      document.querySelectorAll('[data-homework-view]').forEach(tab => {
-        const selected = tab === button;
-        tab.classList.toggle('is-active', selected);
-        tab.setAttribute('aria-selected', String(selected));
-      });
-      renderHomework(button.dataset.homeworkView);
-    });
-  });
-
-  function saveSession() {
-    try { localStorage.setItem(sessionKey, JSON.stringify({ demo: true, expires: Date.now() + 8 * 60 * 60 * 1000 })); } catch (_) {}
-  }
-
-  function hasSession() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(sessionKey) || 'null');
-      if (saved && saved.demo === true && saved.expires > Date.now() && student.active) return true;
-      localStorage.removeItem(sessionKey);
-    } catch (_) { try { localStorage.removeItem(sessionKey); } catch (_) {} }
-    return false;
-  }
-
-  function enterDashboard() {
-    renderDashboard();
-    byId('loginPanel').hidden = true;
-    byId('studentDashboard').hidden = false;
-    byId('logoutButton').hidden = false;
-  }
-
-  byId('studentLoginForm').addEventListener('submit', event => {
-    event.preventDefault();
-    const username = byId('studentUsername').value.trim();
-    const password = byId('studentPassword').value;
-    if (username !== credentials.username || password !== credentials.password) {
-      showLogin('Kullanıcı adı veya şifre hatalı. Demo giriş bilgilerini kontrol edin.');
-      return;
-    }
-    if (!student.active) {
-      showLogin('Bu demo öğrenci hesabı pasif. Giriş yapılamaz.');
-      return;
-    }
-    saveSession();
-    enterDashboard();
-  });
-
-  byId('logoutButton').addEventListener('click', () => {
-    try { localStorage.removeItem(sessionKey); } catch (_) {}
-    byId('studentUsername').value = '';
-    byId('studentPassword').value = '';
-    showLogin('Çıkış yapıldı.');
-  });
-
-  if (hasSession()) enterDashboard();
+(()=>{
+ const $=id=>document.getElementById(id),key='aydaStudentSession',api=String(window.AYDA_API_URL||''),tz='Europe/Istanbul';
+ let session=null,data=null,seq=0,view='current';
+ const weekdays={Pazar:0,Pazartesi:1,Salı:2,Çarşamba:3,Perşembe:4,Cuma:5,Cumartesi:6};
+ const payload64=s=>{const bytes=new TextEncoder().encode(s);let bin='';for(const b of bytes)bin+=String.fromCharCode(b);return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
+ async function passHash(id,p){const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(id+':'+p));return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+ function request(action,params={}){return new Promise((resolve,reject)=>{const cb='ayda_cb_student_'+Date.now()+'_'+(++seq),s=document.createElement('script'),u=new URL(api);let done=false;const end=(e,v)=>{if(done)return;done=true;clearTimeout(t);delete window[cb];s.remove();e?reject(e):resolve(v);};const t=setTimeout(()=>end(Error('Sunucu yanıt vermedi. Tekrar deneyin.')),30000);window[cb]=r=>r?.ok?end(null,r.data):end(Error(r?.error||'İşlem başarısız.'));u.searchParams.set('action',action);u.searchParams.set('callback',cb);Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,String(v)));s.onerror=()=>end(Error('Sunucuya bağlanılamadı.'));s.src=u.href;document.head.append(s);});}
+ const istDate=(s,h=0)=>{if(!s)return null;const [y,m,d]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,d,h-3));};
+ const fmt=(s,opt={weekday:'long',day:'numeric',month:'long'})=>s?new Intl.DateTimeFormat('tr-TR',{timeZone:tz,...opt}).format(istDate(s)):'Belirtilmemiş';
+ const set=(id,v)=>{const n=$(id);if(n)n.textContent=v||'';};
+ function card(title,meta,status,description=''){const a=document.createElement('article');a.className='student-homework-item';const h=document.createElement('strong');h.textContent=title||'Ödev';const m=document.createElement('div');m.className='student-homework-meta';m.textContent=meta;a.append(h,m);if(status){const b=document.createElement('span');b.className='student-homework-deadline';b.textContent=status;a.append(b);}if(description){const p=document.createElement('p');p.textContent=description;a.append(p);}return a;}
+ function empty(root,msg){const p=document.createElement('p');p.className='student-homework-status';p.textContent=msg;root.append(p);}
+ function renderHomework(v=view){view=v;const root=$('homeworkList');root.replaceChildren();document.querySelectorAll('[data-homework-view]').forEach(b=>{const active=b.dataset.homeworkView===v;b.classList.toggle('is-active',active);b.setAttribute('aria-selected',String(active));});const checks=data.homeworkChecks||[],tasks=data.tasks||[],assignments=data.assignments||[];
+  if(v==='missed'){const missed=checks.filter(x=>x.status==='Yapmadı'),overdue=tasks.filter(x=>x.overdue);missed.forEach(x=>root.append(card(x.text||'Ders ödevi','Ders: '+fmt(x.date,{day:'numeric',month:'long',year:'numeric'}),'Eksik')));overdue.forEach(x=>root.append(card(x.title,'Teslim: '+fmt(x.dueDate,{day:'numeric',month:'long',year:'numeric'}),'Süresi geçti',x.description)));if(!missed.length&&!overdue.length)empty(root,'Eksik ödev görünmüyor.');return;}
+  if(v==='history'){checks.forEach(x=>root.append(card(x.text||'Ders ödevi','Ders: '+fmt(x.date,{day:'numeric',month:'long',year:'numeric'}),x.status)));if(!checks.length)empty(root,'Henüz ödev kontrol kaydı yok.');return;}
+  tasks.filter(x=>x.status==='Aktif').forEach(x=>root.append(card(x.title,'Verildi: '+fmt(x.assignedDate,{day:'numeric',month:'long'})+' · Teslim: '+fmt(x.dueDate,{day:'numeric',month:'long',year:'numeric'}),x.overdue?'Süresi geçti':'Aktif',x.description)));
+  assignments.slice(0,12).filter(x=>(Date.parse(data.today)-Date.parse(x.date))/86400000<=7).forEach(x=>{const c=checks.find(y=>y.date===x.date);root.append(card(x.text,'Ders: '+fmt(x.date,{day:'numeric',month:'long'}),c?.status==='Yapmadı'?'Eksik':c?.status==='Yaptı'?'Tamamlandı':'Paylaşıldı'));});
+  if(!root.children.length)empty(root,'Henüz ödev paylaşılmadı.');
+ }
+ function nextLesson(){const now=new Date(),p=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now).filter(x=>x.type!=='literal').map(x=>[x.type,+x.value])),t=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(now).filter(x=>x.type!=='literal').map(x=>[x.type,+x.value])),base=new Date(Date.UTC(p.year,p.month-1,p.day));for(let i=0;i<8;i++){const d=new Date(base);d.setUTCDate(d.getUTCDate()+i);const x=(data.schedule||[]).find(a=>weekdays[a.day]===d.getUTCDay());if(!x)continue;const [h,m]=String(x.start||'00:00').split(':').map(Number);if(i===0&&(t.hour>h||t.hour===h&&t.minute>=m))continue;return {date:d.toISOString().slice(0,10),...x};}return null;}
+ function render(){const s=data.student||{},g=data.group||{},c=data.course||{};set('studentName',s.name);set('studentLevel',s.level);set('studentGroup',s.group);set('courseEndDate',c.end?fmt(c.end,{day:'numeric',month:'long',year:'numeric'}):'Henüz belirtilmedi');const lesson=nextLesson();set('lessonDate',lesson?fmt(lesson.date):'Sonraki ders programı bulunamadı');set('lessonTime',lesson?lesson.start+'–'+lesson.end:'');set('lessonTopic','Konu öğretmen tarafından henüz belirtilmedi.');set('lessonUnit',g.total?'Tahmini sıradaki ünite: '+Math.min((+g.completed||0)+1,g.total)+' · Programdan tahmin edilmiştir':'');const wa=$('classWhatsapp'),url=String(g.whatsapp||'');if(/^https:\/\/(chat\.whatsapp\.com\/[A-Za-z0-9_-]+|wa\.me\/[0-9]+)$/.test(url)){wa.href=url;wa.hidden=false;}else{wa.hidden=true;wa.removeAttribute('href');}renderHomework(view);const root=$('attendanceList');root.replaceChildren();const absent=(data.attendance||[]).filter(x=>x.status==='Gelmedi');set('attendanceSummary',absent.length+' devamsızlık kaydı');if(!absent.length)empty(root,'Kayıtlı devamsızlığın bulunmuyor.');absent.forEach(x=>root.append(card(x.excused?'Mazeretli devamsızlık':'Devamsızlık',fmt(x.date,{day:'numeric',month:'long',year:'numeric'}),x.excused?'Mazeretli':'Gelmedi')));set('studentUpdated','Son güncelleme: '+new Intl.DateTimeFormat('tr-TR',{timeZone:tz,hour:'2-digit',minute:'2-digit'}).format(new Date(data.updatedAt||Date.now()))+' (Türkiye saati)');}
+ function showLogin(msg=''){$('loginPanel').hidden=false;$('studentDashboard').hidden=true;$('logoutButton').hidden=true;$('studentLoading').hidden=true;set('loginMessage',msg);}
+ async function load(){ $('studentLoading').hidden=false;try{data=await request('studentPortal',{token:session.token});render();$('loginPanel').hidden=true;$('studentDashboard').hidden=false;$('logoutButton').hidden=false;$('studentLoading').hidden=true;}catch(e){localStorage.removeItem(key);session=null;showLogin(e.message);}}
+ document.querySelectorAll('[data-homework-view]').forEach(b=>b.addEventListener('click',()=>renderHomework(b.dataset.homeworkView)));
+ $('studentLoginForm').addEventListener('submit',async e=>{e.preventDefault();const username=$('studentUsername').value.trim(),password=$('studentPassword').value;if(!username||!password){showLogin('Öğrenci numarası ve parola gerekli.');return;}const b=e.submitter;if(b)b.disabled=true;set('loginMessage','Giriş yapılıyor…');try{const passHash=await passHash(username,password),r=await request('studentLogin',{payload:payload64(JSON.stringify({username,passHash}))});session={token:r.token,expires:Date.now()+r.expiresIn*1000};localStorage.setItem(key,JSON.stringify(session));await load();}catch(err){showLogin(err.message);}finally{if(b)b.disabled=false;$('studentPassword').value='';}});
+ $('logoutButton').addEventListener('click',()=>{if(session?.token)request('studentLogout',{token:session.token}).catch(()=>{});localStorage.removeItem(key);session=null;data=null;showLogin('Çıkış yapıldı.');});
+ try{const x=JSON.parse(localStorage.getItem(key)||'null');if(x?.token&&x.expires>Date.now()){session=x;load();}else localStorage.removeItem(key);}catch(_){}
 })();
