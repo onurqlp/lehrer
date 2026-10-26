@@ -72,23 +72,37 @@
 .student-error{border:1px solid #e7bcbc;background:#fff5f5;color:#922d2d}
 @keyframes student-spin{to{transform:rotate(360deg)}}
 @media(max-width:640px){
-  .student-header{gap:8px;padding:10px 14px;min-height:66px}
+  .student-header{gap:8px;padding:8px 12px;min-height:60px}
   .student-brand{gap:8px}.student-brand img{width:97px}.student-brand span{padding-left:8px;font-size:8px;letter-spacing:.07em}
   .student-demo-pill{padding:5px 7px;font-size:8px;letter-spacing:0}
   .student-logout{min-height:38px;padding:7px 9px;font-size:11px}
-  .student-shell{padding:13px 13px 35px}
-  .student-demo-note{align-items:flex-start;gap:6px;margin-bottom:12px;padding:9px 10px;font-size:10px}
+  .student-shell{padding:10px 12px 28px}
+  .student-demo-note{align-items:flex-start;gap:6px;margin-bottom:9px;padding:7px 9px;font-size:9px}
   .student-demo-note strong{font-size:9px}
-  .student-login-card{margin:18px auto;padding:21px 18px;border-radius:16px}
-  .student-dashboard-grid{grid-template-columns:minmax(0,1fr);gap:11px}
-  .student-welcome{margin-bottom:11px;padding:15px 16px}
-  .student-welcome h1{font-size:25px}
+  .student-login-card{margin:14px auto;padding:21px 18px;border-radius:16px}
+  .student-dashboard-grid{grid-template-columns:minmax(0,1fr);gap:8px}
+  .student-welcome{margin-bottom:8px;padding:11px 13px}
+  .student-welcome h1{font-size:23px}
   .student-sample-tag{padding:5px 7px;font-size:9px}
-  .student-card{padding:15px}
-  .student-card-heading{margin-bottom:9px}
-  .student-portal-card{min-height:142px;padding:15px;gap:9px}
-  .student-portal-copy strong{font-size:15px}
-  .student-portal-action{min-height:40px;font-size:12px}
+  .student-card{padding:11px}
+  .student-card-heading{margin-bottom:6px}
+  .student-icon{width:36px;height:36px;border-radius:11px;font-size:19px}
+  .student-card h2{font-size:16px}
+  .student-tabs{margin-bottom:7px;padding:3px}
+  .student-tab{min-height:29px;padding:5px 8px}
+  .student-homework-item{padding:8px}
+  .student-homework-meta{font-size:10px}
+  .student-homework-deadline{margin-top:5px;padding:3px 6px}
+  .student-lesson-date{font-size:15px}
+  .student-lesson-time{font-size:12px}
+  .student-lesson-topic{margin-top:8px;padding-top:7px;font-size:11px}
+  .student-unit-label{margin-top:6px;font-size:10px}
+  .student-portal-card{display:grid;grid-template-columns:auto 1fr;align-items:center;min-height:110px;padding:10px 12px;gap:7px}
+  .student-portal-icon{grid-row:1/3;width:36px;height:36px;border-radius:11px;font-size:18px}
+  .student-portal-copy{gap:2px}
+  .student-portal-copy strong{font-size:13px}
+  .student-portal-copy small{font-size:10px}
+  .student-portal-action{grid-column:2;min-height:32px;margin-top:0;padding:5px 8px;font-size:10px}
 }
 @media(min-width:760px){
   .student-portal-card{display:grid;grid-template-columns:auto 1fr;align-content:start;min-height:158px}
