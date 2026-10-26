@@ -114,3 +114,10 @@
   .student-portal-action{grid-column:2}
 }
 @media(prefers-reduced-motion:reduce){.student-portal-card{transition:none}.student-spinner{animation-duration:2s}}
+.student-homework-upload-note{margin:8px 0 5px!important;color:#536779;font-size:11px;line-height:1.45}
+.student-homework-upload{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}
+.student-homework-upload input[type=file]{min-width:0;max-width:100%;flex:1 1 190px;color:#536779;font-size:11px}
+.student-upload-button,.student-homework-whatsapp{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:8px 11px;border:0;border-radius:9px;background:#102541;color:#fff;font-size:11px;font-weight:800;text-decoration:none;cursor:pointer}
+.student-upload-button:disabled{opacity:.55;cursor:wait}
+.student-upload-feedback{display:block;margin-top:5px;color:#536779;font-size:11px}
+.student-homework-whatsapp{margin-top:8px;background:#eaf7f0;color:#176344;border:1px solid #bfdfcc}
