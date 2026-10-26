@@ -105,18 +105,9 @@
   header.append(el('strong','',task.title),el('span','ayda-task-pill'+(task.overdue?' overdue':''),task.status==='Aktif'?(task.overdue?'Teslim tarihi geçti':'Aktif'):task.status));
   card.append(header,el('small','',task.group+' · Son teslim: '+formatDate(task.dueDate)));
   if(task.description)card.append(el('p','',task.description));
-  const submissions=task.submissions||[];
-  card.append(el('small','ayda-task-submission-count','Dosya teslimi: '+submissions.length));
-  if(submissions.length){
-   const list=el('ul','ayda-task-submissions');
-   for(const submission of submissions){
-    const row=el('li','',''),label=el('span','',(submission.studentName||submission.studentId||'Öğrenci')+' · '+(submission.fileName||'Dosya')+' · '+(submission.status||'Teslim edildi'));
-    row.append(label);
-    try{const fileUrl=new URL(submission.fileUrl);if(fileUrl.hostname==='drive.google.com'){const link=el('a','ayda-task-submission-link','Dosyayı aç');link.href=fileUrl.href;link.target='_blank';link.rel='noopener noreferrer';row.append(link);}}catch(_){}
-    list.append(row);
-   }
-   card.append(list);
-  }
+  const deliveries=task.deliveries||[];
+  card.append(el('small','ayda-task-submission-count','WhatsApp gönderim onayı: '+deliveries.length));
+  if(deliveries.length){const list=el('ul','ayda-task-submissions');for(const delivery of deliveries){const row=el('li','','');row.append(el('span','',(delivery.studentName||delivery.studentId||'Öğrenci')+' · '+(delivery.sentAt||'Gönderim tarihi yok')));list.append(row);}card.append(list);}
   if(task.status==='Aktif'){
    const actions=el('div','ayda-task-actions'),state=el('span','ayda-note-state');
    for(const days of [3,7]){
