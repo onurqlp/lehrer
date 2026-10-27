@@ -70,6 +70,11 @@
 .student-whatsapp{grid-column:1/-1;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:11px 16px;border:1px solid #b7d8cb;border-radius:12px;background:#eef9f3;color:#176344;text-decoration:none;font-weight:800}
 .student-whatsapp[hidden]{display:none!important}
 .student-updated{margin:12px 2px 0;color:#748596;font-size:10px;text-align:center}
+.student-refresh-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:12px 2px 0}
+.student-updated{margin:0}
+.student-refresh-button{min-height:32px;padding:6px 10px;border:1px solid #c8d4de;border-radius:8px;background:#fff;color:#294761;font-size:10px;font-weight:800;cursor:pointer}
+.student-refresh-button:disabled{opacity:.6;cursor:wait}
+
 .student-loading,.student-error{margin:16px auto;padding:14px;border-radius:12px;text-align:center}
 .student-loading{color:#536779;background:#fff;border:1px solid #dbe3ea}
 .student-spinner{display:inline-block;width:15px;height:15px;margin-right:8px;vertical-align:-3px;border:2px solid #bdcad5;border-top-color:#214d75;border-radius:50%;animation:student-spin .75s linear infinite}
