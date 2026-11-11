@@ -208,7 +208,7 @@ function aydaSyncLessonType(){
  $('completedWrap')?.classList.toggle('hidden',priv);
  $('attendancePreview')?.classList.toggle('hidden',priv);
  $('daily')?.classList.toggle('ayda-private-mode',priv);
- $('groupId').required=!priv;$('privateStudent').required=priv;
+ $('groupId').required=!priv;$('privateStudent').required=false; // 11.11.2026: özel derste öğrenci adı isteğe bağlı
  aydaSyncHomeworkField();aydaSyncSaveLabel();
  window.dispatchEvent(new Event('ayda:lesson-type-changed'));
 }
@@ -309,17 +309,53 @@ function aydaPrivateLessonMatch(report,payload,teacherId){
 function aydaFindPrivateLesson(overview,payload,teacherId){
  return (Array.isArray(overview?.privateHistory)?overview.privateHistory:[]).find(row=>aydaPrivateLessonMatch(row,payload,teacherId))||null;
 }
+/* 11.11.2026 — Özel derste öğrenci adı isteğe bağlı (yönetici talebi: "isim gerekmez, ayrım yeter").
+   Sunucu (aydaPrivateSave_) boş adı kabul etmiyor ve aynı öğretmen + gün + ad için ikinci kaydı
+   reddediyor. Ad boş bırakılırsa "Özel ders 1", "Özel ders 2"… gibi o güne ait boş bir etiket
+   kullanılır; böylece aynı gün birden fazla özel ders de kaydedilebilir. */
+function aydaNextPrivateLabel(overview,date,teacherId){
+ for(let n=1;n<100;n++){
+  const label='Özel ders '+n;
+  if(!aydaFindPrivateLesson(overview,{date,student:label},teacherId))return label;
+ }
+ return 'Özel ders '+Date.now();
+}
+/* 11.11.2026 — Grup dersi Google'da kayıtlı mı? Yalnızca OKUR, asla ikinci kayıt göndermez.
+   aydaSave_ ders, yoklama ve ödevi tek işlemde yazar; hata olursa hepsini geri alır. Bu yüzden
+   ders satırının bulunması kaydın bütünüyle tamamlandığını gösterir. Tarayıcı 60 sn'de zaman
+   aşımına uğrasa bile Google kaydı bitirmiş olabilir; öğretmene yanlış "kaydedilmedi" demeyelim. */
+async function aydaFindSavedGroupLesson(payload,attempts){
+ for(let i=0;i<attempts;i++){
+  if(i)await new Promise(resolve=>setTimeout(resolve,12000));
+  try{
+   const overview=await jsonp('overview');
+   const lesson=(Array.isArray(overview?.history)?overview.history:[]).find(r=>r.groupId===payload.groupId&&r.date===payload.date);
+   if(lesson)return {lesson,overview};
+  }catch(_){/* okuma hatası: bir sonraki denemede tekrar bakılır */}
+ }
+ return null;
+}
 let aydaUncertainPrivateSave=null;
-$('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$('saveBtn');b.disabled=true;b.textContent='Kaydediliyor...';clear('formMessage');try{
+$('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$('saveBtn');b.disabled=true;b.textContent='Kaydediliyor...';clear('formMessage');let autoPrivateLabel=false;try{
  const payload={type:$('lessonType').value,student:$('privateStudent').value,groupId:$('groupId').value,date:$('lessonDate').value,unit:Number($('completed').value),completed:Number($('completed').value),actual:$('actual').value,status:$('status').value,topic:'',note:$('note').value.trim(),homeworkText:$('note').value.trim()};
  if(payload.type==='private'){
   payload.groupId='';payload.unit=0;payload.completed=0;
-  if(!payload.student.trim())throw Error('Özel ders için öğrenci adı gerekli.');
-  const existing=aydaFindPrivateLesson(data,payload,data?.user?.id);
-  if(existing)throw Error('Bu öğrenci ve tarihe ait özel ders zaten kayıtlı (ID: '+existing.id+'). Geçmiş Ders Raporları bölümünden kontrol edin.');
-  if(aydaUncertainPrivateSave&&aydaPrivateLessonMatch(
+  // Sunucu kısa notu zorunlu tutuyor; aksi halde "Öğrenci adı veya not geçersiz" gibi yanıltıcı bir hata dönüyordu.
+  if(payload.note.length<3)throw Error('Kısa bir not yazın (en az 3 karakter).');
+  if(!payload.student.trim()){
+   // Ad yazılmadı: belirsiz kalmış önceki denemenin etiketini yeniden kullan (ikinci kayıt oluşmasın),
+   // yoksa o güne ait sıradaki boş etiketi al.
+   const pending=aydaUncertainPrivateSave;
+   payload.student=pending&&pending.auto&&pending.date===payload.date?pending.student:aydaNextPrivateLabel(data,payload.date,data?.user?.id);
+   autoPrivateLabel=true;
+  }
+  const uncertainMatch=!!aydaUncertainPrivateSave&&aydaPrivateLessonMatch(
    {teacherId:data?.user?.id,date:aydaUncertainPrivateSave.date,student:aydaUncertainPrivateSave.student},
-   payload,data?.user?.id)){
+   payload,data?.user?.id);
+  // Belirsiz önceki deneme için önce Google kontrolü yapılır (aşağıda); "zaten kayıtlı" hatası verilmez.
+  const existing=uncertainMatch?null:aydaFindPrivateLesson(data,payload,data?.user?.id);
+  if(existing)throw Error('Bu öğrenci ve tarihe ait özel ders zaten kayıtlı (ID: '+existing.id+'). Geçmiş Ders Raporları bölümünden kontrol edin.');
+  if(uncertainMatch){
    // Prior save may have reached Google; verify without sending a second write.
    message('formMessage','Önceki özel ders Google’da kontrol ediliyor; ikinci kayıt gönderilmiyor…','info');
    const checked=await jsonp('overview');
@@ -355,10 +391,20 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
    ?await jsonp('saveAttendance',{payload:utf8Base64Url(JSON.stringify({groupId:payload.groupId,date:payload.date,...tracking}))})
    :await jsonp('save',{payload:utf8Base64Url(JSON.stringify(payload))});
  }catch(writeError){
+  const groupDuplicate=/rapor zaten var/i.test(String(writeError?.message||''));
+  if(payload.type==='group'&&!oldAttendance&&(writeError.unknownCommit||groupDuplicate)){
+   // Zaman aşımı: kayıt Google'da tamamlanmış olabilir. "Rapor zaten var": önceki deneme ulaşmış.
+   // İkisinde de yeni yazma GÖNDERMEDEN, salt-okunur kontrol yapılır.
+   message('formMessage',groupDuplicate?'Bu tarihin raporu Google’da kontrol ediliyor…':'Google yanıtı gecikti. Ders yeniden gönderilmeden Google’da kontrol ediliyor…','info');
+   const confirmed=await aydaFindSavedGroupLesson(payload,groupDuplicate?1:3);
+   if(!confirmed)throw writeError;
+   saved={saved:true,id:confirmed.lesson.id,recovered:true,duplicate:groupDuplicate};
+   recoveredOverview=confirmed.overview;
+  }else{
   if(payload.type!=='private'||!writeError.unknownCommit)throw writeError;
   // The save can finish on Google after the browser times out.
   // Never retry the same write: check privateHistory from a read-only overview.
-  aydaUncertainPrivateSave={student:payload.student,date:payload.date};
+  aydaUncertainPrivateSave={student:payload.student,date:payload.date,auto:autoPrivateLabel};
   message('formMessage','Google yanıtı gecikti. Özel ders kaydı yeniden gönderilmeden kontrol ediliyor…','info');
   try{
    const checked=await jsonp('overview');
@@ -375,15 +421,16 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
    const e=Error('Google’daki özel ders henüz doğrulanamadı ('+readError.message+'). Kaydet düğmesine tekrar basıldığında yalnızca kayıt kontrolü yapılacak.');
    e.unknownCommit=true;throw e;
   }
+  }
  }
  if(!saved?.saved)throw Error('Sunucu kayıt işlemini doğrulamadı.');
  if(payload.type==='private')aydaUncertainPrivateSave=null;
  const trackingVerified=!!tracking&&saved.trackingSaved===true&&saved.attendanceCount===tracking.attendance.length;
  const homeworkVerified=oldAttendance||payload.type!=='group'||payload.status!=='İşlendi'||(saved.homeworkSaved===true&&/^DO-[A-Za-z0-9-]{8,80}$/.test(saved.homeworkId||''));
- if(payload.type==='group'&&payload.status==='İşlendi'&&(!trackingVerified||!homeworkVerified))throw Error('Kayıt onayı eksik. Apps Script sürümünü kontrol edin, aynı raporu tekrar göndermeden önce yöneticiyle görüşün.');
- const confirmation=saved.recovered?'Özel dersin Google’a daha önce kaydedildiği doğrulandı. Tekrar kayıt oluşturulmadı.':(oldAttendance?'Eksik yoklama tamamlandı.':(payload.type==='group'&&payload.status==='İşlendi'?'Ders ve yoklama kaydedildi. WhatsApp paylaşımı hazır.':'Ders kaydı tamamlandı.'));
+ if(!saved.recovered&&payload.type==='group'&&payload.status==='İşlendi'&&(!trackingVerified||!homeworkVerified))throw Error('Kayıt onayı eksik. Apps Script sürümünü kontrol edin, aynı raporu tekrar göndermeden önce yöneticiyle görüşün.');
+ const confirmation=saved.recovered?(payload.type==='private'?'Özel dersin Google’a daha önce kaydedildiği doğrulandı. Tekrar kayıt oluşturulmadı.':saved.duplicate?'Bu tarihin ders raporu zaten kayıtlı; önceki deneme Google’a ulaşmış. Tekrar göndermenize gerek yok.':'Google geç yanıt verdi ama ders, yoklama ve ödev Google’a kaydedilmiş. Tekrar göndermeyin.'):(oldAttendance?'Eksik yoklama tamamlandı.':(payload.type==='group'&&payload.status==='İşlendi'?'Ders ve yoklama kaydedildi. WhatsApp paylaşımı hazır.':'Ders kaydı tamamlandı.'));
  message('formMessage',confirmation+(saved.progressWarning?' '+saved.progressWarning:''),'success');
- lastSharedHomework=!oldAttendance&&payload.type==='group'&&payload.status==='İşlendi'?{
+ lastSharedHomework=!saved.recovered&&!oldAttendance&&payload.type==='group'&&payload.status==='İşlendi'?{
    id:saved.homeworkId,lessonId:saved.id,groupId:payload.groupId,
    groupName:data?.groups?.find(g=>g.id===payload.groupId)?.name||payload.groupId,
    date:payload.date,text:payload.homeworkText}:null;
@@ -391,6 +438,9 @@ $('reportForm').addEventListener('submit',async e=>{e.preventDefault();const b=$
  $('sendHomeworkToGroup').textContent='WhatsApp’ta paylaş →';
  $('aydaShareHint').hidden=true;
  if(lastSharedHomework)window.dispatchEvent(new CustomEvent('ayda:homework-saved',{detail:lastSharedHomework}));
+ // Bu kayıt yeni ödev üretmediyse (iptal/erteleme, eksik yoklama, Google'dan doğrulanan geç kayıt)
+ // paylaşım düğmesi bir ÖNCEKİ dersin ödevini göstermesin.
+ else window.dispatchEvent(new Event('ayda:homework-reset'));
  aydaSetLessonSaved(true);
  $('note').value='';
  window.AYDA_ATTENDANCE?.resetAfterSave?.();

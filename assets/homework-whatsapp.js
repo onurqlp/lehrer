@@ -116,6 +116,9 @@
   updateMain();paintPending();
  });
  window.addEventListener('ayda:lesson-type-changed',()=>{updateMain();paintPending();});
+ // 11.11.2026: yeni ödev üretmeyen kayıttan sonra önceki dersin ödevi ana düğmede kalmasın;
+ // paylaşılmamış ödevler "bekleyen" listesinde görünmeye devam eder.
+ window.addEventListener('ayda:homework-reset',()=>{current=null;updateMain();paintPending();});
  window.addEventListener('ayda:login',()=>{current=null;opened.clear();busy.clear();updateMain();refresh();});
  window.addEventListener('ayda:saved',()=>{
   if($('lessonType')?.value==='private'){current=null;updateMain();}

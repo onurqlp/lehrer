@@ -26,7 +26,7 @@
   byId('attendanceInputs').hidden=!valid;
   const quickAdd=byId('attendanceQuickAdd');if(quickAdd)quickAdd.hidden=!valid||!liveRoster;
   const badge=attendanceBox.querySelector('.attendance-preview-tag');if(badge)badge.textContent=rosterLoading?'YÜKLENİYOR':liveRoster?'CANLI':'BEKLENİYOR';
-  const saveButton=byId('saveBtn');if(saveButton&&!saveButton.disabled)saveButton.textContent=valid?'Yoklama + ödev + dersi kaydet':'Ders durumunu kaydet';
+  const saveButton=byId('saveBtn');if(saveButton&&!saveButton.disabled)saveButton.textContent=valid?'Yoklama + ödev + dersi kaydet':(byId('lessonType').value==='private'?'Özel dersi kaydet':'Ders durumunu kaydet');
   if(!valid){const banner=attendanceBox.querySelector('.attendance-caution');if(banner)banner.textContent=rosterLoading?'Google öğrenci listesi yükleniyor…':liveRoster?'Canlı kayıt hazır. İşlenen bir grup dersini seçerek yoklama alın.':rosterError?'Öğrenci listesi alınamadı: '+rosterError:'Ders Kaydı ekranında öğrenci listesi otomatik yüklenir.';empty.textContent=byId('lessonType').value==='private'?'Öğrenci yoklaması grup dersleri için tasarlandı.':!group?'Önce bir grup seçin.':'İptal veya ertelenen derslerde yoklama alınmaz.';empty.hidden=false;counter.textContent='';demoBtn.hidden=true;return;}
   const actual=roster.get(groupId)||[],students=actual.length?actual:(demo?examples:[]);
   demoBtn.hidden=liveRoster||actual.length>0;
