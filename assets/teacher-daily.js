@@ -18,7 +18,7 @@
  /* Teachers can confirm a concise lesson description with one click; no fabricated automatic note. */
  const noteInput=$('note'),actualInput=$('actual');
  if(actualInput){
-  const choices=Array.from({length:6},(_,i)=>{const hour=i+1;return [String(hour).padStart(2,'0')+':00',hour+' saat'];});
+  const choices=Array.from({length:4},(_,i)=>{const hour=i+1; /* 13.11.2026: en fazla 4 saat */return [String(hour).padStart(2,'0')+':00',hour+' saat'];});
   const previous=actualInput.value;actualInput.replaceChildren();
   for(const [value,label] of choices)actualInput.add(new Option(label,value));
   actualInput.value=choices.some(([value])=>value===previous)?previous:'02:00';
